@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Bell, Heart, Menu, MessageCircle, Moon, Sun, User, LogOut } from "lucide-react";
+import { Bell, Heart, Menu, MessageCircle, Moon, Sun, User, LogOut, Settings as SettingsIcon, Building2 } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,6 +10,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
@@ -86,6 +87,13 @@ const Header = () => {
           >
             <Link to="/therapy">Thérapie</Link>
           </Button>
+          <Button 
+            variant="ghost" 
+            className={`text-foreground hover:text-primary ${isActive('/pricing') ? 'text-primary bg-primary/10' : ''}`}
+            asChild
+          >
+            <Link to="/pricing">Tarifs</Link>
+          </Button>
         </nav>
 
         {/* Actions */}
@@ -127,6 +135,19 @@ const Header = () => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem asChild>
+                <Link to="/settings" className="cursor-pointer">
+                  <SettingsIcon className="mr-2 h-4 w-4" />
+                  Paramètres
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/organizations" className="cursor-pointer">
+                  <Building2 className="mr-2 h-4 w-4" />
+                  Organisations B2B
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
                 <LogOut className="mr-2 h-4 w-4" />
                 Déconnexion

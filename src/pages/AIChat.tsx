@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { 
   Brain, 
   Send, 
@@ -12,63 +12,51 @@ import {
   Heart,
   Smile,
   MessageCircle,
-  Star,
   User,
   Bot
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAIChat } from "@/hooks/useAIChat";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const AIChat = () => {
   const [message, setMessage] = useState("");
-  const [isRecording, setIsRecording] = useState(false);
+  const [conversationId, setConversationId] = useState<string>("");
+  const { messages, sendMessage, isLoading } = useAIChat(conversationId);
 
-  const messages = [
-    {
-      id: 1,
-      sender: "ai",
-      content: "Bonjour Sophie ! 👋 Je suis Emma, votre assistante bien-être IA. Comment vous sentez-vous aujourd'hui ?",
-      timestamp: "14:30",
-      type: "text"
-    },
-    {
-      id: 2,
-      sender: "user",
-      content: "Salut Emma ! Je me sens un peu stressée aujourd'hui. J'ai une présentation importante demain.",
-      timestamp: "14:32",
-      type: "text"
-    },
-    {
-      id: 3,
-      sender: "ai",
-      content: "Je comprends votre stress concernant cette présentation. C'est tout à fait normal de ressentir de l'anxiété avant un événement important. Voulez-vous qu'on explore ensemble quelques techniques pour vous aider à vous sentir plus sereine ?",
-      timestamp: "14:33",
-      type: "text",
-      suggestions: [
-        "Exercices de respiration",
-        "Techniques de visualisation", 
-        "Conseils de préparation"
-      ]
-    },
-    {
-      id: 4,
-      sender: "user",
-      content: "Oui, j'aimerais bien essayer les exercices de respiration.",
-      timestamp: "14:35",
-      type: "text"
-    },
-    {
-      id: 5,
-      sender: "ai",
-      content: "Parfait ! Je vais vous guider dans un exercice de respiration 4-7-8, très efficace pour réduire l'anxiété. Êtes-vous dans un endroit calme où vous pouvez vous concentrer ?",
-      timestamp: "14:36",
-      type: "breathing_exercise",
-      exerciseData: {
-        name: "Respiration 4-7-8",
-        steps: ["Inspirez 4 secondes", "Retenez 7 secondes", "Expirez 8 secondes"],
-        duration: "3 minutes"
+  useEffect(() => {
+    // Create or get conversation on mount
+    const initConversation = async () => {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) return;
+
+      const { data, error } = await supabase
+        .from('chat_conversations')
+        .insert({ 
+          user_id: userData.user.id,
+          title: 'Nouvelle conversation avec Emma'
+        })
+        .select()
+        .single();
+      
+      if (data && !error) {
+        setConversationId(data.id);
+      } else {
+        toast.error("Erreur lors de l'initialisation de la conversation");
       }
-    }
-  ];
+    };
+    
+    initConversation();
+  }, []);
+
+  const handleSend = async () => {
+    if (!message.trim() || !conversationId) return;
+    
+    const messageToSend = message;
+    setMessage("");
+    await sendMessage(messageToSend);
+  };
 
   const quickSuggestions = [
     "Comment gérer mon stress ?",
@@ -98,7 +86,6 @@ const AIChat = () => {
               <CardContent className="p-4 text-center space-y-3">
                 <div className="relative mx-auto w-16 h-16">
                   <Avatar className="w-16 h-16 border-2 border-primary/20">
-                    <AvatarImage src="/api/placeholder/64/64" alt="Emma AI" />
                     <AvatarFallback className="bg-gradient-primary text-primary-foreground text-xl">
                       <Brain className="h-8 w-8" />
                     </AvatarFallback>
@@ -181,70 +168,63 @@ const AIChat = () => {
 
               {/* Messages */}
               <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
-                {messages.map((msg) => (
-                  <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`flex max-w-[80%] space-x-2 ${msg.sender === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`}>
-                      {/* Avatar */}
-                      <Avatar className="w-8 h-8">
-                        {msg.sender === 'user' ? (
-                          <AvatarFallback className="bg-gradient-secondary text-secondary-foreground">
-                            <User className="h-4 w-4" />
-                          </AvatarFallback>
-                        ) : (
-                          <AvatarFallback className="bg-gradient-primary text-primary-foreground">
-                            <Bot className="h-4 w-4" />
-                          </AvatarFallback>
-                        )}
-                      </Avatar>
-
-                      {/* Message Content */}
-                      <div className={`space-y-1 ${msg.sender === 'user' ? 'items-end' : 'items-start'} flex flex-col`}>
-                        <div className={`p-3 rounded-lg ${
-                          msg.sender === 'user' 
-                            ? 'bg-gradient-primary text-primary-foreground' 
-                            : 'bg-muted/50 border border-border/50'
-                        }`}>
-                          <p className="text-sm">{msg.content}</p>
-                          
-                          {/* Breathing Exercise */}
-                          {msg.type === 'breathing_exercise' && msg.exerciseData && (
-                            <div className="mt-3 p-3 bg-background/20 rounded-lg space-y-2">
-                              <h4 className="font-medium text-sm">{msg.exerciseData.name}</h4>
-                              <div className="space-y-1">
-                                {msg.exerciseData.steps.map((step, index) => (
-                                  <p key={index} className="text-xs opacity-90">• {step}</p>
-                                ))}
-                              </div>
-                              <Button size="sm" variant="secondary" className="mt-2">
-                                <Heart className="h-3 w-3 mr-1" />
-                                Commencer ({msg.exerciseData.duration})
-                              </Button>
-                            </div>
+                {messages.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full space-y-4 text-center">
+                    <Brain className="h-16 w-16 text-primary animate-pulse-soft" />
+                    <div>
+                      <h3 className="text-lg font-semibold mb-2">Bonjour ! Je suis Emma 👋</h3>
+                      <p className="text-muted-foreground">
+                        Votre assistante IA bien-être. Comment puis-je vous aider aujourd'hui ?
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  messages.map((msg, index) => (
+                    <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`flex max-w-[80%] space-x-2 ${msg.role === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`}>
+                        <Avatar className="w-8 h-8">
+                          {msg.role === 'user' ? (
+                            <AvatarFallback className="bg-gradient-secondary text-secondary-foreground">
+                              <User className="h-4 w-4" />
+                            </AvatarFallback>
+                          ) : (
+                            <AvatarFallback className="bg-gradient-primary text-primary-foreground">
+                              <Bot className="h-4 w-4" />
+                            </AvatarFallback>
                           )}
-                        </div>
-                        
-                        {/* Suggestions */}
-                        {msg.suggestions && (
-                          <div className="flex flex-wrap gap-1 max-w-xs">
-                            {msg.suggestions.map((suggestion, index) => (
-                              <Button
-                                key={index}
-                                size="sm"
-                                variant="outline"
-                                className="text-xs h-6"
-                                onClick={() => setMessage(suggestion)}
-                              >
-                                {suggestion}
-                              </Button>
-                            ))}
+                        </Avatar>
+
+                        <div className={`space-y-1 ${msg.role === 'user' ? 'items-end' : 'items-start'} flex flex-col`}>
+                          <div className={`p-3 rounded-lg ${
+                            msg.role === 'user' 
+                              ? 'bg-gradient-primary text-primary-foreground' 
+                              : 'bg-muted/50 border border-border/50'
+                          }`}>
+                            <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                           </div>
-                        )}
-                        
-                        <span className="text-xs text-muted-foreground">{msg.timestamp}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+                {isLoading && (
+                  <div className="flex justify-start">
+                    <div className="flex space-x-2">
+                      <Avatar className="w-8 h-8">
+                        <AvatarFallback className="bg-gradient-primary text-primary-foreground">
+                          <Bot className="h-4 w-4" />
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="bg-muted/50 border border-border/50 p-3 rounded-lg">
+                        <div className="flex space-x-1">
+                          <div className="w-2 h-2 bg-primary rounded-full animate-bounce" />
+                          <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                          <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
+                        </div>
                       </div>
                     </div>
                   </div>
-                ))}
+                )}
               </CardContent>
 
               {/* Input Area */}
@@ -255,16 +235,13 @@ const AIChat = () => {
                       placeholder="Partagez vos pensées, émotions, ou posez une question..."
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
                       className="pr-20 border-border/50 focus:border-primary"
+                      disabled={isLoading}
                     />
                     <div className="absolute right-2 top-1/2 -translate-y-1/2 flex space-x-1">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-6 w-6 p-0"
-                        onClick={() => setIsRecording(!isRecording)}
-                      >
-                        <Mic className={`h-3 w-3 ${isRecording ? 'text-destructive' : 'text-muted-foreground'}`} />
+                      <Button size="sm" variant="ghost" className="h-6 w-6 p-0">
+                        <Mic className="h-3 w-3 text-muted-foreground" />
                       </Button>
                       <Button size="sm" variant="ghost" className="h-6 w-6 p-0">
                         <Paperclip className="h-3 w-3 text-muted-foreground" />
@@ -273,7 +250,8 @@ const AIChat = () => {
                   </div>
                   <Button 
                     className="bg-gradient-primary text-primary-foreground border-0 shadow-glow"
-                    disabled={!message.trim()}
+                    disabled={!message.trim() || isLoading}
+                    onClick={handleSend}
                   >
                     <Send className="h-4 w-4" />
                   </Button>

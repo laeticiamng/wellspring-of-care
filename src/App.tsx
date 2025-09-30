@@ -13,6 +13,9 @@ import Meditation from "./pages/Meditation";
 import Community from "./pages/Community";
 import Therapy from "./pages/Therapy";
 import AIChat from "./pages/AIChat";
+import Settings from "./pages/Settings";
+import Organizations from "./pages/Organizations";
+import Pricing from "./pages/Pricing";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,12 +30,15 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/pricing" element={<Pricing />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/journal" element={<ProtectedRoute><Journal /></ProtectedRoute>} />
             <Route path="/meditation" element={<ProtectedRoute><Meditation /></ProtectedRoute>} />
             <Route path="/community" element={<ProtectedRoute><Community /></ProtectedRoute>} />
             <Route path="/therapy" element={<ProtectedRoute><Therapy /></ProtectedRoute>} />
             <Route path="/chat" element={<ProtectedRoute><AIChat /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="/organizations" element={<ProtectedRoute><Organizations /></ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
