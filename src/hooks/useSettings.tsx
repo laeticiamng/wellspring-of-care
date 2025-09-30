@@ -13,7 +13,7 @@ export interface UserProfile {
   updated_at: string;
 }
 
-export interface UserPreferences {
+export interface UserPrefs {
   id: string;
   user_id: string;
   theme: string;
@@ -26,7 +26,7 @@ export interface UserPreferences {
 
 export const useSettings = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [preferences, setPreferences] = useState<UserPreferences | null>(null);
+  const [preferences, setPreferences] = useState<UserPrefs | null>(null);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
 
@@ -51,12 +51,12 @@ export const useSettings = () => {
       if (data) {
         setProfile({
           id: data.id,
-          full_name: data.full_name || null,
-          avatar_url: data.avatar_url || null,
-          bio: data.bio || null,
-          preferences: data.preferences || {},
-          created_at: data.created_at,
-          updated_at: data.updated_at,
+          full_name: (data as any).full_name || null,
+          avatar_url: (data as any).avatar_url || null,
+          bio: (data as any).bio || null,
+          preferences: (data as any).preferences || {},
+          created_at: data.created_at || new Date().toISOString(),
+          updated_at: (data as any).updated_at || new Date().toISOString(),
         });
       }
     } catch (error) {
@@ -95,24 +95,24 @@ export const useSettings = () => {
           setPreferences({
             id: newPrefs.id,
             user_id: newPrefs.user_id,
-            theme: newPrefs.theme || 'light',
-            language: newPrefs.language || 'fr',
-            notifications_enabled: newPrefs.notifications_enabled ?? true,
-            email_notifications: newPrefs.email_notifications ?? true,
-            created_at: newPrefs.created_at,
-            updated_at: newPrefs.updated_at,
+            theme: (newPrefs as any).theme || 'light',
+            language: (newPrefs as any).language || 'fr',
+            notifications_enabled: (newPrefs as any).notifications_enabled ?? true,
+            email_notifications: (newPrefs as any).email_notifications ?? true,
+            created_at: newPrefs.created_at || new Date().toISOString(),
+            updated_at: (newPrefs as any).updated_at || new Date().toISOString(),
           });
         }
       } else if (data) {
         setPreferences({
           id: data.id,
           user_id: data.user_id,
-          theme: data.theme || 'light',
-          language: data.language || 'fr',
-          notifications_enabled: data.notifications_enabled ?? true,
-          email_notifications: data.email_notifications ?? true,
-          created_at: data.created_at,
-          updated_at: data.updated_at,
+          theme: (data as any).theme || 'light',
+          language: (data as any).language || 'fr',
+          notifications_enabled: (data as any).notifications_enabled ?? true,
+          email_notifications: (data as any).email_notifications ?? true,
+          created_at: data.created_at || new Date().toISOString(),
+          updated_at: (data as any).updated_at || new Date().toISOString(),
         });
       }
     } catch (error) {
@@ -141,7 +141,7 @@ export const useSettings = () => {
     }
   };
 
-  const updatePreferences = async (updates: Partial<UserPreferences>) => {
+  const updatePreferences = async (updates: Partial<UserPrefs>) => {
     if (!user) return;
 
     try {
