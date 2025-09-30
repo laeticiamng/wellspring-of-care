@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { useUserStats } from "@/hooks/useUserStats";
 import { 
   Heart, 
   Brain, 
@@ -13,6 +14,20 @@ import {
 } from "lucide-react";
 
 const DashboardStats = () => {
+  const { stats, loading } = useUserStats();
+
+  if (loading) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">Chargement des statistiques...</p>
+      </div>
+    );
+  }
+
+  const wellbeingScore = stats.averageMood > 0 
+    ? Math.round((stats.averageMood / 6) * 100) 
+    : 87;
+
   const moodData = [
     { emotion: "Joie", value: 85, color: "bg-gradient-secondary", icon: Smile },
     { emotion: "Calme", value: 72, color: "bg-gradient-primary", icon: Heart },
@@ -29,10 +44,10 @@ const DashboardStats = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-primary-foreground/80 text-sm">Bien-être global</p>
-                <p className="text-3xl font-bold">87%</p>
+                <p className="text-3xl font-bold">{wellbeingScore}%</p>
                 <p className="text-xs text-primary-foreground/60 flex items-center mt-1">
                   <TrendingUp className="h-3 w-3 mr-1" />
-                  +12% cette semaine
+                  {stats.totalMoodEntries} entrées
                 </p>
               </div>
               <Heart className="h-10 w-10 text-primary-foreground/60" />
@@ -45,7 +60,7 @@ const DashboardStats = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-secondary-foreground/80 text-sm">Streak quotidien</p>
-                <p className="text-3xl font-bold">15</p>
+                <p className="text-3xl font-bold">{stats.streakDays}</p>
                 <p className="text-xs text-secondary-foreground/60 flex items-center mt-1">
                   <Calendar className="h-3 w-3 mr-1" />
                   jours consécutifs
@@ -61,10 +76,10 @@ const DashboardStats = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-accent-foreground/80 text-sm">Sessions complétées</p>
-                <p className="text-3xl font-bold">42</p>
+                <p className="text-3xl font-bold">{stats.completedSessions}</p>
                 <p className="text-xs text-accent-foreground/60 flex items-center mt-1">
                   <Clock className="h-3 w-3 mr-1" />
-                  cette semaine
+                  au total
                 </p>
               </div>
               <Brain className="h-10 w-10 text-accent-foreground/60" />
@@ -77,7 +92,7 @@ const DashboardStats = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-muted-foreground text-sm">Objectifs atteints</p>
-                <p className="text-3xl font-bold text-foreground">8/10</p>
+                <p className="text-3xl font-bold text-foreground">{stats.goalsAchieved}/{stats.totalGoals}</p>
                 <p className="text-xs text-muted-foreground flex items-center mt-1">
                   <Target className="h-3 w-3 mr-1" />
                   ce mois-ci

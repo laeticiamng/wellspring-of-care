@@ -15,10 +15,16 @@ import {
   BookOpen,
   Star
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useMoodEntries } from "@/hooks/useMoodEntries";
+import { useToast } from "@/hooks/use-toast";
 
 const Journal = () => {
   const [selectedMood, setSelectedMood] = useState<string>("");
+  const [journalText, setJournalText] = useState<string>("");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const { entries, loading, createEntry } = useMoodEntries();
+  const { toast } = useToast();
   
   const moodOptions = [
     { emoji: "😊", name: "Joyeux", color: "bg-gradient-secondary", value: "happy" },
@@ -29,7 +35,51 @@ const Journal = () => {
     { emoji: "😴", name: "Fatigué", color: "bg-muted-foreground/20", value: "tired" },
   ];
 
-  const recentEntries = [
+  const handleSave = async () => {
+    if (!selectedMood || !journalText) {
+      toast({
+        title: "Attention",
+        description: "Veuillez sélectionner une humeur et écrire votre journal",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const moodLevel = moodOptions.findIndex(m => m.value === selectedMood) + 1;
+    await createEntry(moodLevel, selectedTags, journalText);
+    
+    setSelectedMood("");
+    setJournalText("");
+    setSelectedTags([]);
+  };
+
+  const toggleTag = (tag: string) => {
+    setSelectedTags(prev => 
+      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+    );
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    if (date.toDateString() === today.toDateString()) return "Aujourd'hui";
+    if (date.toDateString() === yesterday.toDateString()) return "Hier";
+    return date.toLocaleDateString('fr-FR');
+  };
+
+  const recentEntries = entries.map(entry => ({
+    date: formatDate(entry.created_at),
+    time: new Date(entry.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+    mood: moodOptions[entry.mood_level - 1]?.emoji || "😊",
+    title: entry.emotions.join(", ") || "Entrée de journal",
+    excerpt: entry.notes || "",
+    tags: entry.emotions
+  })).slice(0, 5);
+
+  const oldRecentEntries = [
     {
       date: "Aujourd'hui",
       time: "14:30",
@@ -119,6 +169,8 @@ const Journal = () => {
                   <Textarea 
                     placeholder="Décrivez vos émotions, vos pensées, ce qui vous a marqué aujourd'hui..."
                     className="min-h-[200px] resize-none border-border/50 focus:border-primary"
+                    value={journalText}
+                    onChange={(e) => setJournalText(e.target.value)}
                   />
                 </div>
 
@@ -130,7 +182,12 @@ const Journal = () => {
                       <Badge 
                         key={tag} 
                         variant="outline" 
-                        className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
+                        className={`cursor-pointer transition-colors ${
+                          selectedTags.includes(tag) 
+                            ? 'bg-primary text-primary-foreground' 
+                            : 'hover:bg-primary hover:text-primary-foreground'
+                        }`}
+                        onClick={() => toggleTag(tag)}
                       >
                         {tag}
                       </Badge>
@@ -140,12 +197,23 @@ const Journal = () => {
 
                 {/* Actions */}
                 <div className="flex space-x-3 pt-4">
-                  <Button className="bg-gradient-primary text-primary-foreground border-0 shadow-glow">
+                  <Button 
+                    className="bg-gradient-primary text-primary-foreground border-0 shadow-glow"
+                    onClick={handleSave}
+                    disabled={!selectedMood || !journalText}
+                  >
                     <Heart className="mr-2 h-4 w-4" />
                     Sauvegarder
                   </Button>
-                  <Button variant="outline">
-                    Brouillon
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      setSelectedMood("");
+                      setJournalText("");
+                      setSelectedTags([]);
+                    }}
+                  >
+                    Réinitialiser
                   </Button>
                 </div>
               </CardContent>
@@ -160,6 +228,11 @@ const Journal = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                {loading ? (
+                  <p className="text-center text-muted-foreground">Chargement...</p>
+                ) : recentEntries.length === 0 ? (
+                  <p className="text-center text-muted-foreground">Aucune entrée pour le moment</p>
+                ) : null}
                 {recentEntries.map((entry, index) => (
                   <div key={index} className="p-4 rounded-lg border border-border/50 hover:border-primary/20 transition-colors group">
                     <div className="flex items-start space-x-4">

@@ -3,6 +3,8 @@ import DashboardStats from "@/components/DashboardStats";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 import { 
   MessageCircle, 
   Calendar, 
@@ -15,6 +17,11 @@ import {
 } from "lucide-react";
 
 const Dashboard = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const userName = user?.user_metadata?.full_name?.split(' ')[0] || "Utilisateur";
+
   const upcomingSessions = [
     {
       type: "Thérapie individuelle",
@@ -64,7 +71,7 @@ const Dashboard = () => {
         {/* Welcome Section */}
         <div className="space-y-2">
           <h1 className="text-3xl font-bold">
-            Bonjour Sophie 👋
+            Bonjour {userName} 👋
           </h1>
           <p className="text-muted-foreground">
             Voici un aperçu de votre bien-être aujourd'hui
@@ -93,7 +100,10 @@ const Dashboard = () => {
                       </p>
                     </div>
                   </div>
-                  <Button className="bg-gradient-primary text-primary-foreground border-0 shadow-glow">
+                  <Button 
+                    className="bg-gradient-primary text-primary-foreground border-0 shadow-glow"
+                    onClick={() => navigate('/chat')}
+                  >
                     <MessageCircle className="mr-2 h-4 w-4" />
                     Commencer
                   </Button>
@@ -195,19 +205,35 @@ const Dashboard = () => {
                 <CardTitle>Actions rapides</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <Button variant="outline" className="w-full justify-start">
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => navigate('/journal')}
+                >
                   <MessageCircle className="mr-2 h-4 w-4" />
                   Nouveau journal
                 </Button>
-                <Button variant="outline" className="w-full justify-start">
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => navigate('/meditation')}
+                >
                   <Heart className="mr-2 h-4 w-4" />
                   Méditation guidée
                 </Button>
-                <Button variant="outline" className="w-full justify-start">
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => navigate('/community')}
+                >
                   <Users className="mr-2 h-4 w-4" />
                   Rejoindre communauté
                 </Button>
-                <Button variant="outline" className="w-full justify-start">
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start"
+                  onClick={() => navigate('/therapy')}
+                >
                   <Video className="mr-2 h-4 w-4" />
                   Prendre RDV
                 </Button>
