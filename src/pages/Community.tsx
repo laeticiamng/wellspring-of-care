@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Textarea } from "@/components/ui/textarea";
 import { 
   Users, 
   MessageCircle, 
@@ -16,9 +17,59 @@ import {
   Share2,
   UserPlus
 } from "lucide-react";
+import { useCommunity } from "@/hooks/useCommunity";
+import { useState } from "react";
+import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Community = () => {
-  const communityGroups = [
+  const { user } = useAuth();
+  const { groups, posts, loading, joinGroup, createPost, addComment } = useCommunity();
+  const [newPostContent, setNewPostContent] = useState("");
+  const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+  const [commentContent, setCommentContent] = useState<{ [key: string]: string }>({});
+
+  const handleJoinGroup = async (groupId: string) => {
+    const success = await joinGroup(groupId);
+    if (success) {
+      toast.success("Groupe rejoint avec succès !");
+    } else {
+      toast.error("Erreur lors de l'adhésion au groupe");
+    }
+  };
+
+  const handleCreatePost = async () => {
+    if (!newPostContent.trim()) {
+      toast.error("Veuillez écrire un message");
+      return;
+    }
+    
+    const success = await createPost("Message de la communauté", newPostContent, selectedGroup);
+    if (success) {
+      toast.success("Message publié !");
+      setNewPostContent("");
+    } else {
+      toast.error("Erreur lors de la publication");
+    }
+  };
+
+  const handleAddComment = async (postId: string) => {
+    const content = commentContent[postId];
+    if (!content?.trim()) {
+      toast.error("Veuillez écrire un commentaire");
+      return;
+    }
+    
+    const success = await addComment(postId, content);
+    if (success) {
+      toast.success("Commentaire ajouté !");
+      setCommentContent({ ...commentContent, [postId]: "" });
+    } else {
+      toast.error("Erreur lors de l'ajout du commentaire");
+    }
+  };
+
+  const communityGroups_fallback = [
     {
       id: 1,
       name: "Gestion de l'anxiété",
@@ -194,52 +245,64 @@ const Community = () => {
                 </Button>
               </CardHeader>
               <CardContent className="space-y-4">
-                {communityGroups.map((group) => (
-                  <div key={group.id} className="p-4 rounded-lg border border-border/50 hover:border-primary/20 transition-colors group">
-                    <div className="flex items-start space-x-4">
-                      <div className="text-3xl group-hover:scale-110 transition-transform">
-                        {group.icon}
-                      </div>
-                      
-                      <div className="flex-1 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <h3 className="font-semibold">{group.name}</h3>
-                          <div className="flex items-center space-x-2">
-                            {group.trending && (
-                              <Badge className="bg-gradient-secondary text-secondary-foreground">
-                                🔥 Tendance
-                              </Badge>
-                            )}
-                            <Badge variant="outline">{group.category}</Badge>
-                          </div>
+                {loading ? (
+                  <p className="text-center text-muted-foreground">Chargement...</p>
+                ) : groups.length === 0 ? (
+                  <p className="text-center text-muted-foreground">Aucun groupe disponible</p>
+                ) : (
+                  groups.map((group) => (
+                    <div key={group.id} className="p-4 rounded-lg border border-border/50 hover:border-primary/20 transition-colors group">
+                      <div className="flex items-start space-x-4">
+                        <div className="text-3xl group-hover:scale-110 transition-transform">
+                          {group.icon}
                         </div>
                         
-                        <p className="text-sm text-muted-foreground">{group.description}</p>
-                        
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                            <span className="flex items-center space-x-1">
-                              <Users className="h-3 w-3" />
-                              <span>{group.members.toLocaleString()}</span>
-                            </span>
-                            <span className="flex items-center space-x-1">
-                              <MessageCircle className="h-3 w-3" />
-                              <span>{group.posts}</span>
-                            </span>
-                            <span>{group.lastActivity}</span>
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <h3 className="font-semibold">{group.name}</h3>
+                            <Badge variant="outline">{group.member_count} membres</Badge>
                           </div>
                           
-                          <Button size="sm" variant="outline">
-                            <UserPlus className="mr-1 h-3 w-3" />
-                            Rejoindre
-                          </Button>
+                          <p className="text-sm text-muted-foreground">{group.description}</p>
+                          
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                              <span className="flex items-center space-x-1">
+                                <Users className="h-3 w-3" />
+                                <span>{group.member_count}</span>
+                              </span>
+                            </div>
+                            
+                            <Button size="sm" variant="outline" onClick={() => handleJoinGroup(group.id)}>
+                              <UserPlus className="mr-1 h-3 w-3" />
+                              Rejoindre
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </CardContent>
             </Card>
+
+            {/* New Post */}
+            {user && (
+              <Card className="border-0 shadow-soft">
+                <CardContent className="pt-6 space-y-4">
+                  <Textarea
+                    placeholder="Partagez votre expérience avec la communauté..."
+                    value={newPostContent}
+                    onChange={(e) => setNewPostContent(e.target.value)}
+                    className="min-h-[100px]"
+                  />
+                  <Button onClick={handleCreatePost} className="bg-gradient-primary">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Publier
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Recent Posts */}
             <Card className="border-0 shadow-soft">
@@ -250,57 +313,75 @@ const Community = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {recentPosts.map((post) => (
-                  <div key={post.id} className="space-y-3 p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-                    {/* Post Header */}
-                    <div className="flex items-center space-x-3">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={post.author.avatar} alt={post.author.name} />
-                        <AvatarFallback>{post.author.name.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                      
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2">
-                          <span className="font-medium">{post.author.name}</span>
-                          <Badge variant="outline" className="text-xs">{post.author.badge}</Badge>
-                          <span className="text-xs text-muted-foreground">dans</span>
-                          <Badge className="text-xs bg-gradient-primary text-primary-foreground">
-                            {post.group}
-                          </Badge>
+                {loading ? (
+                  <p className="text-center text-muted-foreground">Chargement...</p>
+                ) : posts.length === 0 ? (
+                  <p className="text-center text-muted-foreground">Aucun message pour le moment</p>
+                ) : (
+                  posts.map((post) => {
+                    const group = groups.find(g => g.id === post.group_id);
+                    return (
+                      <div key={post.id} className="space-y-3 p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+                        {/* Post Header */}
+                        <div className="flex items-center space-x-3">
+                          <Avatar className="h-10 w-10">
+                            <AvatarFallback>{user?.email?.charAt(0).toUpperCase()}</AvatarFallback>
+                          </Avatar>
+                          
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2">
+                              <span className="font-medium">{user?.email?.split('@')[0] || "Membre"}</span>
+                              {group && (
+                                <>
+                                  <span className="text-xs text-muted-foreground">dans</span>
+                                  <Badge className="text-xs bg-gradient-primary text-primary-foreground">
+                                    {group.name}
+                                  </Badge>
+                                </>
+                              )}
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(post.created_at).toLocaleDateString('fr-FR')}
+                            </p>
+                          </div>
                         </div>
-                        <p className="text-xs text-muted-foreground">{post.timestamp}</p>
+                        
+                        {/* Post Content */}
+                        <div>
+                          <h4 className="font-medium text-sm mb-1">{post.title}</h4>
+                          <p className="text-sm leading-relaxed">{post.content}</p>
+                        </div>
+                        
+                        {/* Post Actions */}
+                        <div className="flex items-center space-x-4">
+                          <Button size="sm" variant="ghost" className="text-xs">
+                            <ThumbsUp className="mr-1 h-3 w-3" />
+                            {post.likes_count}
+                          </Button>
+                          <Button size="sm" variant="ghost" className="text-xs">
+                            <MessageCircle className="mr-1 h-3 w-3" />
+                            {post.comments_count}
+                          </Button>
+                        </div>
+
+                        {/* Comment Section */}
+                        {user && (
+                          <div className="pt-3 border-t space-y-2">
+                            <Textarea
+                              placeholder="Ajouter un commentaire..."
+                              value={commentContent[post.id] || ""}
+                              onChange={(e) => setCommentContent({ ...commentContent, [post.id]: e.target.value })}
+                              className="min-h-[60px] text-sm"
+                            />
+                            <Button size="sm" onClick={() => handleAddComment(post.id)}>
+                              Commenter
+                            </Button>
+                          </div>
+                        )}
                       </div>
-                    </div>
-                    
-                    {/* Post Content */}
-                    <p className="text-sm leading-relaxed">{post.content}</p>
-                    
-                    {/* Tags */}
-                    <div className="flex flex-wrap gap-1">
-                      {post.tags.map((tag, index) => (
-                        <Badge key={index} variant="outline" className="text-xs">
-                          #{tag}
-                        </Badge>
-                      ))}
-                    </div>
-                    
-                    {/* Post Actions */}
-                    <div className="flex items-center space-x-4">
-                      <Button size="sm" variant="ghost" className="text-xs">
-                        <ThumbsUp className="mr-1 h-3 w-3" />
-                        {post.likes}
-                      </Button>
-                      <Button size="sm" variant="ghost" className="text-xs">
-                        <MessageCircle className="mr-1 h-3 w-3" />
-                        {post.comments}
-                      </Button>
-                      <Button size="sm" variant="ghost" className="text-xs">
-                        <Share2 className="mr-1 h-3 w-3" />
-                        Partager
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                    );
+                  })
+                )}
               </CardContent>
             </Card>
           </div>

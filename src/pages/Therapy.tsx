@@ -17,9 +17,39 @@ import {
   CheckCircle,
   Phone
 } from "lucide-react";
+import { useTherapy } from "@/hooks/useTherapy";
+import { useState } from "react";
+import { toast } from "sonner";
 
 const Therapy = () => {
-  const therapists = [
+  const { therapists, sessions, loading, bookSession, cancelSession } = useTherapy();
+  const [bookingTherapist, setBookingTherapist] = useState<string | null>(null);
+
+  const handleBookSession = async (therapistId: string) => {
+    setBookingTherapist(therapistId);
+    const scheduledAt = new Date();
+    scheduledAt.setDate(scheduledAt.getDate() + 1); // Tomorrow
+    scheduledAt.setHours(14, 0, 0, 0); // 14:00
+    
+    const success = await bookSession(therapistId, scheduledAt);
+    if (success) {
+      toast.success("Session réservée avec succès !");
+    } else {
+      toast.error("Erreur lors de la réservation");
+    }
+    setBookingTherapist(null);
+  };
+
+  const handleCancelSession = async (sessionId: string) => {
+    const success = await cancelSession(sessionId);
+    if (success) {
+      toast.success("Session annulée");
+    } else {
+      toast.error("Erreur lors de l'annulation");
+    }
+  };
+
+  const therapists_fallback = [
     {
       id: 1,
       name: "Dr. Sarah Lopez",
@@ -70,28 +100,6 @@ const Therapy = () => {
     }
   ];
 
-  const upcomingSessions = [
-    {
-      id: 1,
-      therapist: "Dr. Sarah Lopez",
-      type: "Thérapie individuelle",
-      date: "Aujourd'hui",
-      time: "15:00 - 16:00",
-      mode: "Vidéo",
-      status: "Confirmé",
-      notes: "Continuer le travail sur les techniques de gestion de l'anxiété"
-    },
-    {
-      id: 2,
-      therapist: "Emma Wilson",
-      type: "Session de méditation",
-      date: "Vendredi",
-      time: "18:00 - 18:45",
-      mode: "En ligne",
-      status: "À confirmer",
-      notes: "Première session de méditation guidée"
-    }
-  ];
 
   const therapyTypes = [
     {
@@ -193,94 +201,75 @@ const Therapy = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                {therapists.map((therapist) => (
-                  <div key={therapist.id} className="p-6 rounded-lg border border-border/50 hover:border-primary/20 transition-colors space-y-4">
-                    {/* Therapist Header */}
-                    <div className="flex items-start space-x-4">
-                      <Avatar className="h-20 w-20 ring-2 ring-primary/20">
-                        <AvatarImage src={therapist.image} alt={therapist.name} />
-                        <AvatarFallback>{therapist.name.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                      
-                      <div className="flex-1 space-y-2">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <div className="flex items-center space-x-2">
-                              <h3 className="text-lg font-semibold">{therapist.name}</h3>
-                              {therapist.verified && (
-                                <Badge className="bg-gradient-secondary text-secondary-foreground">
-                                  <CheckCircle className="h-3 w-3 mr-1" />
-                                  Certifié
-                                </Badge>
-                              )}
-                            </div>
-                            <p className="text-muted-foreground">{therapist.title}</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-lg font-semibold text-primary">{therapist.price}</p>
-                            <p className="text-sm text-muted-foreground">par session</p>
-                          </div>
-                        </div>
+                {loading ? (
+                  <p className="text-center text-muted-foreground">Chargement...</p>
+                ) : therapists.length === 0 ? (
+                  <p className="text-center text-muted-foreground">Aucun thérapeute disponible</p>
+                ) : (
+                  therapists.map((therapist) => (
+                    <div key={therapist.id} className="p-6 rounded-lg border border-border/50 hover:border-primary/20 transition-colors space-y-4">
+                      {/* Therapist Header */}
+                      <div className="flex items-start space-x-4">
+                        <Avatar className="h-20 w-20 ring-2 ring-primary/20">
+                          <AvatarImage src={therapist.avatar_url || undefined} alt={therapist.full_name} />
+                          <AvatarFallback>{therapist.full_name.charAt(0)}</AvatarFallback>
+                        </Avatar>
                         
-                        <div className="flex items-center space-x-4">
-                          <div className="flex items-center space-x-1">
-                            <Star className="h-4 w-4 fill-primary text-primary" />
-                            <span className="font-medium">{therapist.rating}</span>
-                            <span className="text-sm text-muted-foreground">({therapist.reviewsCount} avis)</span>
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <div className="flex items-center space-x-2">
+                                <h3 className="text-lg font-semibold">{therapist.full_name}</h3>
+                                {therapist.available && (
+                                  <Badge className="bg-gradient-secondary text-secondary-foreground">
+                                    <CheckCircle className="h-3 w-3 mr-1" />
+                                    Disponible
+                                  </Badge>
+                                )}
+                              </div>
+                              <p className="text-muted-foreground">{therapist.specialization}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-lg font-semibold text-primary">€{therapist.price_per_session}</p>
+                              <p className="text-sm text-muted-foreground">par session</p>
+                            </div>
                           </div>
-                          <div className="flex items-center space-x-1">
-                            <Award className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm text-muted-foreground">{therapist.experience}</span>
+                          
+                          <div className="flex items-center space-x-4">
+                            <div className="flex items-center space-x-1">
+                              <Star className="h-4 w-4 fill-primary text-primary" />
+                              <span className="font-medium">{therapist.rating}</span>
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              <span className="text-sm text-muted-foreground">
+                                {therapist.languages?.join(", ") || "Français"}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                    
-                    {/* Description */}
-                    <p className="text-sm text-muted-foreground">{therapist.description}</p>
-                    
-                    {/* Specialties */}
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium">Spécialités :</p>
-                      <div className="flex flex-wrap gap-2">
-                        {therapist.specialties.map((specialty, index) => (
-                          <Badge key={index} variant="outline">{specialty}</Badge>
-                        ))}
+                      
+                      {/* Description */}
+                      <p className="text-sm text-muted-foreground">{therapist.bio}</p>
+                      
+                      {/* Actions */}
+                      <div className="flex space-x-3">
+                        <Button 
+                          className="bg-gradient-primary text-primary-foreground border-0 shadow-glow"
+                          onClick={() => handleBookSession(therapist.id)}
+                          disabled={bookingTherapist === therapist.id}
+                        >
+                          <Calendar className="mr-2 h-4 w-4" />
+                          {bookingTherapist === therapist.id ? "Réservation..." : "Prendre rendez-vous"}
+                        </Button>
+                        <Button variant="outline">
+                          <MessageCircle className="mr-2 h-4 w-4" />
+                          Contacter
+                        </Button>
                       </div>
                     </div>
-                    
-                    {/* Details */}
-                    <div className="grid md:grid-cols-3 gap-4 text-sm text-muted-foreground">
-                      <div>
-                        <p className="font-medium text-foreground mb-1">Langues :</p>
-                        <p>{therapist.languages.join(", ")}</p>
-                      </div>
-                      <div>
-                        <p className="font-medium text-foreground mb-1">Types de sessions :</p>
-                        <p>{therapist.sessionTypes.join(", ")}</p>
-                      </div>
-                      <div>
-                        <p className="font-medium text-foreground mb-1">Prochaine disponibilité :</p>
-                        <p className="text-primary font-medium">{therapist.nextAvailable}</p>
-                      </div>
-                    </div>
-                    
-                    {/* Actions */}
-                    <div className="flex space-x-3">
-                      <Button className="bg-gradient-primary text-primary-foreground border-0 shadow-glow">
-                        <Calendar className="mr-2 h-4 w-4" />
-                        Prendre rendez-vous
-                      </Button>
-                      <Button variant="outline">
-                        <MessageCircle className="mr-2 h-4 w-4" />
-                        Contacter
-                      </Button>
-                      <Button variant="outline">
-                        Voir profil complet
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </CardContent>
             </Card>
           </div>
@@ -296,52 +285,69 @@ const Therapy = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {upcomingSessions.map((session) => (
-                  <div key={session.id} className="space-y-3 p-4 rounded-lg border border-border/50">
-                    <div className="flex items-center justify-between">
-                      <Badge 
-                        variant={session.status === "Confirmé" ? "default" : "outline"}
-                        className={session.status === "Confirmé" ? "bg-gradient-secondary text-secondary-foreground" : ""}
-                      >
-                        {session.status}
-                      </Badge>
-                      <div className="flex items-center space-x-1 text-sm text-muted-foreground">
-                        {session.mode === "Vidéo" ? (
-                          <Video className="h-3 w-3" />
-                        ) : (
-                          <Phone className="h-3 w-3" />
+                {loading ? (
+                  <p className="text-sm text-muted-foreground">Chargement...</p>
+                ) : sessions.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Aucune session prévue</p>
+                ) : (
+                  sessions.map((session) => {
+                    const therapist = therapists.find(t => t.id === session.therapist_id);
+                    return (
+                      <div key={session.id} className="space-y-3 p-4 rounded-lg border border-border/50">
+                        <div className="flex items-center justify-between">
+                          <Badge 
+                            variant={session.status === "scheduled" ? "default" : "outline"}
+                            className={session.status === "scheduled" ? "bg-gradient-secondary text-secondary-foreground" : ""}
+                          >
+                            {session.status === "scheduled" ? "Confirmé" : session.status === "completed" ? "Terminé" : "Annulé"}
+                          </Badge>
+                          <div className="flex items-center space-x-1 text-sm text-muted-foreground">
+                            <Video className="h-3 w-3" />
+                            <span>En ligne</span>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <h4 className="font-medium text-sm">Thérapie individuelle</h4>
+                          <p className="text-sm text-muted-foreground">{therapist?.full_name || "Thérapeute"}</p>
+                        </div>
+                        
+                        <div className="space-y-1 text-sm text-muted-foreground">
+                          <div className="flex items-center space-x-2">
+                            <Calendar className="h-3 w-3" />
+                            <span>{new Date(session.scheduled_at).toLocaleDateString('fr-FR')}</span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Clock className="h-3 w-3" />
+                            <span>{new Date(session.scheduled_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} ({session.duration_minutes} min)</span>
+                          </div>
+                        </div>
+                        
+                        {session.notes && (
+                          <p className="text-xs text-muted-foreground bg-muted/30 p-2 rounded">
+                            {session.notes}
+                          </p>
                         )}
-                        <span>{session.mode}</span>
+                        
+                        {session.status === "scheduled" && (
+                          <div className="flex gap-2">
+                            <Button size="sm" className="flex-1 bg-gradient-primary text-primary-foreground border-0">
+                              Rejoindre
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="flex-1"
+                              onClick={() => handleCancelSession(session.id)}
+                            >
+                              Annuler
+                            </Button>
+                          </div>
+                        )}
                       </div>
-                    </div>
-                    
-                    <div>
-                      <h4 className="font-medium text-sm">{session.type}</h4>
-                      <p className="text-sm text-muted-foreground">{session.therapist}</p>
-                    </div>
-                    
-                    <div className="space-y-1 text-sm text-muted-foreground">
-                      <div className="flex items-center space-x-2">
-                        <Calendar className="h-3 w-3" />
-                        <span>{session.date}</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Clock className="h-3 w-3" />
-                        <span>{session.time}</span>
-                      </div>
-                    </div>
-                    
-                    {session.notes && (
-                      <p className="text-xs text-muted-foreground bg-muted/30 p-2 rounded">
-                        {session.notes}
-                      </p>
-                    )}
-                    
-                    <Button size="sm" className="w-full bg-gradient-primary text-primary-foreground border-0">
-                      Rejoindre la session
-                    </Button>
-                  </div>
-                ))}
+                    );
+                  })
+                )}
               </CardContent>
             </Card>
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,18 +6,66 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User, Bell, Lock, CreditCard, Shield, Palette } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { useSettings } from "@/hooks/useSettings";
 
 const Settings = () => {
   const { user } = useAuth();
-  const [notifications, setNotifications] = useState({
-    email: true,
-    push: true,
-    marketing: false,
+  const { profile, preferences, loading, updateProfile, updatePreferences } = useSettings();
+  
+  const [profileData, setProfileData] = useState({
+    full_name: "",
+    bio: "",
   });
+
+  const [preferencesData, setPreferencesData] = useState({
+    theme: "light",
+    language: "fr",
+    notifications_enabled: true,
+    email_notifications: true,
+  });
+
+  useEffect(() => {
+    if (profile) {
+      setProfileData({
+        full_name: profile.full_name || "",
+        bio: profile.bio || "",
+      });
+    }
+  }, [profile]);
+
+  useEffect(() => {
+    if (preferences) {
+      setPreferencesData({
+        theme: preferences.theme,
+        language: preferences.language,
+        notifications_enabled: preferences.notifications_enabled,
+        email_notifications: preferences.email_notifications,
+      });
+    }
+  }, [preferences]);
+
+  const handleSaveProfile = async () => {
+    const success = await updateProfile(profileData);
+    if (success) {
+      toast.success("Profil mis à jour avec succès !");
+    } else {
+      toast.error("Erreur lors de la mise à jour du profil");
+    }
+  };
+
+  const handleSavePreferences = async () => {
+    const success = await updatePreferences(preferencesData);
+    if (success) {
+      toast.success("Préférences mises à jour !");
+    } else {
+      toast.error("Erreur lors de la mise à jour");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-calm">
@@ -80,27 +128,32 @@ const Settings = () => {
                     <Input id="email" type="email" value={user?.email || ''} disabled />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="firstName">Prénom</Label>
-                      <Input id="firstName" placeholder="Votre prénom" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="lastName">Nom</Label>
-                      <Input id="lastName" placeholder="Votre nom" />
-                    </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="fullName">Nom complet</Label>
+                    <Input 
+                      id="fullName" 
+                      placeholder="Votre nom complet" 
+                      value={profileData.full_name}
+                      onChange={(e) => setProfileData({ ...profileData, full_name: e.target.value })}
+                    />
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="bio">Bio</Label>
-                    <Input 
+                    <Textarea 
                       id="bio" 
                       placeholder="Parlez-nous de vous..."
+                      value={profileData.bio}
+                      onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
                     />
                   </div>
 
-                  <Button className="bg-gradient-primary">
-                    Enregistrer les modifications
+                  <Button 
+                    className="bg-gradient-primary" 
+                    onClick={handleSaveProfile}
+                    disabled={loading}
+                  >
+                    {loading ? "Enregistrement..." : "Enregistrer les modifications"}
                   </Button>
                 </div>
               </CardContent>
@@ -125,42 +178,35 @@ const Settings = () => {
                     </p>
                   </div>
                   <Switch
-                    checked={notifications.email}
+                    checked={preferencesData.email_notifications}
                     onCheckedChange={(checked) =>
-                      setNotifications({ ...notifications, email: checked })
+                      setPreferencesData({ ...preferencesData, email_notifications: checked })
                     }
                   />
                 </div>
 
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label>Notifications push</Label>
+                    <Label>Notifications activées</Label>
                     <p className="text-sm text-muted-foreground">
                       Recevez des notifications sur votre appareil
                     </p>
                   </div>
                   <Switch
-                    checked={notifications.push}
+                    checked={preferencesData.notifications_enabled}
                     onCheckedChange={(checked) =>
-                      setNotifications({ ...notifications, push: checked })
+                      setPreferencesData({ ...preferencesData, notifications_enabled: checked })
                     }
                   />
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Emails marketing</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Recevez nos actualités et promotions
-                    </p>
-                  </div>
-                  <Switch
-                    checked={notifications.marketing}
-                    onCheckedChange={(checked) =>
-                      setNotifications({ ...notifications, marketing: checked })
-                    }
-                  />
-                </div>
+                <Button 
+                  className="bg-gradient-primary"
+                  onClick={handleSavePreferences}
+                  disabled={loading}
+                >
+                  {loading ? "Enregistrement..." : "Enregistrer"}
+                </Button>
               </CardContent>
             </Card>
           </TabsContent>
