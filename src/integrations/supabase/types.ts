@@ -1532,6 +1532,118 @@ export type Database = {
           },
         ]
       }
+      community_comments: {
+        Row: {
+          author_id: string
+          content: string
+          created_at: string | null
+          id: string
+          likes_count: number | null
+          post_id: string
+        }
+        Insert: {
+          author_id: string
+          content: string
+          created_at?: string | null
+          id?: string
+          likes_count?: number | null
+          post_id: string
+        }
+        Update: {
+          author_id?: string
+          content?: string
+          created_at?: string | null
+          id?: string
+          likes_count?: number | null
+          post_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      community_groups: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          icon: string | null
+          id: string
+          is_private: boolean | null
+          member_count: number | null
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_private?: boolean | null
+          member_count?: number | null
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_private?: boolean | null
+          member_count?: number | null
+          name?: string
+        }
+        Relationships: []
+      }
+      community_posts: {
+        Row: {
+          author_id: string
+          comments_count: number | null
+          content: string
+          created_at: string | null
+          group_id: string | null
+          id: string
+          likes_count: number | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          author_id: string
+          comments_count?: number | null
+          content: string
+          created_at?: string | null
+          group_id?: string | null
+          id?: string
+          likes_count?: number | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          author_id?: string
+          comments_count?: number | null
+          content?: string
+          created_at?: string | null
+          group_id?: string | null
+          id?: string
+          likes_count?: number | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_posts_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "community_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       completeness_alerts: {
         Row: {
           alert_type: string
@@ -3350,6 +3462,38 @@ export type Database = {
         }
         Relationships: []
       }
+      group_memberships: {
+        Row: {
+          group_id: string
+          id: string
+          joined_at: string | null
+          role: string | null
+          user_id: string
+        }
+        Insert: {
+          group_id: string
+          id?: string
+          joined_at?: string | null
+          role?: string | null
+          user_id: string
+        }
+        Update: {
+          group_id?: string
+          id?: string
+          joined_at?: string | null
+          role?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_memberships_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "community_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       groups: {
         Row: {
           id: string
@@ -5081,6 +5225,45 @@ export type Database = {
           patient_data?: Json
           patient_name?: string
           payment_status?: string | null
+        }
+        Relationships: []
+      }
+      meditation_content: {
+        Row: {
+          audio_url: string | null
+          category: string
+          created_at: string | null
+          description: string | null
+          difficulty_level: string | null
+          duration: number
+          id: string
+          instructor: string | null
+          thumbnail_url: string | null
+          title: string
+        }
+        Insert: {
+          audio_url?: string | null
+          category: string
+          created_at?: string | null
+          description?: string | null
+          difficulty_level?: string | null
+          duration: number
+          id?: string
+          instructor?: string | null
+          thumbnail_url?: string | null
+          title: string
+        }
+        Update: {
+          audio_url?: string | null
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          difficulty_level?: string | null
+          duration?: number
+          id?: string
+          instructor?: string | null
+          thumbnail_url?: string | null
+          title?: string
         }
         Relationships: []
       }
@@ -7302,6 +7485,89 @@ export type Database = {
         }
         Relationships: []
       }
+      therapists: {
+        Row: {
+          available: boolean | null
+          avatar_url: string | null
+          bio: string | null
+          created_at: string | null
+          full_name: string
+          id: string
+          languages: string[] | null
+          price_per_session: number
+          rating: number | null
+          specialization: string
+        }
+        Insert: {
+          available?: boolean | null
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          full_name: string
+          id?: string
+          languages?: string[] | null
+          price_per_session: number
+          rating?: number | null
+          specialization: string
+        }
+        Update: {
+          available?: boolean | null
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          full_name?: string
+          id?: string
+          languages?: string[] | null
+          price_per_session?: number
+          rating?: number | null
+          specialization?: string
+        }
+        Relationships: []
+      }
+      therapy_sessions: {
+        Row: {
+          created_at: string | null
+          duration_minutes: number | null
+          id: string
+          meeting_url: string | null
+          notes: string | null
+          scheduled_at: string
+          status: string | null
+          therapist_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          duration_minutes?: number | null
+          id?: string
+          meeting_url?: string | null
+          notes?: string | null
+          scheduled_at: string
+          status?: string | null
+          therapist_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          duration_minutes?: number | null
+          id?: string
+          meeting_url?: string | null
+          notes?: string | null
+          scheduled_at?: string
+          status?: string | null
+          therapist_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "therapy_sessions_therapist_id_fkey"
+            columns: ["therapist_id"]
+            isOneToOne: false
+            referencedRelation: "therapists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ui_suggestion_cache: {
         Row: {
           created_at: string | null
@@ -7785,6 +8051,44 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_meditation_progress: {
+        Row: {
+          completed: boolean | null
+          completed_at: string | null
+          created_at: string | null
+          id: string
+          meditation_id: string
+          progress_seconds: number | null
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          meditation_id: string
+          progress_seconds?: number | null
+          user_id: string
+        }
+        Update: {
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          meditation_id?: string
+          progress_seconds?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_meditation_progress_meditation_id_fkey"
+            columns: ["meditation_id"]
+            isOneToOne: false
+            referencedRelation: "meditation_content"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_music_preferences: {
         Row: {
