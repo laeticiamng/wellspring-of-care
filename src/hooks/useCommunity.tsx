@@ -78,10 +78,9 @@ export const useCommunity = () => {
     }
   };
 
-  const createPost = async (title: string, content: string, groupId?: string) => {
+  const createPost = async (title: string, content: string, groupId?: string): Promise<boolean> => {
     if (!user) {
-      toast.error('Vous devez être connecté pour publier');
-      return;
+      return false;
     }
 
     try {
@@ -96,18 +95,17 @@ export const useCommunity = () => {
 
       if (error) throw error;
 
-      toast.success('Publication créée !');
       await fetchPosts();
+      return true;
     } catch (error) {
       console.error('Error creating post:', error);
-      toast.error('Erreur lors de la création');
+      return false;
     }
   };
 
-  const joinGroup = async (groupId: string) => {
+  const joinGroup = async (groupId: string): Promise<boolean> => {
     if (!user) {
-      toast.error('Vous devez être connecté pour rejoindre un groupe');
-      return;
+      return false;
     }
 
     try {
@@ -121,18 +119,17 @@ export const useCommunity = () => {
 
       if (error) throw error;
 
-      toast.success('Vous avez rejoint le groupe !');
       await fetchGroups();
+      return true;
     } catch (error) {
       console.error('Error joining group:', error);
-      toast.error('Erreur lors de l\'inscription');
+      return false;
     }
   };
 
-  const addComment = async (postId: string, content: string) => {
+  const addComment = async (postId: string, content: string): Promise<boolean> => {
     if (!user) {
-      toast.error('Vous devez être connecté pour commenter');
-      return;
+      return false;
     }
 
     try {
@@ -155,11 +152,11 @@ export const useCommunity = () => {
           .eq('id', postId);
       }
 
-      toast.success('Commentaire ajouté !');
       await fetchPosts();
+      return true;
     } catch (error) {
       console.error('Error adding comment:', error);
-      toast.error('Erreur lors de l\'ajout du commentaire');
+      return false;
     }
   };
 

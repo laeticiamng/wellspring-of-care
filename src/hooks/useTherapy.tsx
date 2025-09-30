@@ -83,10 +83,9 @@ export const useTherapy = () => {
     therapistId: string,
     scheduledAt: Date,
     durationMinutes: number = 60
-  ) => {
+  ): Promise<boolean> => {
     if (!user) {
-      toast.error('Vous devez être connecté pour réserver');
-      return;
+      return false;
     }
 
     try {
@@ -102,15 +101,15 @@ export const useTherapy = () => {
 
       if (error) throw error;
 
-      toast.success('Session réservée avec succès !');
       await fetchSessions();
+      return true;
     } catch (error) {
       console.error('Error booking session:', error);
-      toast.error('Erreur lors de la réservation');
+      return false;
     }
   };
 
-  const cancelSession = async (sessionId: string) => {
+  const cancelSession = async (sessionId: string): Promise<boolean> => {
     try {
       const { error } = await supabase
         .from('therapy_sessions')
@@ -119,11 +118,11 @@ export const useTherapy = () => {
 
       if (error) throw error;
 
-      toast.success('Session annulée');
       await fetchSessions();
+      return true;
     } catch (error) {
       console.error('Error cancelling session:', error);
-      toast.error('Erreur lors de l\'annulation');
+      return false;
     }
   };
 

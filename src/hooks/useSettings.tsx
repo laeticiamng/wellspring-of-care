@@ -120,8 +120,8 @@ export const useSettings = () => {
     }
   };
 
-  const updateProfile = async (updates: Partial<UserProfile>) => {
-    if (!user) return;
+  const updateProfile = async (updates: Partial<UserProfile>): Promise<boolean> => {
+    if (!user) return false;
 
     try {
       const { error } = await supabase
@@ -133,16 +133,16 @@ export const useSettings = () => {
 
       if (error) throw error;
 
-      toast.success('Profil mis à jour !');
       await fetchProfile();
+      return true;
     } catch (error) {
       console.error('Error updating profile:', error);
-      toast.error('Erreur lors de la mise à jour');
+      return false;
     }
   };
 
-  const updatePreferences = async (updates: Partial<UserPrefs>) => {
-    if (!user) return;
+  const updatePreferences = async (updates: Partial<UserPrefs>): Promise<boolean> => {
+    if (!user) return false;
 
     try {
       const { error } = await supabase
@@ -152,11 +152,11 @@ export const useSettings = () => {
 
       if (error) throw error;
 
-      toast.success('Préférences mises à jour !');
       await fetchPreferences();
+      return true;
     } catch (error) {
       console.error('Error updating preferences:', error);
-      toast.error('Erreur lors de la mise à jour');
+      return false;
     }
   };
 
