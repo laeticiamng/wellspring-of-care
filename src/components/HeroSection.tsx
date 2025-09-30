@@ -13,8 +13,10 @@ import {
   CheckCircle
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 const HeroSection = () => {
+  const { user } = useAuth();
   const features = [
     {
       icon: Brain,
@@ -91,8 +93,8 @@ const HeroSection = () => {
                 className="bg-gradient-primary text-primary-foreground border-0 shadow-glow hover:scale-105 transition-transform"
                 asChild
               >
-                <Link to="/dashboard">
-                  Commencer gratuitement
+                <Link to={user ? "/dashboard" : "/auth"}>
+                  {user ? "Accéder au tableau de bord" : "Commencer gratuitement"}
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
@@ -103,9 +105,9 @@ const HeroSection = () => {
                 className="border-2 border-primary/20 hover:border-primary/40"
                 asChild
               >
-                <Link to="/chat">
+                <Link to={user ? "/chat" : "/auth"}>
                   <Video className="mr-2 h-5 w-5" />
-                  Voir la démo
+                  {user ? "Essayer l'IA" : "Voir la démo"}
                 </Link>
               </Button>
             </div>
@@ -266,9 +268,9 @@ const HeroSection = () => {
                 className="bg-white text-primary hover:bg-white/90"
                 asChild
               >
-                <Link to="/dashboard">
+                <Link to={user ? "/dashboard" : "/auth"}>
                   <CheckCircle className="mr-2 h-5 w-5" />
-                  Commencer maintenant - Gratuit
+                  {user ? "Aller au tableau de bord" : "Commencer maintenant - Gratuit"}
                 </Link>
               </Button>
               
@@ -278,7 +280,7 @@ const HeroSection = () => {
                 className="border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10"
                 asChild
               >
-                <Link to="/therapy">
+                <Link to={user ? "/therapy" : "/auth"}>
                   Parler à un expert
                 </Link>
               </Button>
