@@ -8,12 +8,14 @@ import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Download, RefreshCw, BarChart3, CheckSquare } from 'lucide-react';
 import { useTeamAggregate } from '@/hooks/useTeamAggregate';
-import { useToast } from '@/hooks/use-toast';
+import { useUserRole } from '@/hooks/useUserRole';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export default function RHDashboard() {
   const [searchParams] = useSearchParams();
-  const orgId = searchParams.get('org');
-  const { toast } = useToast();
+  const orgId = searchParams.get('orgId');
+  const { profile } = useUserRole();
   const { 
     assessments, 
     actions, 
@@ -21,7 +23,7 @@ export default function RHDashboard() {
     generateAssessment, 
     completeAction,
     isGenerating 
-  } = useTeamAggregate(orgId || '');
+  } = useTeamAggregate(orgId || profile?.org_id || '');
 
   const [isExporting, setIsExporting] = useState(false);
 
@@ -38,30 +40,34 @@ export default function RHDashboard() {
     });
   };
 
-  const handleExport = () => {
+  const handleExport = async () => {
     setIsExporting(true);
     
-    // Generate PDF content (simplified)
-    const content = assessments?.map(a => ({
-      team: a.team_name,
-      period: `${a.period_start} - ${a.period_end}`,
-      phrases: a.phrases
-    })) || [];
-
-    // Create downloadable content
-    const blob = new Blob([JSON.stringify(content, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `rapport-rh-${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-pdf-report", {
+        body: { 
+          orgId: orgId || profile?.org_id, 
+          month: new Date().toISOString().slice(0, 7) 
+        },
+      });
+      
+      if (error) throw error;
+      
+      // Download HTML report
+      const blob = new Blob([data.html], { type: "text/html" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = data.filename;
+      a.click();
+      URL.revokeObjectURL(url);
+      
+      toast.success("Rapport exporté ✅");
+    } catch (error: any) {
+      toast.error(error.message || "Erreur lors de l'export");
+    }
+    
     setIsExporting(false);
-    toast({
-      title: "Export réussi 📄",
-      description: "Le rapport a été téléchargé",
-      duration: 2000,
-    });
   };
 
   if (!orgId) {

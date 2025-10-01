@@ -12,7 +12,6 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import B2BLanding from "./pages/B2BLanding";
 import B2BPortal from "./pages/B2BPortal";
-import Journal from "./pages/Journal";
 import JournalNew from "./pages/JournalNew";
 import Meditation from "./pages/Meditation";
 import Community from "./pages/Community";
@@ -20,7 +19,6 @@ import Therapy from "./pages/Therapy";
 import AIChat from "./pages/AIChat";
 import Settings from "./pages/Settings";
 import Coach from "./pages/Coach";
-import Organizations from "./pages/Organizations";
 import Pricing from "./pages/Pricing";
 import NotFound from "./pages/NotFound";
 import Nyvee from "./pages/Nyvee";
@@ -68,7 +66,6 @@ const App = () => (
             <Route path="/chat" element={<ProtectedRoute><AIChat /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/coach" element={<ProtectedRoute><Coach /></ProtectedRoute>} />
-            <Route path="/organizations" element={<ProtectedRoute><Organizations /></ProtectedRoute>} />
             
             {/* Nouveaux modules EmotionsCare */}
             <Route path="/nyvee" element={<ProtectedRoute><Nyvee /></ProtectedRoute>} />
