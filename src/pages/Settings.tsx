@@ -8,12 +8,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, Bell, Lock, Palette, Sparkles, HelpCircle, Eye, Volume2, Smartphone } from "lucide-react";
+import { User, Bell, Lock, Palette, Sparkles, HelpCircle, Eye, Volume2, Smartphone, Shield, Download, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { useSettings } from "@/hooks/useSettings";
 import { useUserSettings } from "@/hooks/useUserSettings";
 import { setImplicitTracking, getImplicitTrackingState } from "@/lib/implicitAssess";
+import { DataExportDialog } from "@/components/DataExportDialog";
+import { DeleteAccountDialog } from "@/components/DeleteAccountDialog";
+import { Link } from "react-router-dom";
 
 const Settings = () => {
   const { user } = useAuth();
@@ -33,6 +36,8 @@ const Settings = () => {
   });
   
   const [implicitTracking, setImplicitTrackingState] = useState(true);
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   useEffect(() => {
     if (profile) {
@@ -87,7 +92,7 @@ const Settings = () => {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 lg:w-auto">
+          <TabsList className="grid w-full grid-cols-5 lg:w-auto">
             <TabsTrigger value="profile">
               <User className="mr-2 h-4 w-4" />
               Profil
@@ -103,6 +108,10 @@ const Settings = () => {
             <TabsTrigger value="appearance">
               <Palette className="mr-2 h-4 w-4" />
               Apparence
+            </TabsTrigger>
+            <TabsTrigger value="privacy">
+              <Shield className="mr-2 h-4 w-4" />
+              Confidentialité
             </TabsTrigger>
           </TabsList>
 
@@ -280,8 +289,151 @@ const Settings = () => {
             </Card>
           </TabsContent>
 
-          {/* Personalization & Consents */}
+          {/* Privacy & Data Management */}
           <TabsContent value="privacy">
+            <div className="space-y-6">
+              {/* Clinical Consents Card */}
+              <Card className="border-0 shadow-soft bg-gradient-healing/10 border border-accent/20">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Sparkles className="h-5 w-5 text-primary" />
+                    <span>Consentements Cliniques</span>
+                  </CardTitle>
+                  <CardDescription>
+                    Contrôlez vos préférences pour les évaluations
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1 flex-1">
+                      <h4 className="font-medium">Adaptation intelligente</h4>
+                      <p className="text-sm text-muted-foreground">
+                        L'app s'adapte discrètement à vos préférences d'utilisation
+                      </p>
+                    </div>
+                    <Switch
+                      checked={implicitTracking}
+                      onCheckedChange={(checked) => {
+                        setImplicitTrackingState(checked);
+                        setImplicitTracking(checked);
+                        toast(checked ? "Personnalisation activée" : "Personnalisation désactivée");
+                      }}
+                    />
+                  </div>
+                  
+                  <div className="space-y-4 pt-4 border-t">
+                    <h4 className="font-medium">Instruments cliniques</h4>
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>WHO-5 (bien-être hebdo)</Label>
+                        <p className="text-sm text-muted-foreground">Carte tarot émotionnelle</p>
+                      </div>
+                      <Switch
+                        checked={settings?.consent_who5 ?? true}
+                        onCheckedChange={(checked) => updateSettings({ consent_who5: checked })}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>PANAS (humeur journal)</Label>
+                        <p className="text-sm text-muted-foreground">Pages émotionnelles</p>
+                      </div>
+                      <Switch
+                        checked={settings?.consent_panas ?? true}
+                        onCheckedChange={(checked) => updateSettings({ consent_panas: checked })}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>Agrégation anonyme</Label>
+                        <p className="text-sm text-muted-foreground">Données anonymes pour améliorer l'expérience</p>
+                      </div>
+                      <Switch
+                        checked={settings?.consent_anonymous_aggregation ?? true}
+                        onCheckedChange={(checked) => updateSettings({ consent_anonymous_aggregation: checked })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-muted/30 rounded-lg space-y-2">
+                    <h5 className="font-medium text-sm">🔒 Engagement confidentialité</h5>
+                    <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+                      <li>Jamais de score affiché → badges verbaux uniquement</li>
+                      <li>Aucune donnée revendue</li>
+                      <li>100% implicite, science OMS</li>
+                      <li>Vous gardez le contrôle total</li>
+                    </ul>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* RGPD Data Management Card */}
+              <Card className="border-0 shadow-soft">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Shield className="h-5 w-5 text-primary" />
+                    <span>Gestion de vos Données (RGPD)</span>
+                  </CardTitle>
+                  <CardDescription>
+                    Exercez vos droits sur vos données personnelles
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
+                      <div className="flex-1">
+                        <h4 className="font-medium mb-1">Droit à la portabilité</h4>
+                        <p className="text-sm text-muted-foreground">
+                          Téléchargez une copie complète de vos données au format JSON
+                        </p>
+                      </div>
+                      <Button onClick={() => setShowExportDialog(true)} variant="outline">
+                        <Download className="h-4 w-4 mr-2" />
+                        Exporter
+                      </Button>
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 bg-destructive/10 rounded-lg border border-destructive/20">
+                      <div className="flex-1">
+                        <h4 className="font-medium mb-1 text-destructive">Droit à l'effacement</h4>
+                        <p className="text-sm text-muted-foreground">
+                          Supprimez définitivement votre compte et toutes vos données
+                        </p>
+                      </div>
+                      <Button onClick={() => setShowDeleteDialog(true)} variant="destructive">
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Supprimer
+                      </Button>
+                    </div>
+
+                    <div className="p-4 bg-muted/30 rounded-lg space-y-2">
+                      <h5 className="font-medium text-sm">📋 Documents légaux</h5>
+                      <div className="flex flex-col gap-2">
+                        <Link to="/privacy" className="text-sm text-primary hover:underline">
+                          → Politique de confidentialité
+                        </Link>
+                        <Link to="/terms" className="text-sm text-primary hover:underline">
+                          → Conditions générales d'utilisation
+                        </Link>
+                        <a 
+                          href="mailto:privacy@emotionscare.com" 
+                          className="text-sm text-primary hover:underline"
+                        >
+                          → Contacter le DPO
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Old Privacy Tab - Removed, now integrated above */}
+          <TabsContent value="old-privacy-removed">
             <Card className="border-0 shadow-soft bg-gradient-healing/10 border border-accent/20">
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
@@ -423,6 +575,17 @@ const Settings = () => {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Dialogs */}
+        <DataExportDialog 
+          open={showExportDialog} 
+          onOpenChange={setShowExportDialog} 
+        />
+        <DeleteAccountDialog 
+          open={showDeleteDialog} 
+          onOpenChange={setShowDeleteDialog}
+          userEmail={user?.email || ''}
+        />
       </main>
     </div>
   );
