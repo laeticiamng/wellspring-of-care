@@ -24,22 +24,35 @@ import { WeeklyCardDeck } from "@/components/WeeklyCardDeck";
 import { WeeklyCardReveal } from "@/components/WeeklyCardReveal";
 import { FloatingCard } from "@/components/FloatingCard";
 import { CardGallery } from "@/components/CardGallery";
+import { useWHO5Calculator } from "@/hooks/useWHO5Calculator";
 
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { card, loading } = useWeeklyCard();
+  const { calculateWHO5 } = useWHO5Calculator();
   const [isRevealing, setIsRevealing] = useState(false);
   const [revealComplete, setRevealComplete] = useState(false);
+  const [interactionCount, setInteractionCount] = useState(0);
 
   const userName = user?.user_metadata?.full_name?.split(' ')[0] || "Utilisateur";
   
   useEffect(() => {
     // Track implicit: temps passé sur le dashboard
     const startTime = Date.now();
+    
     return () => {
       const dwellMs = Date.now() - startTime;
-      if (dwellMs > 60000) { // Si plus de 1 min
+      const dwellSeconds = Math.floor(dwellMs / 1000);
+      
+      if (dwellSeconds > 10) { // Si plus de 10 secondes
+        // Calculer WHO-5 implicite
+        calculateWHO5({
+          dwellTime: dwellSeconds,
+          interactionCount,
+          cardDrawChoice: revealComplete,
+        });
+        
         trackImplicitAssess({
           instrument: "WHO5",
           item_id: "item_calm",
@@ -49,9 +62,10 @@ const Dashboard = () => {
         });
       }
     };
-  }, []);
+  }, [calculateWHO5, interactionCount, revealComplete]);
   
   const handleDrawCard = () => {
+    setInteractionCount(prev => prev + 1);
     if (card?.is_new_draw) {
       setIsRevealing(true);
       trackImplicitAssess({
@@ -66,6 +80,7 @@ const Dashboard = () => {
 
   const handleRevealComplete = () => {
     setRevealComplete(true);
+    setInteractionCount(prev => prev + 1);
   };
 
   const upcomingSessions = [

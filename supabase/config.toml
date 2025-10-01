@@ -2,3 +2,6 @@ project_id = "yaincoxihiqdksxgrsrk"
 
 [functions.ai-chat]
 verify_jwt = true
+
+[functions.calculate-who5-card]
+verify_jwt = true
