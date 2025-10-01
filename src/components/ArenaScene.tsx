@@ -18,11 +18,11 @@ export const ArenaScene = ({ auraLevel }: ArenaSceneProps) => {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    // Get computed CSS variable values
+    // Get computed CSS variable values and convert to Canvas-compatible format
     const computedStyle = getComputedStyle(document.documentElement);
-    const primaryHsl = computedStyle.getPropertyValue('--primary').trim();
-    const accentHsl = computedStyle.getPropertyValue('--accent').trim();
-    const chartHsl = computedStyle.getPropertyValue('--chart-1').trim();
+    const primaryHsl = computedStyle.getPropertyValue('--primary').trim().replace(/\s+/g, ', ');
+    const accentHsl = computedStyle.getPropertyValue('--accent').trim().replace(/\s+/g, ', ');
+    const chartHsl = computedStyle.getPropertyValue('--chart-1').trim().replace(/\s+/g, ', ');
 
     const particles: Array<{
       x: number;
