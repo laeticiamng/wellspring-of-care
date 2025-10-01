@@ -1,151 +1,238 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Header from "@/components/Header";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { useImplicitTracking } from "@/hooks/useImplicitTracking";
-import { Swords, Trophy, Sword } from "lucide-react";
+import { ArenaScene } from "@/components/ArenaScene";
+import { BossChallenge } from "@/components/BossChallenge";
+import { AuraEvolution } from "@/components/AuraEvolution";
+import { TrophyGallery } from "@/components/TrophyGallery";
+import BadgeReveal from "@/components/BadgeReveal";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { Howl } from "howler";
+
+const epicSound = new Howl({
+  src: ['/sounds/epic-drums.mp3'],
+  volume: 0.3,
+  html5: true
+});
+
+const victorySound = new Howl({
+  src: ['/sounds/victory.mp3'],
+  volume: 0.5,
+  html5: true
+});
 
 const BossGrit = () => {
-  const { track } = useImplicitTracking();
-  const [currentChallenge, setCurrentChallenge] = useState(0);
-  const [completionRatio, setCompletionRatio] = useState(0);
+  const { toast } = useToast();
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [auraLevel, setAuraLevel] = useState(1);
+  const [trophies, setTrophies] = useState<any[]>([]);
+  const [showBadge, setShowBadge] = useState(false);
+  const [currentBadge, setCurrentBadge] = useState<any>(null);
+  const [currentChallenge, setCurrentChallenge] = useState(0);
 
   const challenges = [
-    { id: 1, name: 'Défi du Courage', difficulty: 'Facile', emoji: '⚔️' },
-    { id: 2, name: 'Défi de la Patience', difficulty: 'Moyen', emoji: '🛡️' },
-    { id: 3, name: 'Défi de la Ténacité', difficulty: 'Difficile', emoji: '👑' },
+    { 
+      id: 1, 
+      name: 'Défi du Courage', 
+      difficulty: 'Facile', 
+      emoji: '⚔️',
+      description: 'Tiens 2 minutes dans ton souffle',
+      duration: 2,
+      type: 'breathing'
+    },
+    { 
+      id: 2, 
+      name: 'Défi de la Patience', 
+      difficulty: 'Moyen', 
+      emoji: '🛡️',
+      description: 'Note 3 gratitudes ce soir',
+      duration: 3,
+      type: 'gratitude'
+    },
+    { 
+      id: 3, 
+      name: 'Défi de la Ténacité', 
+      difficulty: 'Difficile', 
+      emoji: '👑',
+      description: 'Reviens demain pour ton streak',
+      duration: 5,
+      type: 'streak'
+    },
   ];
 
-  const handleChallengeComplete = (ratio: number) => {
-    setCompletionRatio(ratio);
-    track({
-      instrument: "GRITS",
-      item_id: "consistency",
-      proxy: "completion",
-      value: ratio
-    });
+  useEffect(() => {
+    loadUserData();
+    epicSound.play();
+  }, []);
 
-    if (ratio >= 0.8) {
-      setAuraLevel(prev => Math.min(prev + 1, 10));
-      if (currentChallenge < challenges.length - 1) {
-        setCurrentChallenge(prev => prev + 1);
-      }
+  const loadUserData = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    // Load trophies from localStorage for now
+    const savedTrophies = localStorage.getItem(`trophies_${user.id}`);
+    if (savedTrophies) {
+      setTrophies(JSON.parse(savedTrophies));
+    }
+
+    const savedAura = localStorage.getItem(`aura_${user.id}`);
+    if (savedAura) {
+      setAuraLevel(parseInt(savedAura));
     }
   };
 
-  const handleRetry = () => {
-    track({
-      instrument: "BRS",
-      item_id: "bounce",
-      proxy: "repeat",
-      value: "retry_48h"
-    });
-    setCompletionRatio(0);
+  const startChallenge = async () => {
+    setIsLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { data, error } = await supabase.functions.invoke('assess-start', {
+        body: { 
+          instruments: ['GRITS', 'BRS'],
+          context: { 
+            challenge_id: challenges[currentChallenge].id,
+            challenge_type: challenges[currentChallenge].type
+          }
+        }
+      });
+
+      if (error) throw error;
+      setSessionId(data.session_id);
+      
+      toast({
+        title: "Défi accepté ⚔️",
+        description: challenges[currentChallenge].name,
+      });
+    } catch (error) {
+      console.error('Error starting challenge:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de démarrer le défi",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const completeChallenge = async (success: boolean, completion: number) => {
+    if (!sessionId) return;
+
+    if (navigator.vibrate) {
+      navigator.vibrate(success ? [200, 100, 200] : 100);
+    }
+
+    setIsLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { data, error } = await supabase.functions.invoke('assess-submit', {
+        body: { 
+          session_id: sessionId,
+          responses: {
+            completion_ratio: completion,
+            challenge_success: success
+          }
+        }
+      });
+
+      if (error) throw error;
+
+      if (success) {
+        victorySound.play();
+        const newAura = Math.min(auraLevel + 1, 10);
+        setAuraLevel(newAura);
+        localStorage.setItem(`aura_${user.id}`, newAura.toString());
+
+        // Rare trophy drop (20% chance)
+        if (Math.random() < 0.2) {
+          const rareTrophy = {
+            id: Date.now(),
+            name: data.badge || 'Force Intérieure',
+            emoji: '🏆',
+            rarity: 'legendary',
+            earnedAt: new Date().toISOString()
+          };
+          const newTrophies = [...trophies, rareTrophy];
+          setTrophies(newTrophies);
+          localStorage.setItem(`trophies_${user.id}`, JSON.stringify(newTrophies));
+        }
+
+        setCurrentBadge({
+          name: data.badge || 'Force Intérieure 🌟',
+          description: data.message || 'Tu as relevé le défi avec succès',
+          rarity: 'epic'
+        });
+        setShowBadge(true);
+
+        if (currentChallenge < challenges.length - 1) {
+          setTimeout(() => {
+            setCurrentChallenge(prev => prev + 1);
+          }, 3000);
+        }
+      }
+
+      setSessionId(null);
+    } catch (error) {
+      console.error('Error completing challenge:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de terminer le défi",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-calm">
+    <div className="min-h-screen bg-gradient-to-b from-background via-primary/5 to-background relative overflow-hidden">
       <Header />
       
-      <main className="container mx-auto px-4 py-8 space-y-8">
-        <div className="text-center space-y-4">
-          <div className="flex items-center justify-center space-x-3">
-            <Sword className="h-12 w-12 text-primary animate-glow" />
-            <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              L'Arène de la Persévérance
-            </h1>
-          </div>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Arène RPG émotionnelle. Chaque défi réussi agrandit votre aura héroïque, comme un chevalier émotionnel.
-          </p>
-          <p className="text-sm text-primary animate-pulse-soft">
-            ⚔️ Votre aura se renforce à chaque retour ⚔️
+      <ArenaScene auraLevel={auraLevel} />
+      
+      <main className="container mx-auto px-4 py-8 space-y-8 relative z-10">
+        <div className="text-center space-y-4 animate-fade-in">
+          <h1 className="text-5xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-glow">
+            L'Arène de la Persévérance
+          </h1>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            Relève ton défi, nourris ton aura ⚔️
           </p>
         </div>
 
-        <Card className="max-w-4xl mx-auto border-0 shadow-glow p-8 animate-scale-in space-y-6">
-          <div className="text-center">
-            <div className="flex justify-center items-center gap-4 mb-4">
-              <Swords className="w-12 h-12 text-primary animate-pulse-soft" />
-              <div className="relative">
-                <div 
-                  className="w-32 h-32 rounded-full bg-gradient-to-br from-primary to-primary/40 flex items-center justify-center animate-glow"
-                  style={{
-                    transform: `scale(${1 + (auraLevel / 20)})`,
-                    transition: 'transform 0.5s ease-out'
-                  }}
-                >
-                  <Trophy className="w-16 h-16 text-white" />
-                </div>
-                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-bold">
-                  Niveau {auraLevel}
-                </div>
-              </div>
-              <Swords className="w-12 h-12 text-primary animate-pulse-soft" />
-            </div>
-            <p className="text-2xl font-bold mb-2">Arène de la Persévérance</p>
-            <p className="text-muted-foreground">Ton aura héroïque grandit à chaque victoire</p>
-          </div>
+        <AuraEvolution level={auraLevel} />
 
-          <div className="space-y-4">
-            <h3 className="text-xl font-semibold">
-              Défi actuel : {challenges[currentChallenge].name}
-            </h3>
-            
-            <div className="p-6 bg-muted rounded-lg text-center space-y-4">
-              <div className="text-6xl">{challenges[currentChallenge].emoji}</div>
-              <div className="space-y-2">
-                <p className="font-semibold">Difficulté: {challenges[currentChallenge].difficulty}</p>
-                <Progress value={completionRatio * 100} className="h-3" />
-                <p className="text-sm text-muted-foreground">
-                  Progression: {Math.round(completionRatio * 100)}%
-                </p>
-              </div>
-            </div>
+        <BossChallenge
+          challenge={challenges[currentChallenge]}
+          onStart={startChallenge}
+          onComplete={completeChallenge}
+          isLoading={isLoading}
+          hasStarted={!!sessionId}
+        />
 
-            <div className="flex gap-4 justify-center">
-              <Button
-                size="lg"
-                onClick={() => handleChallengeComplete(0.3)}
-                variant="outline"
-              >
-                Tentative (+30%)
-              </Button>
-              <Button
-                size="lg"
-                onClick={() => handleChallengeComplete(0.7)}
-                variant="outline"
-              >
-                Bon effort (+70%)
-              </Button>
-              <Button
-                size="lg"
-                onClick={() => handleChallengeComplete(1.0)}
-              >
-                Victoire! (+100%)
-              </Button>
-            </div>
+        {trophies.length > 0 && (
+          <TrophyGallery trophies={trophies} />
+        )}
 
-            {completionRatio > 0 && completionRatio < 1 && (
-              <div className="text-center">
-                <Button variant="ghost" onClick={handleRetry}>
-                  Réessayer
-                </Button>
-              </div>
-            )}
-          </div>
-        </Card>
-
-        {auraLevel >= 3 && (
-          <Card className="max-w-4xl mx-auto border-0 shadow-soft p-6 animate-fade-in bg-gradient-to-br from-primary/5 to-primary/20">
-            <p className="text-center text-lg">
-              🌟 Ton aura héroïque rayonne ! Continue pour la faire grandir encore plus.
+        {currentChallenge < challenges.length - 1 && auraLevel >= 3 && (
+          <div className="text-center animate-pulse-soft">
+            <p className="text-primary font-semibold">
+              🔥 Continue ton ascension héroïque
             </p>
-          </Card>
+          </div>
         )}
       </main>
+
+      {showBadge && currentBadge && (
+        <BadgeReveal
+          badge={currentBadge}
+          onClose={() => setShowBadge(false)}
+        />
+      )}
     </div>
   );
 };
