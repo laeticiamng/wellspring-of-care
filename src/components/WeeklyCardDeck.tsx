@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Flame, Waves, Sprout, Moon, Star, Wind, Home, Sunrise } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useCardSounds } from '@/hooks/useCardSounds';
 
 interface WeeklyCardDeckProps {
   onCardSelect?: () => void;
@@ -23,6 +24,7 @@ const IconMap: Record<string, any> = {
 
 export const WeeklyCardDeck = ({ onCardSelect, isRevealing = false }: WeeklyCardDeckProps) => {
   const [particles, setParticles] = useState<Array<{ id: number; x: number; y: number; delay: number }>>([]);
+  const { playClickSound, playAmbient, stopAmbient } = useCardSounds();
 
   useEffect(() => {
     // Générer des particules cosmiques
@@ -33,7 +35,14 @@ export const WeeklyCardDeck = ({ onCardSelect, isRevealing = false }: WeeklyCard
       delay: Math.random() * 2
     }));
     setParticles(newParticles);
-  }, []);
+
+    // Démarrer musique d'ambiance
+    playAmbient();
+
+    return () => {
+      stopAmbient();
+    };
+  }, [playAmbient, stopAmbient]);
 
   return (
     <div className="relative w-full h-[400px] flex items-center justify-center overflow-hidden">
@@ -67,7 +76,10 @@ export const WeeklyCardDeck = ({ onCardSelect, isRevealing = false }: WeeklyCard
         {!isRevealing && (
           <motion.div
             className="relative cursor-pointer group"
-            onClick={onCardSelect}
+            onClick={() => {
+              playClickSound();
+              onCardSelect?.();
+            }}
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.8, opacity: 0, y: -50 }}

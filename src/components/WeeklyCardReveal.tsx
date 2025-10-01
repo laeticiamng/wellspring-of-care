@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { Sparkles, Flame, Waves, Sprout, Moon, Star, Wind, Home, Sunrise } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { WeeklyCard } from '@/hooks/useWeeklyCard';
+import { useCardSounds } from '@/hooks/useCardSounds';
 
 interface WeeklyCardRevealProps {
   card: WeeklyCard;
@@ -26,14 +27,18 @@ export const WeeklyCardReveal = ({ card, onRevealComplete }: WeeklyCardRevealPro
   const [isFlipped, setIsFlipped] = useState(false);
   const [showHalo, setShowHalo] = useState(false);
   const [particles, setParticles] = useState<Array<{ id: number; angle: number; distance: number }>>([]);
+  const { playRevealSound } = useCardSounds();
   
   const CardIcon = IconMap[card.icon_name] || Sparkles;
 
   useEffect(() => {
-    // Vibration haptic (si supporté)
+    // Vibration haptic + son initial
     if ('vibrate' in navigator) {
       navigator.vibrate(50);
     }
+
+    // Déclencher les sons immersifs
+    playRevealSound({ rarity: card.rarity });
 
     // Flip après 500ms
     const flipTimer = setTimeout(() => {
@@ -55,10 +60,7 @@ export const WeeklyCardReveal = ({ card, onRevealComplete }: WeeklyCardRevealPro
       setParticles(newParticles);
     }, 1700);
 
-    // Son cristallin (à implémenter avec Howler.js)
-    const soundTimer = setTimeout(() => {
-      // TODO: playSound('card-reveal.mp3');
-    }, 1700);
+    // Les sons sont déjà gérés par playRevealSound
 
     // Complétion après toutes les animations
     const completeTimer = setTimeout(() => {
@@ -68,10 +70,9 @@ export const WeeklyCardReveal = ({ card, onRevealComplete }: WeeklyCardRevealPro
     return () => {
       clearTimeout(flipTimer);
       clearTimeout(haloTimer);
-      clearTimeout(soundTimer);
       clearTimeout(completeTimer);
     };
-  }, []);
+  }, [card.rarity, playRevealSound]);
 
   // Couleur de rareté
   const rarityGlow = {
