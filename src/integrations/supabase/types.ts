@@ -1568,12 +1568,37 @@ export type Database = {
           },
         ]
       }
+      community_badges: {
+        Row: {
+          badge_type: string
+          earned_at: string | null
+          id: string
+          metadata: Json | null
+          user_id: string
+        }
+        Insert: {
+          badge_type: string
+          earned_at?: string | null
+          id?: string
+          metadata?: Json | null
+          user_id: string
+        }
+        Update: {
+          badge_type?: string
+          earned_at?: string | null
+          id?: string
+          metadata?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       community_comments: {
         Row: {
           author_id: string
           content: string
           created_at: string | null
           id: string
+          is_empathy_template: boolean | null
           likes_count: number | null
           post_id: string
         }
@@ -1582,6 +1607,7 @@ export type Database = {
           content: string
           created_at?: string | null
           id?: string
+          is_empathy_template?: boolean | null
           likes_count?: number | null
           post_id: string
         }
@@ -1590,6 +1616,7 @@ export type Database = {
           content?: string
           created_at?: string | null
           id?: string
+          is_empathy_template?: boolean | null
           likes_count?: number | null
           post_id?: string
         }
@@ -1636,6 +1663,33 @@ export type Database = {
         }
         Relationships: []
       }
+      community_house_state: {
+        Row: {
+          acts_of_care: number
+          created_at: string | null
+          id: string
+          last_activity_at: string | null
+          light_intensity: number
+          user_id: string
+        }
+        Insert: {
+          acts_of_care?: number
+          created_at?: string | null
+          id?: string
+          last_activity_at?: string | null
+          light_intensity?: number
+          user_id: string
+        }
+        Update: {
+          acts_of_care?: number
+          created_at?: string | null
+          id?: string
+          last_activity_at?: string | null
+          light_intensity?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       community_posts: {
         Row: {
           author_id: string
@@ -1643,8 +1697,11 @@ export type Database = {
           content: string
           created_at: string | null
           group_id: string | null
+          has_empathy_response: boolean | null
           id: string
           likes_count: number | null
+          mood_halo: string | null
+          reply_count: number | null
           title: string
           updated_at: string | null
         }
@@ -1654,8 +1711,11 @@ export type Database = {
           content: string
           created_at?: string | null
           group_id?: string | null
+          has_empathy_response?: boolean | null
           id?: string
           likes_count?: number | null
+          mood_halo?: string | null
+          reply_count?: number | null
           title: string
           updated_at?: string | null
         }
@@ -1665,8 +1725,11 @@ export type Database = {
           content?: string
           created_at?: string | null
           group_id?: string | null
+          has_empathy_response?: boolean | null
           id?: string
           likes_count?: number | null
+          mood_halo?: string | null
+          reply_count?: number | null
           title?: string
           updated_at?: string | null
         }
@@ -1679,6 +1742,83 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      community_room_members: {
+        Row: {
+          badges_earned: string[] | null
+          id: string
+          joined_at: string | null
+          left_at: string | null
+          room_id: string
+          user_id: string
+        }
+        Insert: {
+          badges_earned?: string[] | null
+          id?: string
+          joined_at?: string | null
+          left_at?: string | null
+          room_id: string
+          user_id: string
+        }
+        Update: {
+          badges_earned?: string[] | null
+          id?: string
+          joined_at?: string | null
+          left_at?: string | null
+          room_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_room_members_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "community_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      community_rooms: {
+        Row: {
+          capacity: number | null
+          created_at: string | null
+          created_by: string | null
+          current_participants: number | null
+          ended_at: string | null
+          id: string
+          name: string
+          ritual_stage: string | null
+          scheduled_at: string | null
+          started_at: string | null
+          status: string | null
+        }
+        Insert: {
+          capacity?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          current_participants?: number | null
+          ended_at?: string | null
+          id?: string
+          name: string
+          ritual_stage?: string | null
+          scheduled_at?: string | null
+          started_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          capacity?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          current_participants?: number | null
+          ended_at?: string | null
+          id?: string
+          name?: string
+          ritual_stage?: string | null
+          scheduled_at?: string | null
+          started_at?: string | null
+          status?: string | null
+        }
+        Relationships: []
       }
       completeness_alerts: {
         Row: {
@@ -3065,6 +3205,33 @@ export type Database = {
           offer?: Json
           room_id?: string
           to_peer_id?: string
+        }
+        Relationships: []
+      }
+      empathy_templates: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          emoji: string | null
+          id: string
+          text_en: string
+          text_fr: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          emoji?: string | null
+          id?: string
+          text_en: string
+          text_fr: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          emoji?: string | null
+          id?: string
+          text_en?: string
+          text_fr?: string
         }
         Relationships: []
       }
@@ -9792,6 +9959,10 @@ export type Database = {
           plan_name: string
           status: string
         }[]
+      }
+      increment_house_light: {
+        Args: { p_acts?: number; p_user_id: string }
+        Returns: undefined
       }
       increment_music_usage: {
         Args: { user_uuid: string }

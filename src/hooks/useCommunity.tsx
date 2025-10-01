@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -20,6 +20,9 @@ export interface CommunityPost {
   author_id: string;
   title: string;
   content: string;
+  mood_halo?: string;
+  reply_count?: number;
+  has_empathy_response?: boolean;
   likes_count: number;
   comments_count: number;
   created_at: string;
@@ -31,19 +34,40 @@ export interface Comment {
   post_id: string;
   author_id: string;
   content: string;
+  is_empathy_template?: boolean;
   likes_count: number;
   created_at: string;
+}
+
+export interface HouseState {
+  id: string;
+  user_id: string;
+  light_intensity: number;
+  acts_of_care: number;
+  last_activity_at: string;
+}
+
+export interface EmpathyTemplate {
+  id: string;
+  text_fr: string;
+  text_en: string;
+  emoji: string;
+  category: string;
 }
 
 export const useCommunity = () => {
   const [groups, setGroups] = useState<CommunityGroup[]>([]);
   const [posts, setPosts] = useState<CommunityPost[]>([]);
+  const [houseState, setHouseState] = useState<HouseState | null>(null);
+  const [empathyTemplates, setEmpathyTemplates] = useState<EmpathyTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
 
   useEffect(() => {
     fetchGroups();
     fetchPosts();
+    fetchHouseState();
+    fetchEmpathyTemplates();
   }, [user]);
 
   const fetchGroups = async () => {
@@ -127,7 +151,7 @@ export const useCommunity = () => {
     }
   };
 
-  const addComment = async (postId: string, content: string): Promise<boolean> => {
+  const addComment = async (postId: string, content: string, isEmpathy = false): Promise<boolean> => {
     if (!user) {
       return false;
     }
@@ -139,6 +163,7 @@ export const useCommunity = () => {
           post_id: postId,
           author_id: user.id,
           content,
+          is_empathy_template: isEmpathy,
         });
 
       if (error) throw error;
@@ -153,6 +178,11 @@ export const useCommunity = () => {
       }
 
       await fetchPosts();
+      await fetchHouseState(); // Refresh house state after comment
+      toast.success('Maison illuminée +2 ✨', {
+        description: 'Merci pour ton écoute bienveillante',
+        duration: 2000,
+      });
       return true;
     } catch (error) {
       console.error('Error adding comment:', error);
@@ -160,14 +190,48 @@ export const useCommunity = () => {
     }
   };
 
+  const fetchHouseState = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('community_house_state')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error;
+      setHouseState(data);
+    } catch (error) {
+      console.error('Error fetching house state:', error);
+    }
+  }, [user]);
+
+  const fetchEmpathyTemplates = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('empathy_templates')
+        .select('*')
+        .order('category');
+
+      if (error) throw error;
+      setEmpathyTemplates(data || []);
+    } catch (error) {
+      console.error('Error fetching empathy templates:', error);
+    }
+  };
+
   return {
     groups,
     posts,
+    houseState,
+    empathyTemplates,
     loading,
     createPost,
     joinGroup,
     addComment,
     refetchGroups: fetchGroups,
     refetchPosts: fetchPosts,
+    refetchHouseState: fetchHouseState,
   };
 };
