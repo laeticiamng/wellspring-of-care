@@ -133,6 +133,16 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  /* 3D Card Animations */
+  .preserve-3d {
+    transform-style: preserve-3d;
+  }
+
+  .backface-hidden {
+    backfaceVisibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
   
   /* Therapeutic animations */
   @keyframes float {

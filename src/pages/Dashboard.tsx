@@ -18,14 +18,19 @@ import {
   BookOpen
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { getWeeklyKeyword } from "@/lib/gamification";
 import { trackImplicitAssess } from "@/lib/implicitAssess";
+import { useWeeklyCard } from "@/hooks/useWeeklyCard";
+import { WeeklyCardDeck } from "@/components/WeeklyCardDeck";
+import { WeeklyCardReveal } from "@/components/WeeklyCardReveal";
+import { FloatingCard } from "@/components/FloatingCard";
+import { CardGallery } from "@/components/CardGallery";
 
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [weeklyCard, setWeeklyCard] = useState(getWeeklyKeyword());
-  const [cardFlipped, setCardFlipped] = useState(false);
+  const { card, loading } = useWeeklyCard();
+  const [isRevealing, setIsRevealing] = useState(false);
+  const [revealComplete, setRevealComplete] = useState(false);
 
   const userName = user?.user_metadata?.full_name?.split(' ')[0] || "Utilisateur";
   
@@ -47,15 +52,20 @@ const Dashboard = () => {
   }, []);
   
   const handleDrawCard = () => {
-    setCardFlipped(true);
-    trackImplicitAssess({
-      instrument: "WHO5",
-      item_id: "item_interest",
-      proxy: "choice",
-      value: "draw_card",
-      context: { action: "weekly_card" }
-    });
-    setTimeout(() => setCardFlipped(false), 3000);
+    if (card?.is_new_draw) {
+      setIsRevealing(true);
+      trackImplicitAssess({
+        instrument: "WHO5",
+        item_id: "item_interest",
+        proxy: "choice",
+        value: "draw_card",
+        context: { action: "weekly_card", card_code: card.card_code }
+      });
+    }
+  };
+
+  const handleRevealComplete = () => {
+    setRevealComplete(true);
   };
 
   const upcomingSessions = [
@@ -103,6 +113,9 @@ const Dashboard = () => {
     <div className="min-h-screen bg-gradient-calm">
       <Header />
       
+      {/* Floating card if revealed */}
+      {card && revealComplete && <FloatingCard card={card} />}
+      
       <main className="container mx-auto px-4 py-8 space-y-8">
         {/* Welcome Section */}
         <div className="text-center space-y-4">
@@ -118,38 +131,41 @@ const Dashboard = () => {
         </div>
 
         {/* Magical Card Draw */}
-        <Card className={`max-w-4xl mx-auto border-0 shadow-glow bg-gradient-primary/10 border border-primary/20 transition-all duration-500 ${cardFlipped ? 'animate-scale-in' : ''}`}>
+        <Card className="max-w-4xl mx-auto border-0 shadow-glow bg-gradient-primary/10 border border-primary/20">
           <CardContent className="p-8">
-            <div className="flex flex-col md:flex-row items-center justify-between space-y-6 md:space-y-0 md:space-x-8">
-              <div className="flex-1 text-center md:text-left space-y-4">
-                <div className="inline-block animate-float">
-                  <div className="text-6xl">{weeklyCard.emoji}</div>
-                </div>
-                <h3 className="text-2xl font-bold">Votre mantra de la semaine</h3>
-                <div className="text-3xl font-bold text-primary animate-pulse-soft">
-                  {weeklyCard.keyword} {weeklyCard.emoji}
-                </div>
-                <blockquote className="text-lg italic text-muted-foreground">
-                  "Cette énergie vous guidera dans votre voyage émotionnel cette semaine"
-                </blockquote>
-                <p className="text-sm text-muted-foreground">
-                  Votre horoscope émotionnel personnel
-                </p>
+            {loading ? (
+              <div className="flex items-center justify-center h-64">
+                <Sparkles className="w-8 h-8 text-primary animate-pulse" />
               </div>
-              <div className="flex flex-col space-y-3">
-                <Button 
-                  className="bg-gradient-primary text-primary-foreground shadow-glow"
-                  onClick={handleDrawCard}
+            ) : card && isRevealing ? (
+              <WeeklyCardReveal card={card} onRevealComplete={handleRevealComplete} />
+            ) : card && !card.is_new_draw ? (
+              <div className="flex flex-col items-center text-center space-y-6">
+                <div
+                  className="w-32 h-32 rounded-full flex items-center justify-center"
+                  style={{
+                    background: `linear-gradient(135deg, ${card.color_primary}, ${card.color_secondary})`,
+                  }}
                 >
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  {cardFlipped ? '✨ Révélée !' : 'Tirer une nouvelle carte'}
-                </Button>
-                <Button variant="outline" onClick={() => navigate('/journal')}>
-                  <BookOpen className="mr-2 h-4 w-4" />
-                  Mon grimoire
-                </Button>
+                  <span className="text-6xl">{card.mantra_emoji}</span>
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold mb-2">Votre mantra de la semaine</h3>
+                  <div 
+                    className="text-4xl font-bold mb-4"
+                    style={{ color: card.color_primary }}
+                  >
+                    {card.mantra} {card.mantra_emoji}
+                  </div>
+                  <p className="text-muted-foreground max-w-lg mx-auto">
+                    Cette énergie vous accompagne jusqu'au prochain lundi. Revenez alors pour découvrir votre nouvelle carte !
+                  </p>
+                </div>
+                <CardGallery />
               </div>
-            </div>
+            ) : (
+              <WeeklyCardDeck onCardSelect={handleDrawCard} isRevealing={isRevealing} />
+            )}
           </CardContent>
         </Card>
 
