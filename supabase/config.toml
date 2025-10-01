@@ -66,5 +66,11 @@ verify_jwt = false
 [functions.generate-insights]
 verify_jwt = true
 
+[functions.generate-recommendations]
+verify_jwt = true
+
+[functions.export-pdf-report]
+verify_jwt = true
+
 [functions.suno-music-generate]
 verify_jwt = true

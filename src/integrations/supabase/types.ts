@@ -10335,7 +10335,17 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      dashboard_stats_cache: {
+        Row: {
+          activity_date: string | null
+          chat_count: number | null
+          journal_count: number | null
+          last_activity_at: string | null
+          meditation_count: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       accept_invitation: {
@@ -11426,6 +11436,10 @@ export type Database = {
       panic_overlay_get_state: {
         Args: Record<PropertyKey, never>
         Returns: Json
+      }
+      refresh_dashboard_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       reset_monthly_quotas: {
         Args: Record<PropertyKey, never>

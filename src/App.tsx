@@ -53,6 +53,7 @@ import Terms from "./pages/Terms";
 import Analytics from "./pages/Analytics";
 // Social features
 import SocialHub from "./pages/SocialHub";
+import DataExport from "./pages/DataExport";
 
 const queryClient = new QueryClient();
 
@@ -125,6 +126,7 @@ const App = () => (
             <Route path="/activity" element={<ProtectedRoute><Activity /></ProtectedRoute>} />
             <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
             <Route path="/social" element={<ProtectedRoute><SocialHub /></ProtectedRoute>} />
+            <Route path="/export" element={<ProtectedRoute><DataExport /></ProtectedRoute>} />
             <Route path="/weekly-bars" element={<ProtectedRoute><WeeklyBars /></ProtectedRoute>} />
             <Route path="/ambition-arcade" element={<ProtectedRoute><AmbitionArcade /></ProtectedRoute>} />
           <Route path="/app/rh" element={

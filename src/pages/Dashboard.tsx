@@ -29,6 +29,7 @@ import { useSmartNotifications } from "@/hooks/useSmartNotifications";
 import { NotificationSettings } from "@/components/NotificationSettings";
 import { GamificationPanel } from "@/components/GamificationPanel";
 import { PersonalizedRecommendations } from "@/components/PersonalizedRecommendations";
+import { RecommendationsWidget } from "@/components/RecommendationsWidget";
 import { B2BSwitch } from "@/components/B2BSwitch";
 
 const Dashboard = () => {
@@ -292,6 +293,9 @@ const Dashboard = () => {
 
           {/* Right Column - 1/3 width */}
           <div className="space-y-6">
+            {/* AI Recommendations Widget */}
+            <RecommendationsWidget />
+
             {/* Personalized Recommendations */}
             <PersonalizedRecommendations />
 
