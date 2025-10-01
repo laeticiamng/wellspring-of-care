@@ -20,9 +20,14 @@ export const ArenaScene = ({ auraLevel }: ArenaSceneProps) => {
 
     // Get computed CSS variable values and convert to Canvas-compatible format
     const computedStyle = getComputedStyle(document.documentElement);
-    const primaryHsl = computedStyle.getPropertyValue('--primary').trim().replace(/\s+/g, ', ');
-    const accentHsl = computedStyle.getPropertyValue('--accent').trim().replace(/\s+/g, ', ');
-    const chartHsl = computedStyle.getPropertyValue('--chart-1').trim().replace(/\s+/g, ', ');
+    const primaryRaw = computedStyle.getPropertyValue('--primary').trim();
+    const accentRaw = computedStyle.getPropertyValue('--accent').trim();
+    const chartRaw = computedStyle.getPropertyValue('--chart-1').trim();
+    
+    // Convert space-separated HSL to comma-separated, with fallbacks
+    const primaryHsl = primaryRaw ? primaryRaw.replace(/\s+/g, ', ') : '214, 84%, 56%';
+    const accentHsl = accentRaw ? accentRaw.replace(/\s+/g, ', ') : '142, 76%, 36%';
+    const chartHsl = chartRaw ? chartRaw.replace(/\s+/g, ', ') : '12, 76%, 61%';
 
     const particles: Array<{
       x: number;
