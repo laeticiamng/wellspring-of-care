@@ -1,161 +1,193 @@
+import { useState, useEffect } from 'react';
 import Header from "@/components/Header";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Trophy, Medal, Star, TrendingUp } from "lucide-react";
-import { useState, useEffect } from "react";
+import { SkyScene } from "@/components/SkyScene";
+import { AuraGallery } from "@/components/AuraGallery";
+import { useAuras } from "@/hooks/useAuras";
+import { useAuth } from "@/contexts/AuthContext";
 import { useImplicitTracking } from "@/hooks/useImplicitTracking";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Sparkles, Users, Eye, History } from "lucide-react";
+import { motion } from "framer-motion";
+import { toast } from "sonner";
+import { Badge } from '@/components/ui/badge';
 
 const Leaderboard = () => {
-  const [viewMode, setViewMode] = useState<"performance" | "calm">("calm");
-  const [calmCardsUsed, setCalmCardsUsed] = useState(0);
+  const { user } = useAuth();
+  const { 
+    userAura, 
+    isLoadingAura, 
+    communityAuras, 
+    isLoadingCommunity,
+    auraHistory,
+    isLoadingHistory,
+    rareCatalog,
+  } = useAuras();
   const { track } = useImplicitTracking();
+  
+  const [viewMode, setViewMode] = useState<'personal' | 'community'>('personal');
+  const [showGallery, setShowGallery] = useState(false);
 
   useEffect(() => {
-    // Track preference for "calm" vs "performance" cards
-    if (viewMode === "calm") {
-      setCalmCardsUsed(prev => {
-        const newCount = prev + 1;
-        if (newCount >= 3) {
-          track({
-            instrument: "WHO5",
-            item_id: "overall_calm",
-            proxy: "choice",
-            value: "calm_cards_bias",
-            context: { view_count: String(newCount) }
-          });
-        }
-        return newCount;
-      });
-    }
+    // Track page view
+    track({
+      instrument: 'navigation',
+      item_id: 'aura_sky',
+      proxy: 'completion',
+      value: 1,
+      context: { surface: 'leaderboard', view: viewMode }
+    });
   }, [viewMode]);
 
-  const topUsers = [
-    { rank: 1, name: 'Sophie Martin', score: 2850, trend: '+12%', level: 42, aura: '✨' },
-    { rank: 2, name: 'Thomas Dubois', score: 2720, trend: '+8%', level: 38, aura: '🌟' },
-    { rank: 3, name: 'Emma Wilson', score: 2640, trend: '+15%', level: 36, aura: '💫' },
-    { rank: 4, name: 'Lucas Bernard', score: 2480, trend: '+5%', level: 34, aura: '⭐' },
-    { rank: 5, name: 'Clara Lopez', score: 2350, trend: '+10%', level: 32, aura: '🌠' }
-  ];
+  const handleToggleView = () => {
+    const newMode = viewMode === 'personal' ? 'community' : 'personal';
+    setViewMode(newMode);
+    
+    toast.success(
+      newMode === 'community' 
+        ? 'Vue collective activée 🌌' 
+        : 'Vue personnelle activée ✨',
+      { duration: 2000 }
+    );
+    
+    track({
+      instrument: 'interaction',
+      item_id: 'toggle_view',
+      proxy: 'choice',
+      value: newMode,
+      context: { surface: 'leaderboard' }
+    });
+  };
+
+  if (isLoadingAura) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-[#0a0a1a] via-[#1a1a2e] to-[#16213e] flex items-center justify-center">
+        <motion.div
+          animate={{ rotate: 360, scale: [1, 1.2, 1] }}
+          transition={{ duration: 2, repeat: Infinity }}
+          className="w-20 h-20 rounded-full bg-gradient-to-r from-primary to-accent opacity-50"
+        />
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-calm">
+    <div className="min-h-screen bg-background">
       <Header />
       
-      <main className="container mx-auto px-4 py-8 space-y-8">
-        <div className="text-center space-y-4">
-          <div className="flex items-center justify-center space-x-3">
-            <Trophy className="h-12 w-12 text-primary animate-glow" />
-            <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              Le Ciel des Auras
+      {!showGallery ? (
+        <div className="relative h-[calc(100vh-4rem)]">
+          {/* Controls overlay */}
+          <div className="absolute top-4 right-4 z-20 flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleToggleView}
+              className="bg-background/80 backdrop-blur border-primary/20"
+            >
+              {viewMode === 'personal' ? (
+                <>
+                  <Users className="w-4 h-4 mr-2" />
+                  Vue Collective
+                </>
+              ) : (
+                <>
+                  <Eye className="w-4 h-4 mr-2" />
+                  Mon Aura
+                </>
+              )}
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowGallery(true)}
+              className="bg-background/80 backdrop-blur border-accent/20"
+            >
+              <History className="w-4 h-4 mr-2" />
+              Galerie
+            </Button>
+          </div>
+
+          {/* Sky Scene */}
+          <SkyScene
+            userAura={userAura}
+            communityAuras={viewMode === 'community' ? communityAuras : undefined}
+            mode={viewMode}
+            onAuraClick={() => {
+              if (userAura?.is_rare) {
+                toast.success(`Aura ${userAura.rare_type} débloquée ! ✨`, {
+                  description: rareCatalog?.find(r => r.aura_type === userAura.rare_type)?.description,
+                });
+              }
+            }}
+          />
+
+          {/* Rare auras progress */}
+          {viewMode === 'personal' && rareCatalog && rareCatalog.length > 0 && (
+            <motion.div
+              className="absolute bottom-20 right-4 z-10"
+              initial={{ x: 100, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ delay: 1.5 }}
+            >
+              <Card className="w-64 border-primary/20 bg-background/80 backdrop-blur">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-primary" />
+                    Auras Rares
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {rareCatalog.slice(0, 4).map((rare) => {
+                    const isUnlocked = userAura?.rare_type === rare.aura_type;
+                    return (
+                      <div
+                        key={rare.id}
+                        className={`flex items-center justify-between p-2 rounded-lg ${
+                          isUnlocked 
+                            ? 'bg-gradient-to-r from-primary/20 to-accent/20 border border-primary/30' 
+                            : 'bg-secondary/20'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">{rare.icon}</span>
+                          <div>
+                            <p className="text-xs font-medium">{rare.name}</p>
+                            <p className="text-[10px] text-muted-foreground">{rare.rarity_level}</p>
+                          </div>
+                        </div>
+                        {isUnlocked ? (
+                          <Badge variant="outline" className="text-xs">Débloquée</Badge>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">🔒</span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+        </div>
+      ) : (
+        <div className="container max-w-6xl mx-auto px-4 py-8">
+          <div className="mb-6 flex items-center justify-between">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              Galerie des Auras
             </h1>
-          </div>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Classement communautaire. Célébrez votre progression avec la communauté.
-          </p>
-          <div className="flex justify-center space-x-3 mt-4">
             <Button
-              size="sm"
-              variant={viewMode === "calm" ? "default" : "outline"}
-              className={viewMode === "calm" ? "bg-gradient-primary" : ""}
-              onClick={() => setViewMode("calm")}
+              variant="outline"
+              onClick={() => setShowGallery(false)}
+              className="border-primary/20"
             >
-              🌊 Auras douces
-            </Button>
-            <Button
-              size="sm"
-              variant={viewMode === "performance" ? "default" : "outline"}
-              className={viewMode === "performance" ? "bg-gradient-secondary" : ""}
-              onClick={() => setViewMode("performance")}
-            >
-              🏆 Performance
+              Retour au Ciel
             </Button>
           </div>
+          
+          <AuraGallery history={auraHistory || []} />
         </div>
-
-        <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-          {topUsers.slice(0, 3).map((user, index) => (
-            <Card
-              key={user.rank}
-              className={`border-0 shadow-glow text-center ${
-                index === 0 ? 'md:col-start-2 md:row-start-1' : ''
-              }`}
-            >
-              <CardContent className="pt-6 space-y-4">
-                {index === 0 && <Trophy className="h-12 w-12 text-yellow-500 mx-auto" />}
-                {index === 1 && <Medal className="h-10 w-10 text-gray-400 mx-auto" />}
-                {index === 2 && <Medal className="h-10 w-10 text-orange-600 mx-auto" />}
-                
-                <Avatar className="h-20 w-20 mx-auto relative">
-                  <AvatarFallback className="bg-gradient-primary text-primary-foreground text-2xl">
-                    {user.name.split(' ').map(n => n[0]).join('')}
-                  </AvatarFallback>
-                  <div className="absolute -top-2 -right-2 text-2xl animate-pulse-soft">
-                    {user.aura}
-                  </div>
-                </Avatar>
-                
-                <div>
-                  <p className="font-bold text-lg">{user.name}</p>
-                  {viewMode === "calm" ? (
-                    <>
-                      <p className="text-2xl font-bold text-primary my-2">{user.aura}</p>
-                      <p className="text-sm text-muted-foreground">Aura de bien-être</p>
-                    </>
-                  ) : (
-                    <>
-                      <p className="text-3xl font-bold text-primary my-2">{user.score}</p>
-                      <Badge className="bg-gradient-secondary text-secondary-foreground">
-                        <TrendingUp className="h-3 w-3 mr-1" />
-                        {user.trend}
-                      </Badge>
-                    </>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        <Card className="max-w-4xl mx-auto border-0 shadow-soft">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Star className="h-5 w-5 text-primary" />
-              <span>Top 10 de la semaine</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {topUsers.map((user) => (
-                <div
-                  key={user.rank}
-                  className="flex items-center justify-between p-4 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
-                >
-                  <div className="flex items-center space-x-4">
-                    <div className="font-bold text-2xl text-primary w-8">#{user.rank}</div>
-                    <Avatar>
-                      <AvatarFallback className="bg-gradient-primary text-primary-foreground">
-                        {user.name.split(' ').map(n => n[0]).join('')}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-medium">{user.name}</p>
-                      <p className="text-sm text-muted-foreground">Niveau {user.level}</p>
-                    </div>
-                  </div>
-                  <div className="text-right space-y-1">
-                    <p className="text-xl font-bold text-primary">{user.score}</p>
-                    <Badge variant="outline" className="text-xs">
-                      {user.trend}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </main>
+      )}
     </div>
   );
 };

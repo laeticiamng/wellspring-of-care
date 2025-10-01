@@ -668,6 +668,75 @@ export type Database = {
         }
         Relationships: []
       }
+      aura_connections: {
+        Row: {
+          connection_strength: number
+          created_at: string | null
+          id: string
+          interaction_types: Json | null
+          last_interaction_at: string | null
+          user_id_a: string
+          user_id_b: string
+        }
+        Insert: {
+          connection_strength?: number
+          created_at?: string | null
+          id?: string
+          interaction_types?: Json | null
+          last_interaction_at?: string | null
+          user_id_a: string
+          user_id_b: string
+        }
+        Update: {
+          connection_strength?: number
+          created_at?: string | null
+          id?: string
+          interaction_types?: Json | null
+          last_interaction_at?: string | null
+          user_id_a?: string
+          user_id_b?: string
+        }
+        Relationships: []
+      }
+      aura_history: {
+        Row: {
+          color_hue: number
+          created_at: string | null
+          id: string
+          luminosity: number
+          size_scale: number
+          snapshot_data: Json | null
+          user_id: string
+          week_end: string
+          week_start: string
+          who5_badge: string | null
+        }
+        Insert: {
+          color_hue: number
+          created_at?: string | null
+          id?: string
+          luminosity: number
+          size_scale: number
+          snapshot_data?: Json | null
+          user_id: string
+          week_end: string
+          week_start: string
+          who5_badge?: string | null
+        }
+        Update: {
+          color_hue?: number
+          created_at?: string | null
+          id?: string
+          luminosity?: number
+          size_scale?: number
+          snapshot_data?: Json | null
+          user_id?: string
+          week_end?: string
+          week_start?: string
+          who5_badge?: string | null
+        }
+        Relationships: []
+      }
       backup_edn_items_immersive: {
         Row: {
           audio_ambiance: Json | null
@@ -7327,6 +7396,45 @@ export type Database = {
         }
         Relationships: []
       }
+      rare_auras_catalog: {
+        Row: {
+          animation_preset: string | null
+          aura_type: string
+          color_palette: Json
+          created_at: string | null
+          description: string | null
+          icon: string | null
+          id: string
+          name: string
+          rarity_level: string
+          unlock_conditions: Json
+        }
+        Insert: {
+          animation_preset?: string | null
+          aura_type: string
+          color_palette: Json
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          rarity_level: string
+          unlock_conditions: Json
+        }
+        Update: {
+          animation_preset?: string | null
+          aura_type?: string
+          color_palette?: Json
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          rarity_level?: string
+          unlock_conditions?: Json
+        }
+        Relationships: []
+      }
       rate_limit_counters: {
         Row: {
           created_at: string | null
@@ -8309,6 +8417,60 @@ export type Database = {
           sessions_completed?: number | null
           study_time_minutes?: number | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      user_auras: {
+        Row: {
+          animation_speed: number
+          color_hue: number
+          created_at: string | null
+          id: string
+          interactions_count: number
+          is_rare: boolean | null
+          last_who5_at: string | null
+          luminosity: number
+          rare_type: string | null
+          size_scale: number
+          streak_weeks: number
+          unlocked_at: string | null
+          updated_at: string | null
+          user_id: string
+          who5_internal_level: number | null
+        }
+        Insert: {
+          animation_speed?: number
+          color_hue?: number
+          created_at?: string | null
+          id?: string
+          interactions_count?: number
+          is_rare?: boolean | null
+          last_who5_at?: string | null
+          luminosity?: number
+          rare_type?: string | null
+          size_scale?: number
+          streak_weeks?: number
+          unlocked_at?: string | null
+          updated_at?: string | null
+          user_id: string
+          who5_internal_level?: number | null
+        }
+        Update: {
+          animation_speed?: number
+          color_hue?: number
+          created_at?: string | null
+          id?: string
+          interactions_count?: number
+          is_rare?: boolean | null
+          last_who5_at?: string | null
+          luminosity?: number
+          rare_type?: string | null
+          size_scale?: number
+          streak_weeks?: number
+          unlocked_at?: string | null
+          updated_at?: string | null
+          user_id?: string
+          who5_internal_level?: number | null
         }
         Relationships: []
       }
@@ -9299,6 +9461,10 @@ export type Database = {
           quota_limit: number
         }[]
       }
+      check_rare_aura_unlocks: {
+        Args: { p_user_id: string }
+        Returns: undefined
+      }
       check_rate_limit: {
         Args: {
           action_type: string
@@ -9960,6 +10126,10 @@ export type Database = {
           status: string
         }[]
       }
+      increment_aura_interaction: {
+        Args: { p_user_id: string }
+        Returns: undefined
+      }
       increment_house_light: {
         Args: { p_acts?: number; p_user_id: string }
         Returns: undefined
@@ -10354,6 +10524,10 @@ export type Database = {
           user_id: string
         }
       }
+      snapshot_aura_weekly: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       start_extraction_batch: {
         Args: {
           p_batch_type: string
@@ -10376,6 +10550,10 @@ export type Database = {
           details: Json
           updated_count: number
         }[]
+      }
+      update_aura_from_who5: {
+        Args: { p_user_id: string; p_who5_score: number }
+        Returns: undefined
       }
       update_competences_counters: {
         Args: Record<PropertyKey, never>
