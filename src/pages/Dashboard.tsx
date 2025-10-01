@@ -17,12 +17,46 @@ import {
   Sparkles,
   BookOpen
 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { getWeeklyKeyword } from "@/lib/gamification";
+import { trackImplicitAssess } from "@/lib/implicitAssess";
 
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [weeklyCard, setWeeklyCard] = useState(getWeeklyKeyword());
+  const [cardFlipped, setCardFlipped] = useState(false);
 
   const userName = user?.user_metadata?.full_name?.split(' ')[0] || "Utilisateur";
+  
+  useEffect(() => {
+    // Track implicit: temps passé sur le dashboard
+    const startTime = Date.now();
+    return () => {
+      const dwellMs = Date.now() - startTime;
+      if (dwellMs > 60000) { // Si plus de 1 min
+        trackImplicitAssess({
+          instrument: "WHO5",
+          item_id: "item_calm",
+          proxy: "duration",
+          value: dwellMs,
+          context: { page: "dashboard" }
+        });
+      }
+    };
+  }, []);
+  
+  const handleDrawCard = () => {
+    setCardFlipped(true);
+    trackImplicitAssess({
+      instrument: "WHO5",
+      item_id: "item_interest",
+      proxy: "choice",
+      value: "draw_card",
+      context: { action: "weekly_card" }
+    });
+    setTimeout(() => setCardFlipped(false), 3000);
+  };
 
   const upcomingSessions = [
     {
@@ -84,29 +118,35 @@ const Dashboard = () => {
         </div>
 
         {/* Magical Card Draw */}
-        <Card className="max-w-4xl mx-auto border-0 shadow-glow bg-gradient-primary/10 border border-primary/20">
+        <Card className={`max-w-4xl mx-auto border-0 shadow-glow bg-gradient-primary/10 border border-primary/20 transition-all duration-500 ${cardFlipped ? 'animate-scale-in' : ''}`}>
           <CardContent className="p-8">
             <div className="flex flex-col md:flex-row items-center justify-between space-y-6 md:space-y-0 md:space-x-8">
               <div className="flex-1 text-center md:text-left space-y-4">
                 <div className="inline-block animate-float">
-                  <div className="text-6xl">🌟</div>
+                  <div className="text-6xl">{weeklyCard.emoji}</div>
                 </div>
                 <h3 className="text-2xl font-bold">Votre mantra de la semaine</h3>
+                <div className="text-3xl font-bold text-primary animate-pulse-soft">
+                  {weeklyCard.keyword} {weeklyCard.emoji}
+                </div>
                 <blockquote className="text-lg italic text-muted-foreground">
-                  "La guérison n'est pas un état de perfection, mais un processus de croissance."
+                  "Cette énergie vous guidera dans votre voyage émotionnel cette semaine"
                 </blockquote>
                 <p className="text-sm text-muted-foreground">
-                  Cette carte vous guidera dans votre voyage émotionnel cette semaine
+                  Votre horoscope émotionnel personnel
                 </p>
               </div>
               <div className="flex flex-col space-y-3">
-                <Button className="bg-gradient-primary text-primary-foreground shadow-glow">
+                <Button 
+                  className="bg-gradient-primary text-primary-foreground shadow-glow"
+                  onClick={handleDrawCard}
+                >
                   <Sparkles className="mr-2 h-4 w-4" />
-                  Tirer une nouvelle carte
+                  {cardFlipped ? '✨ Révélée !' : 'Tirer une nouvelle carte'}
                 </Button>
-                <Button variant="outline">
+                <Button variant="outline" onClick={() => navigate('/journal')}>
                   <BookOpen className="mr-2 h-4 w-4" />
-                  Mon grimoire de cartes
+                  Mon grimoire
                 </Button>
               </div>
             </div>

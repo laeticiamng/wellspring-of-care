@@ -8,10 +8,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, Bell, Lock, CreditCard, Shield, Palette } from "lucide-react";
+import { User, Bell, Lock, CreditCard, Shield, Palette, Sparkles, HelpCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { useSettings } from "@/hooks/useSettings";
+import { setImplicitTracking, getImplicitTrackingState } from "@/lib/implicitAssess";
 
 const Settings = () => {
   const { user } = useAuth();
@@ -28,6 +29,8 @@ const Settings = () => {
     notifications_enabled: true,
     email_notifications: true,
   });
+  
+  const [implicitTracking, setImplicitTrackingState] = useState(true);
 
   useEffect(() => {
     if (profile) {
@@ -47,6 +50,8 @@ const Settings = () => {
         email_notifications: preferences.email_notifications,
       });
     }
+    // Charger l'état du tracking implicite
+    setImplicitTrackingState(getImplicitTrackingState());
   }, [preferences]);
 
   const handleSaveProfile = async () => {
@@ -211,53 +216,109 @@ const Settings = () => {
             </Card>
           </TabsContent>
 
-          {/* Security Tab */}
+          {/* Personalization Tab - Added to Security tab */}
           <TabsContent value="security">
-            <Card className="border-0 shadow-soft">
-              <CardHeader>
-                <CardTitle>Sécurité et confidentialité</CardTitle>
-                <CardDescription>
-                  Gérez vos paramètres de sécurité
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="text-lg font-medium mb-4">Changer le mot de passe</h3>
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="currentPassword">Mot de passe actuel</Label>
-                        <Input id="currentPassword" type="password" />
+            <div className="space-y-6">
+              {/* Existing Security Card */}
+              <Card className="border-0 shadow-soft">
+                <CardHeader>
+                  <CardTitle>Sécurité et confidentialité</CardTitle>
+                  <CardDescription>
+                    Gérez vos paramètres de sécurité
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="text-lg font-medium mb-4">Changer le mot de passe</h3>
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="currentPassword">Mot de passe actuel</Label>
+                          <Input id="currentPassword" type="password" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="newPassword">Nouveau mot de passe</Label>
+                          <Input id="newPassword" type="password" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="confirmPassword">Confirmer le mot de passe</Label>
+                          <Input id="confirmPassword" type="password" />
+                        </div>
+                        <Button className="bg-gradient-primary">
+                          Mettre à jour le mot de passe
+                        </Button>
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="newPassword">Nouveau mot de passe</Label>
-                        <Input id="newPassword" type="password" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="confirmPassword">Confirmer le mot de passe</Label>
-                        <Input id="confirmPassword" type="password" />
-                      </div>
-                      <Button className="bg-gradient-primary">
-                        Mettre à jour le mot de passe
-                      </Button>
                     </div>
+
+                    <div className="pt-6 border-t">
+                      <div className="flex items-start space-x-4">
+                        <Shield className="h-6 w-6 text-primary mt-1" />
+                        <div className="flex-1">
+                          <h3 className="font-medium mb-2">Authentification à deux facteurs</h3>
+                          <p className="text-sm text-muted-foreground mb-4">
+                            Ajoutez une couche de sécurité supplémentaire à votre compte
+                          </p>
+                          <Button variant="outline">Activer 2FA</Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* NEW: Personalization Card */}
+              <Card className="border-0 shadow-soft bg-gradient-healing/10 border border-accent/20">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Sparkles className="h-5 w-5 text-primary" />
+                    <span>Personnalisation bien-être</span>
+                  </CardTitle>
+                  <CardDescription>
+                    Améliorez votre expérience grâce à l'adaptation automatique
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-1 flex-1">
+                      <h4 className="font-medium">Adaptation intelligente</h4>
+                      <p className="text-sm text-muted-foreground">
+                        L'app s'adapte discrètement à vos préférences d'utilisation pour vous offrir des suggestions plus pertinentes
+                      </p>
+                    </div>
+                    <Switch
+                      checked={implicitTracking}
+                      onCheckedChange={(checked) => {
+                        setImplicitTrackingState(checked);
+                        setImplicitTracking(checked);
+                        toast(checked ? "Personnalisation activée" : "Personnalisation désactivée", {
+                          description: checked 
+                            ? "L'app s'adaptera progressivement à vos préférences"
+                            : "Les adaptations automatiques sont désactivées"
+                        });
+                      }}
+                    />
+                  </div>
+                  
+                  <div className="p-4 bg-muted/30 rounded-lg space-y-2">
+                    <h5 className="font-medium text-sm">Comment ça marche ?</h5>
+                    <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+                      <li>Analyse de vos interactions (modules préférés, durées, choix)</li>
+                      <li>Suggestions personnalisées selon votre rythme</li>
+                      <li>Aucun questionnaire - tout se fait naturellement</li>
+                      <li>Données chiffrées uniquement, anonymes et sécurisées</li>
+                      <li>Vous gardez le contrôle total</li>
+                    </ul>
                   </div>
 
-                  <div className="pt-6 border-t">
-                    <div className="flex items-start space-x-4">
-                      <Shield className="h-6 w-6 text-primary mt-1" />
-                      <div className="flex-1">
-                        <h3 className="font-medium mb-2">Authentification à deux facteurs</h3>
-                        <p className="text-sm text-muted-foreground mb-4">
-                          Ajoutez une couche de sécurité supplémentaire à votre compte
-                        </p>
-                        <Button variant="outline">Activer 2FA</Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                  <Button variant="outline" className="w-full" asChild>
+                    <a href="#" onClick={(e) => { e.preventDefault(); toast("Page en construction"); }}>
+                      <HelpCircle className="mr-2 h-4 w-4" />
+                      En savoir plus sur la personnalisation
+                    </a>
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           {/* Billing Tab */}
