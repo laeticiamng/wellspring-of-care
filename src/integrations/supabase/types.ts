@@ -4162,24 +4162,45 @@ export type Database = {
       }
       journal_entries: {
         Row: {
-          ai_feedback: string | null
+          affect_negative: number | null
+          affect_positive: number | null
+          audio_url: string | null
+          badge_text: string | null
+          color_palette: Json | null
           content: string
-          date: string
+          created_at: string | null
           id: string
+          is_precious: boolean | null
+          tags: string[] | null
+          updated_at: string | null
           user_id: string
         }
         Insert: {
-          ai_feedback?: string | null
+          affect_negative?: number | null
+          affect_positive?: number | null
+          audio_url?: string | null
+          badge_text?: string | null
+          color_palette?: Json | null
           content: string
-          date?: string
+          created_at?: string | null
           id?: string
+          is_precious?: boolean | null
+          tags?: string[] | null
+          updated_at?: string | null
           user_id: string
         }
         Update: {
-          ai_feedback?: string | null
+          affect_negative?: number | null
+          affect_positive?: number | null
+          audio_url?: string | null
+          badge_text?: string | null
+          color_palette?: Json | null
           content?: string
-          date?: string
+          created_at?: string | null
           id?: string
+          is_precious?: boolean | null
+          tags?: string[] | null
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: []

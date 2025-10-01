@@ -25,7 +25,7 @@ const Journal = () => {
   const [selectedMood, setSelectedMood] = useState<string>("");
   const [journalText, setJournalText] = useState<string>("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const { entries, loading, createEntry } = useMoodEntries();
+  const { entries, loading, saveEntry } = useMoodEntries();
   const { toast } = useToast();
   const { track } = useImplicitTracking();
   const { collections, unlockItem } = useCollections();
@@ -51,8 +51,7 @@ const Journal = () => {
       return;
     }
 
-    const moodLevel = moodOptions.findIndex(m => m.value === selectedMood) + 1;
-    await createEntry(moodLevel, selectedTags, journalText);
+    await saveEntry(journalText);
     
     // Track journal completion with PANAS proxy
     const hasPositiveMood = ['happy', 'calm'].includes(selectedMood);
@@ -112,10 +111,10 @@ const Journal = () => {
   const recentEntries = entries.map(entry => ({
     date: formatDate(entry.created_at),
     time: new Date(entry.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-    mood: moodOptions[entry.mood_level - 1]?.emoji || "😊",
-    title: entry.emotions.join(", ") || "Entrée de journal",
-    excerpt: entry.notes || "",
-    tags: entry.emotions
+    mood: selectedMood ? moodOptions.find(m => m.value === selectedMood)?.emoji : "😊",
+    title: entry.tags?.slice(0, 2).join(", ") || "Entrée de journal",
+    excerpt: entry.content.substring(0, 100) + "...",
+    tags: entry.tags || []
   })).slice(0, 5);
 
   const oldRecentEntries = [

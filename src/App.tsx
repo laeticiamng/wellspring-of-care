@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Journal from "./pages/Journal";
+import JournalNew from "./pages/JournalNew";
 import Meditation from "./pages/Meditation";
 import Community from "./pages/Community";
 import Therapy from "./pages/Therapy";
@@ -49,7 +50,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/journal" element={<ProtectedRoute><Journal /></ProtectedRoute>} />
+            <Route path="/journal" element={<ProtectedRoute><JournalNew /></ProtectedRoute>} />
             <Route path="/meditation" element={<ProtectedRoute><Meditation /></ProtectedRoute>} />
             <Route path="/community" element={<ProtectedRoute><Community /></ProtectedRoute>} />
             <Route path="/therapy" element={<ProtectedRoute><Therapy /></ProtectedRoute>} />

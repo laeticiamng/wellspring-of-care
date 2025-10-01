@@ -1,85 +1,94 @@
 import { motion } from 'framer-motion';
-import { Sparkles, Flame, Waves, Sprout, Moon, Star, Wind, Home, Sunrise } from 'lucide-react';
-import { WeeklyCard } from '@/hooks/useWeeklyCard';
+import { Sparkles } from 'lucide-react';
 
 interface FloatingCardProps {
-  card: WeeklyCard;
+  content: string;
+  colorPalette: {
+    primary: string;
+    secondary: string;
+  };
+  badgeText?: string;
+  isPrecious: boolean;
+  onClick?: () => void;
 }
 
-const IconMap: Record<string, any> = {
-  Sparkles,
-  Flame,
-  Waves,
-  Sprout,
-  Moon,
-  Star,
-  Wind,
-  Home,
-  Sunrise,
-  Stars: Sparkles,
-  Sun: Star
-};
-
-export const FloatingCard = ({ card }: FloatingCardProps) => {
-  const CardIcon = IconMap[card.icon_name] || Sparkles;
-
+export function FloatingCard({ content, colorPalette, badgeText, isPrecious, onClick }: FloatingCardProps) {
   return (
     <motion.div
-      className="fixed top-24 right-6 z-10 w-32 h-48"
-      initial={{ opacity: 0, x: 100 }}
-      animate={{ 
-        opacity: [0.4, 0.6, 0.4],
-        x: 0,
-        y: [0, -10, 0],
-      }}
-      transition={{
-        opacity: {
-          duration: 3,
-          repeat: Infinity,
-        },
-        y: {
-          duration: 4,
-          repeat: Infinity,
-          ease: 'easeInOut',
-        },
+      initial={{ opacity: 0, scale: 0.8, y: 50 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.9, y: -20 }}
+      whileHover={{ scale: 1.02, y: -5 }}
+      whileTap={{ scale: 0.98 }}
+      onClick={onClick}
+      className="relative cursor-pointer group"
+      style={{
+        background: `linear-gradient(135deg, ${colorPalette.primary}, ${colorPalette.secondary})`,
       }}
     >
-      <div
-        className="relative w-full h-full rounded-xl shadow-lg overflow-hidden backdrop-blur-sm"
-        style={{
-          background: `linear-gradient(135deg, ${card.color_primary}80, ${card.color_secondary}80)`,
-        }}
-      >
-        {/* Halo subtil */}
-        <div 
-          className="absolute inset-0 opacity-30"
-          style={{
-            background: `radial-gradient(circle at center, ${card.color_primary}60, transparent 70%)`,
-          }}
-        />
-        
+      <div className="relative backdrop-blur-sm bg-white/10 rounded-2xl p-6 shadow-xl border border-white/20 overflow-hidden min-h-[200px]">
+        {/* Effet de lueur pour pages précieuses */}
+        {isPrecious && (
+          <>
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-r from-yellow-400/20 via-orange-400/20 to-yellow-400/20"
+              animate={{
+                opacity: [0.3, 0.6, 0.3],
+                scale: [1, 1.05, 1]
+              }}
+              transition={{
+                duration: 2,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+            />
+            <motion.div
+              className="absolute top-4 right-4"
+              animate={{
+                rotate: [0, 10, -10, 0],
+                scale: [1, 1.1, 1]
+              }}
+              transition={{
+                duration: 3,
+                repeat: Infinity
+              }}
+            >
+              <Sparkles className="w-6 h-6 text-yellow-300" />
+            </motion.div>
+          </>
+        )}
+
         {/* Contenu */}
-        <div className="relative h-full flex flex-col items-center justify-center p-3 text-white">
-          <CardIcon className="w-12 h-12 mb-2 drop-shadow-md" />
-          <p className="text-xs font-semibold text-center">
-            {card.mantra}
+        <div className="relative z-10">
+          <p className="text-white/90 text-lg leading-relaxed line-clamp-4">
+            {content}
           </p>
-          <p className="text-lg">{card.mantra_emoji}</p>
         </div>
 
-        {/* Brillance */}
+        {/* Badge émotionnel */}
+        {badgeText && (
+          <motion.div
+            className="absolute bottom-4 left-4 right-4"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <div className="bg-black/20 backdrop-blur-md rounded-full px-4 py-2 border border-white/10">
+              <p className="text-white/80 text-sm text-center font-medium">
+                {badgeText}
+              </p>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Effet de brillance au survol */}
         <motion.div
           className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"
-          animate={{
-            x: ['-100%', '200%'],
-          }}
-          transition={{
-            duration: 3,
-            repeat: Infinity,
-            repeatDelay: 5,
-          }}
+          initial={{ x: '-100%' }}
+          whileHover={{ x: '100%' }}
+          transition={{ duration: 0.6 }}
         />
       </div>
     </motion.div>
   );
-};
+}

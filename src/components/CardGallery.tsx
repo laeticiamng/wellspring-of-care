@@ -1,191 +1,183 @@
-import { motion } from 'framer-motion';
-import { Sparkles, Flame, Waves, Sprout, Moon, Star, Wind, Home, Sunrise, BookOpen } from 'lucide-react';
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { Card, CardContent } from './ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
-import { Button } from './ui/button';
-import { ScrollArea } from './ui/scroll-area';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import { FloatingCard } from './FloatingCard';
 
-const IconMap: Record<string, any> = {
-  Sparkles,
-  Flame,
-  Waves,
-  Sprout,
-  Moon,
-  Star,
-  Wind,
-  Home,
-  Sunrise,
-  Stars: Sparkles,
-  Sun: Star
-};
-
-interface CardDraw {
+interface Entry {
   id: string;
-  drawn_at: string;
-  week_start: string;
-  emotion_cards: {
-    code: string;
-    mantra: string;
-    mantra_emoji: string;
-    color_primary: string;
-    color_secondary: string;
-    icon_name: string;
-    rarity: string;
-    description: string;
+  content: string;
+  color_palette: {
+    primary: string;
+    secondary: string;
   };
+  badge_text?: string;
+  is_precious: boolean;
+  created_at: string;
 }
 
-export const CardGallery = () => {
-  const [cards, setCards] = useState<CardDraw[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
+interface CardGalleryProps {
+  entries: Entry[];
+  onCardClick?: (entry: Entry) => void;
+}
 
-  useEffect(() => {
-    const fetchGallery = async () => {
-      if (!user) return;
+export function CardGallery({ entries, onCardClick }: CardGalleryProps) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [direction, setDirection] = useState(0);
 
-      try {
-        const { data, error } = await supabase
-          .from('weekly_card_draws')
-          .select(`
-            id,
-            drawn_at,
-            week_start,
-            emotion_cards (
-              code,
-              mantra,
-              mantra_emoji,
-              color_primary,
-              color_secondary,
-              icon_name,
-              rarity,
-              description
-            )
-          `)
-          .eq('user_id', user.id)
-          .order('drawn_at', { ascending: false });
-
-        if (error) throw error;
-        setCards(data || []);
-      } catch (err) {
-        console.error('Error fetching gallery:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchGallery();
-  }, [user]);
-
-  const getRarityBorder = (rarity: string) => {
-    switch (rarity) {
-      case 'legendary': return 'border-4 border-yellow-500 shadow-xl shadow-yellow-500/50';
-      case 'epic': return 'border-4 border-purple-500 shadow-lg shadow-purple-500/50';
-      case 'rare': return 'border-2 border-blue-500 shadow-md shadow-blue-500/50';
-      default: return 'border border-primary/30';
-    }
+  const slideVariants = {
+    enter: (direction: number) => ({
+      x: direction > 0 ? 1000 : -1000,
+      opacity: 0,
+      scale: 0.8
+    }),
+    center: {
+      zIndex: 1,
+      x: 0,
+      opacity: 1,
+      scale: 1
+    },
+    exit: (direction: number) => ({
+      zIndex: 0,
+      x: direction < 0 ? 1000 : -1000,
+      opacity: 0,
+      scale: 0.8
+    })
   };
 
+  const swipeConfidenceThreshold = 10000;
+  const swipePower = (offset: number, velocity: number) => {
+    return Math.abs(offset) * velocity;
+  };
+
+  const paginate = (newDirection: number) => {
+    setDirection(newDirection);
+    setCurrentIndex((prevIndex) => {
+      let nextIndex = prevIndex + newDirection;
+      if (nextIndex < 0) nextIndex = entries.length - 1;
+      if (nextIndex >= entries.length) nextIndex = 0;
+      return nextIndex;
+    });
+  };
+
+  if (!entries || entries.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[400px] text-white/60">
+        <p className="text-lg mb-2">Votre bibliothèque est vide</p>
+        <p className="text-sm">Écrivez votre première page émotionnelle ✨</p>
+      </div>
+    );
+  }
+
+  const currentEntry = entries[currentIndex];
+  const preciousCount = entries.filter(e => e.is_precious).length;
+
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="outline" className="gap-2">
-          <BookOpen className="w-4 h-4" />
-          Mon Grimoire ✨
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-4xl h-[80vh]">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold flex items-center gap-2">
-            <BookOpen className="w-6 h-6" />
-            Ton Grimoire des Cartes Émotionnelles
-          </DialogTitle>
-        </DialogHeader>
-        
-        <ScrollArea className="h-full pr-4">
-          {loading ? (
-            <div className="flex items-center justify-center h-64">
+    <div className="relative w-full max-w-2xl mx-auto">
+      {/* Stats en haut */}
+      <div className="flex justify-between items-center mb-6 px-4">
+        <div className="text-sm text-white/60">
+          {currentIndex + 1} / {entries.length} pages
+        </div>
+        {preciousCount > 0 && (
+          <div className="flex items-center gap-2 text-sm text-yellow-400">
+            <Sparkles className="w-4 h-4" />
+            <span>{preciousCount} précieuses</span>
+          </div>
+        )}
+      </div>
+
+      {/* Carrousel principal */}
+      <div className="relative h-[400px] overflow-hidden">
+        <AnimatePresence initial={false} custom={direction}>
+          <motion.div
+            key={currentIndex}
+            custom={direction}
+            variants={slideVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{
+              x: { type: "spring", stiffness: 300, damping: 30 },
+              opacity: { duration: 0.2 },
+              scale: { duration: 0.2 }
+            }}
+            drag="x"
+            dragConstraints={{ left: 0, right: 0 }}
+            dragElastic={1}
+            onDragEnd={(e, { offset, velocity }) => {
+              const swipe = swipePower(offset.x, velocity.x);
+
+              if (swipe < -swipeConfidenceThreshold) {
+                paginate(1);
+              } else if (swipe > swipeConfidenceThreshold) {
+                paginate(-1);
+              }
+            }}
+            className="absolute w-full"
+          >
+            <FloatingCard
+              content={currentEntry.content}
+              colorPalette={currentEntry.color_palette}
+              badgeText={currentEntry.badge_text}
+              isPrecious={currentEntry.is_precious}
+              onClick={() => onCardClick?.(currentEntry)}
+            />
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      {/* Contrôles de navigation */}
+      <div className="flex justify-center items-center gap-4 mt-6">
+        <motion.button
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={() => paginate(-1)}
+          className="p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors text-white"
+        >
+          <ChevronLeft className="w-6 h-6" />
+        </motion.button>
+
+        {/* Indicateurs de points */}
+        <div className="flex gap-2">
+          {entries.slice(Math.max(0, currentIndex - 2), Math.min(entries.length, currentIndex + 3)).map((_, idx) => {
+            const actualIndex = Math.max(0, currentIndex - 2) + idx;
+            return (
               <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-              >
-                <Sparkles className="w-8 h-8 text-primary" />
-              </motion.div>
-            </div>
-          ) : cards.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
-              <BookOpen className="w-16 h-16 mb-4 opacity-50" />
-              <p>Aucune carte tirée pour le moment</p>
-              <p className="text-sm">Reviens lundi pour ta première carte !</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-4">
-              {cards.map((draw, index) => {
-                const cardData = draw.emotion_cards;
-                const CardIcon = IconMap[cardData.icon_name] || Sparkles;
-                
-                return (
-                  <motion.div
-                    key={draw.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                  >
-                    <Card 
-                      className={`overflow-hidden ${getRarityBorder(cardData.rarity)} hover:scale-105 transition-transform`}
-                      style={{
-                        background: `linear-gradient(135deg, ${cardData.color_primary}20, ${cardData.color_secondary}20)`,
-                      }}
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex flex-col items-center text-center">
-                          <div
-                            className="w-16 h-16 rounded-full flex items-center justify-center mb-3"
-                            style={{
-                              background: `linear-gradient(135deg, ${cardData.color_primary}, ${cardData.color_secondary})`,
-                            }}
-                          >
-                            <CardIcon className="w-8 h-8 text-white" />
-                          </div>
-                          
-                          <h3 className="text-xl font-bold mb-1">
-                            {cardData.mantra} {cardData.mantra_emoji}
-                          </h3>
-                          
-                          <p className="text-xs text-muted-foreground mb-2">
-                            {new Date(draw.week_start).toLocaleDateString('fr-FR', { 
-                              day: 'numeric',
-                              month: 'long'
-                            })}
-                          </p>
-                          
-                          <p className="text-sm text-muted-foreground line-clamp-3">
-                            {cardData.description}
-                          </p>
-                          
-                          <span className={`text-xs mt-2 px-2 py-1 rounded-full ${
-                            cardData.rarity === 'legendary' ? 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-300' :
-                            cardData.rarity === 'epic' ? 'bg-purple-500/20 text-purple-700 dark:text-purple-300' :
-                            cardData.rarity === 'rare' ? 'bg-blue-500/20 text-blue-700 dark:text-blue-300' :
-                            'bg-primary/20 text-primary'
-                          }`}>
-                            {cardData.rarity === 'legendary' ? 'Légendaire' :
-                             cardData.rarity === 'epic' ? 'Épique' :
-                             cardData.rarity === 'rare' ? 'Rare' : 'Commune'}
-                          </span>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                );
-              })}
-            </div>
-          )}
-        </ScrollArea>
-      </DialogContent>
-    </Dialog>
+                key={actualIndex}
+                className={`h-2 rounded-full transition-all cursor-pointer ${
+                  actualIndex === currentIndex 
+                    ? 'w-8 bg-white' 
+                    : 'w-2 bg-white/30'
+                }`}
+                whileHover={{ scale: 1.2 }}
+                onClick={() => {
+                  setDirection(actualIndex > currentIndex ? 1 : -1);
+                  setCurrentIndex(actualIndex);
+                }}
+              />
+            );
+          })}
+        </div>
+
+        <motion.button
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={() => paginate(1)}
+          className="p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors text-white"
+        >
+          <ChevronRight className="w-6 h-6" />
+        </motion.button>
+      </div>
+
+      {/* Instructions swipe */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1 }}
+        className="text-center mt-4 text-sm text-white/50"
+      >
+        ← Swipe pour naviguer →
+      </motion.div>
+    </div>
   );
-};
+}

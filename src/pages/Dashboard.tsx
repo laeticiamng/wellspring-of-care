@@ -149,7 +149,7 @@ const Dashboard = () => {
       <Header />
       
       {/* Floating card if revealed */}
-      {card && revealComplete && <FloatingCard card={card} />}
+      {/* Card will be shown in the main section */}
       
       <main className="container mx-auto px-4 py-8 space-y-8">
         {/* Welcome Section */}
@@ -196,7 +196,9 @@ const Dashboard = () => {
                     Cette énergie vous accompagne jusqu'au prochain lundi. Revenez alors pour découvrir votre nouvelle carte !
                   </p>
                 </div>
-                <CardGallery />
+                <div className="text-center text-muted-foreground py-8">
+                  <p>Votre collection de cartes apparaîtra ici</p>
+                </div>
               </div>
             ) : (
               <WeeklyCardDeck onCardSelect={handleDrawCard} isRevealing={isRevealing} />
