@@ -58,6 +58,13 @@ const App = () => (
             <Route path="/b2b" element={<B2BLanding />} />
             <Route path="/b2b/portal" element={<ProtectedRoute><B2BPortal /></ProtectedRoute>} />
             <Route path="/app/accept-invitation" element={<AcceptInvitation />} />
+            <Route path="/organizations" element={
+              <ProtectedRoute>
+                <RoleBasedRoute allowedRoles={['admin']}>
+                  <Organizations />
+                </RoleBasedRoute>
+              </ProtectedRoute>
+            } />
             <Route path="/app/organizations" element={
               <ProtectedRoute>
                 <RoleBasedRoute allowedRoles={['admin']}>
