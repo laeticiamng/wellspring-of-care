@@ -57,9 +57,19 @@ const VRGalaxy = () => {
   };
 
   const constellationNames = [
+    // Calmes et sereins
     "Orion le Calme", "Cassiopée Sereine", "Andromède Apaisée",
     "Pégase Libéré", "Draco Zen", "Lyra Lumineuse",
-    "Cygne Cosmique", "Phoenix Renaissant", "Ursa Tranquille"
+    "Cygne Cosmique", "Phoenix Renaissant", "Ursa Tranquille",
+    // Mystiques
+    "Nébuleuse du Lotus", "Étoile du Matin", "Constellation de la Paix",
+    "Arc-en-Ciel Stellaire", "Voie Lactée Intérieure", "Aurore Boréale Cosmique",
+    // Puissants
+    "Le Grand Ancrage", "L'Éveil des Étoiles", "La Spirale Infinie",
+    "Le Gardien Céleste", "Le Sanctuaire Astral", "La Porte des Dimensions",
+    // Poétiques
+    "Souffle d'Étoile", "Rêve Galactique", "Harmonie Céleste",
+    "Murmure Cosmique", "Danse des Planètes", "Symphonie Stellaire"
   ];
 
   const handleStartSession = () => {

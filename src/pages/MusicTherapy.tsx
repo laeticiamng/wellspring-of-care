@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Music, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ForestScene } from "@/components/ForestScene";
+import ForestScene from "@/components/ForestScene";
 import { MusicSync } from "@/components/MusicSync";
 import FragmentGallery from "@/components/FragmentGallery";
 import { useMusicTherapy } from "@/hooks/useMusicTherapy";
@@ -147,10 +147,8 @@ export default function MusicTherapy() {
             className="relative min-h-screen"
           >
             <ForestScene
-              visualTheme={session.visualTheme}
-              audioLevel={audioLevel}
-              onTreeTouch={handleTreeTouch}
-              onMove={handleMove}
+              breathLevel={audioLevel}
+              isActive={phase === 'journey'}
             />
             <MusicSync
               musicUrl={session.musicUrl}

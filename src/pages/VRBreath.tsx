@@ -8,6 +8,7 @@ import { useCollections } from "@/hooks/useCollections";
 import { useMicrophone } from "@/hooks/useMicrophone";
 import BreathingBubble from "@/components/BreathingBubble";
 import FragmentGallery from "@/components/FragmentGallery";
+import ForestScene from "@/components/ForestScene";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -28,6 +29,7 @@ const VRBreath = () => {
   const [showBadge, setShowBadge] = useState(false);
   const [badgeText, setBadgeText] = useState("");
   const [currentRarity, setCurrentRarity] = useState<'common' | 'rare' | 'epic' | 'legendary'>('common');
+  const [environment, setEnvironment] = useState<'temple' | 'forest' | 'cosmos'>('temple');
   
   const { track } = useImplicitTracking();
   const { collections, unlockItem } = useCollections();
@@ -175,45 +177,53 @@ const VRBreath = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-8">
-            {/* Sphère respiratoire */}
+            {/* Environnement respiratoire */}
             {sessionActive ? (
-              <div className="py-8">
-                <BreathingBubble 
-                  breathLevel={breathLevel} 
-                  isActive={isListening}
-                  onBreathCycle={handleBreathCycle}
-                />
+              <div className="py-8 space-y-6">
+                {environment === 'temple' && (
+                  <BreathingBubble 
+                    breathLevel={breathLevel} 
+                    isActive={isListening}
+                    onBreathCycle={handleBreathCycle}
+                  />
+                )}
                 
-                <div className="text-center mt-6 space-y-2">
-                  <p className="text-lg font-medium text-primary">
-                    Respirez avec la sphère
-                  </p>
-                  <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground">
-                    <div>Inspire {breathLevel > 0.5 ? '✨' : '○'}</div>
-                    <div>•</div>
-                    <div>Expire {breathLevel <= 0.5 ? '🌙' : '○'}</div>
-                  </div>
-                </div>
-
-                {/* Ondes lumineuses */}
-                <div className="mt-8 relative h-32 overflow-hidden">
-                  {Array.from({length: 5}).map((_, i) => (
-                    <motion.div
-                      key={i}
-                      className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary to-transparent"
-                      animate={{
-                        y: [-20, -120],
-                        opacity: [0, breathLevel, 0]
-                      }}
-                      transition={{
-                        duration: 2,
-                        repeat: Infinity,
-                        delay: i * 0.4,
-                        ease: "easeOut"
-                      }}
+                {environment === 'forest' && (
+                  <ForestScene 
+                    breathLevel={breathLevel}
+                    isActive={isListening}
+                  />
+                )}
+                
+                {environment === 'cosmos' && (
+                  <div className="relative w-full h-96 bg-gradient-to-b from-black via-indigo-950 to-purple-950 rounded-lg overflow-hidden">
+                    <BreathingBubble 
+                      breathLevel={breathLevel} 
+                      isActive={isListening}
+                      onBreathCycle={handleBreathCycle}
                     />
-                  ))}
-                </div>
+                    {/* Stars background */}
+                    {Array.from({ length: 50 }).map((_, i) => (
+                      <motion.div
+                        key={i}
+                        className="absolute w-1 h-1 bg-white rounded-full"
+                        style={{
+                          left: `${Math.random() * 100}%`,
+                          top: `${Math.random() * 100}%`
+                        }}
+                        animate={{
+                          opacity: [0.3, 1, 0.3],
+                          scale: [0.5, 1.5, 0.5]
+                        }}
+                        transition={{
+                          duration: 2 + Math.random() * 3,
+                          repeat: Infinity,
+                          delay: Math.random() * 2
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             ) : (
               <div className="aspect-video bg-gradient-to-br from-primary/20 via-accent/10 to-primary/20 rounded-lg flex items-center justify-center relative overflow-hidden">
@@ -276,25 +286,44 @@ const VRBreath = () => {
 
             {/* Environnements */}
             {!sessionActive && (
-              <div className="grid md:grid-cols-3 gap-4">
-                {[
-                  { name: 'Temple zen', emoji: '🏛️' },
-                  { name: 'Forêt mystique', emoji: '🌲' },
-                  { name: 'Galaxie cosmique', emoji: '🌌' }
-                ].map((env) => (
-                  <motion.div
-                    key={env.name}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <Card className="border-0 bg-gradient-to-br from-muted/50 to-muted/30 hover:from-primary/20 hover:to-accent/20 transition-all cursor-pointer">
-                      <CardContent className="pt-6 text-center">
-                        <span className="text-4xl mb-2 block">{env.emoji}</span>
-                        <p className="font-medium">{env.name}</p>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                ))}
+              <div className="space-y-3">
+                <p className="text-center text-sm text-muted-foreground">Choisissez votre environnement</p>
+                <div className="grid md:grid-cols-3 gap-4">
+                  {[
+                    { id: 'temple' as const, name: 'Temple Zen', emoji: '🏛️', desc: 'Calme et sérénité' },
+                    { id: 'forest' as const, name: 'Forêt Mystique', emoji: '🌲', desc: 'Nature vivante' },
+                    { id: 'cosmos' as const, name: 'Cosmos Infini', emoji: '🌌', desc: 'Espace étoilé' }
+                  ].map((env) => (
+                    <motion.div
+                      key={env.id}
+                      whileHover={{ scale: 1.05, y: -5 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setEnvironment(env.id)}
+                    >
+                      <Card className={`border-2 transition-all cursor-pointer ${
+                        environment === env.id 
+                          ? 'border-primary bg-gradient-to-br from-primary/20 to-accent/20 shadow-glow' 
+                          : 'border-muted bg-gradient-to-br from-muted/50 to-muted/30 hover:border-primary/50'
+                      }`}>
+                        <CardContent className="pt-6 text-center space-y-2">
+                          <span className="text-5xl block">{env.emoji}</span>
+                          <p className="font-semibold">{env.name}</p>
+                          <p className="text-xs text-muted-foreground">{env.desc}</p>
+                          {environment === env.id && (
+                            <motion.div
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              className="flex items-center justify-center gap-1 text-xs text-primary"
+                            >
+                              <Sparkles className="h-3 w-3" />
+                              <span>Sélectionné</span>
+                            </motion.div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  ))}
+                </div>
               </div>
             )}
           </CardContent>

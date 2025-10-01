@@ -22,17 +22,43 @@ const GalaxyScene = ({ isActive, tension, onStarActivated }: GalaxySceneProps) =
   const [connections, setConnections] = useState<Array<{from: Star, to: Star}>>([]);
   const [lastActivated, setLastActivated] = useState<Star | null>(null);
 
-  // Générer galaxie initiale
+  // Générer galaxie initiale avec clusters
   useEffect(() => {
-    const newStars: Star[] = Array.from({ length: 80 }, (_, i) => ({
-      id: i,
-      x: Math.random() * 100,
-      y: Math.random() * 100,
-      size: Math.random() * 3 + 1,
-      brightness: Math.random() * 0.5 + 0.5,
-      activated: false,
-      type: Math.random() > 0.95 ? 'legendary' : Math.random() > 0.85 ? 'rare' : 'normal'
-    }));
+    const newStars: Star[] = [];
+    
+    // Create star clusters
+    const clusterCount = 5;
+    for (let c = 0; c < clusterCount; c++) {
+      const clusterX = Math.random() * 100;
+      const clusterY = Math.random() * 100;
+      const starsInCluster = 15 + Math.floor(Math.random() * 10);
+      
+      for (let i = 0; i < starsInCluster; i++) {
+        newStars.push({
+          id: newStars.length,
+          x: clusterX + (Math.random() - 0.5) * 30,
+          y: clusterY + (Math.random() - 0.5) * 30,
+          size: Math.random() * 4 + 1,
+          brightness: Math.random() * 0.6 + 0.4,
+          activated: false,
+          type: Math.random() > 0.98 ? 'legendary' : Math.random() > 0.90 ? 'rare' : 'normal'
+        });
+      }
+    }
+    
+    // Add scattered stars
+    for (let i = 0; i < 30; i++) {
+      newStars.push({
+        id: newStars.length,
+        x: Math.random() * 100,
+        y: Math.random() * 100,
+        size: Math.random() * 3 + 0.5,
+        brightness: Math.random() * 0.5 + 0.3,
+        activated: false,
+        type: 'normal'
+      });
+    }
+    
     setStars(newStars);
   }, []);
 
