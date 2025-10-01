@@ -14,3 +14,12 @@ verify_jwt = true
 
 [functions.music-therapy-submit]
 verify_jwt = true
+
+[functions.emotional-scan]
+verify_jwt = true
+
+[functions.story-music-generate]
+verify_jwt = true
+
+[functions.coach-ai-assist]
+verify_jwt = true
