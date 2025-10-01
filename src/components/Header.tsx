@@ -67,7 +67,7 @@ const Header = () => {
                 <Link to="/nyvee" className="cursor-pointer">Nyvée - Bulle Respirante</Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link to="/scan" className="cursor-pointer">Scan émotionnel</Link>
+                <Link to="/emotional-scan" className="cursor-pointer">Scan émotionnel</Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link to="/music" className="cursor-pointer">Thérapie musicale</Link>
@@ -120,6 +120,16 @@ const Header = () => {
               <DropdownMenuItem asChild>
                 <Link to="/ambition-arcade" className="cursor-pointer">Ambition Arcade</Link>
               </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link to="/analytics" className="cursor-pointer">📊 Analytics</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/social" className="cursor-pointer">👥 Hub Social</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/export" className="cursor-pointer">📥 Export Données</Link>
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           <Button 
@@ -128,6 +138,13 @@ const Header = () => {
             asChild
           >
             <Link to="/therapy">Thérapie</Link>
+          </Button>
+          <Button 
+            variant="ghost" 
+            className={`text-foreground hover:text-primary ${isActive('/community') ? 'text-primary bg-primary/10' : ''}`}
+            asChild
+          >
+            <Link to="/community">Communauté</Link>
           </Button>
           <Button 
             variant="ghost" 
