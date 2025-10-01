@@ -12,6 +12,8 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import B2BLanding from "./pages/B2BLanding";
 import B2BPortal from "./pages/B2BPortal";
+import AcceptInvitation from "./pages/AcceptInvitation";
+import Organizations from "./pages/Organizations";
 import JournalNew from "./pages/JournalNew";
 import Meditation from "./pages/Meditation";
 import Community from "./pages/Community";
@@ -55,6 +57,14 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/b2b" element={<B2BLanding />} />
             <Route path="/b2b/portal" element={<ProtectedRoute><B2BPortal /></ProtectedRoute>} />
+            <Route path="/app/accept-invitation" element={<AcceptInvitation />} />
+            <Route path="/app/organizations" element={
+              <ProtectedRoute>
+                <RoleBasedRoute allowedRoles={['admin']}>
+                  <Organizations />
+                </RoleBasedRoute>
+              </ProtectedRoute>
+            } />
             <Route path="/auth" element={<Auth />} />
             <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
             <Route path="/pricing" element={<Pricing />} />
