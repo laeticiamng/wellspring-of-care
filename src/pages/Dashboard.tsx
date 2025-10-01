@@ -29,6 +29,7 @@ import { useSmartNotifications } from "@/hooks/useSmartNotifications";
 import { NotificationSettings } from "@/components/NotificationSettings";
 import { GamificationPanel } from "@/components/GamificationPanel";
 import { PersonalizedRecommendations } from "@/components/PersonalizedRecommendations";
+import { B2BSwitch } from "@/components/B2BSwitch";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -396,6 +397,9 @@ const Dashboard = () => {
           </div>
         </div>
       </main>
+      
+      {/* B2B Switch for enterprise users */}
+      <B2BSwitch />
     </div>
   );
 };

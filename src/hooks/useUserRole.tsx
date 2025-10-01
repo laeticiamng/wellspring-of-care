@@ -5,7 +5,7 @@ export type UserRole = 'user_b2c' | 'user_b2b' | 'manager_b2b' | 'admin';
 
 interface UserProfile {
   id: string;
-  user_role: UserRole;
+  role: UserRole;
   org_id: string | null;
   team_id: string | null;
 }
@@ -19,7 +19,7 @@ export function useUserRole() {
 
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, user_role, org_id, team_id')
+        .select('id, role, org_id, team_id')
         .eq('id', user.id)
         .single();
 
@@ -28,15 +28,18 @@ export function useUserRole() {
     },
   });
 
+  const isB2BManager = profile?.role === 'manager_b2b' || profile?.role === 'admin';
+
   return {
     profile,
-    role: profile?.user_role || 'user_b2c',
-    isB2C: profile?.user_role === 'user_b2c',
-    isB2BEmployee: profile?.user_role === 'user_b2b',
-    isB2BManager: profile?.user_role === 'manager_b2b',
-    isAdmin: profile?.user_role === 'admin',
-    orgId: profile?.org_id,
-    teamId: profile?.team_id,
+    role: profile?.role || 'user_b2c',
+    isB2C: profile?.role === 'user_b2c',
+    isB2BEmployee: profile?.role === 'user_b2b',
+    isB2BManager,
+    isManager: isB2BManager, // Alias for convenience
+    isAdmin: profile?.role === 'admin',
+    orgId: profile?.org_id || null,
+    teamId: profile?.team_id || null,
     isLoading,
   };
 }

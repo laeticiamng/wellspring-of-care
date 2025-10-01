@@ -6,10 +6,12 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { RoleGuard } from "./components/RoleGuard";
+import { RoleBasedRoute } from "./components/RoleBasedRoute";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
-import B2BEnterprise from "./pages/B2BEnterprise";
+import B2BLanding from "./pages/B2BLanding";
+import B2BPortal from "./pages/B2BPortal";
 import Journal from "./pages/Journal";
 import JournalNew from "./pages/JournalNew";
 import Meditation from "./pages/Meditation";
@@ -53,9 +55,10 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/b2b" element={<B2BLanding />} />
+            <Route path="/b2b/portal" element={<ProtectedRoute><B2BPortal /></ProtectedRoute>} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
-            <Route path="/b2b" element={<ProtectedRoute><B2BEnterprise /></ProtectedRoute>} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/journal" element={<ProtectedRoute><JournalNew /></ProtectedRoute>} />
@@ -86,9 +89,9 @@ const App = () => (
             <Route path="/ambition-arcade" element={<ProtectedRoute><AmbitionArcade /></ProtectedRoute>} />
           <Route path="/app/rh" element={
             <ProtectedRoute>
-              <RoleGuard allowedRoles={['manager_b2b', 'admin']}>
+              <RoleBasedRoute allowedRoles={['manager_b2b', 'admin']}>
                 <RHDashboard />
-              </RoleGuard>
+              </RoleBasedRoute>
             </ProtectedRoute>
           } />
             <Route path="/app/screen-silk" element={<ProtectedRoute><ScreenSilk /></ProtectedRoute>} />
