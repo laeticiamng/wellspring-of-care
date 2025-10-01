@@ -52,25 +52,42 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-calm flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen relative overflow-hidden bg-gradient-calm flex items-center justify-center p-4">
+      {/* Halo lumineux de fond */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-accent/20 animate-pulse-soft" />
+      
+      {/* Particules flottantes */}
+      {[...Array(8)].map((_, i) => (
+        <div
+          key={i}
+          className="absolute w-2 h-2 bg-primary/30 rounded-full animate-float"
+          style={{
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+            animationDelay: `${Math.random() * 5}s`,
+            animationDuration: `${15 + Math.random() * 10}s`,
+          }}
+        />
+      ))}
+
+      <div className="relative z-10 w-full max-w-md">
         <div className="text-center mb-8">
           <div className="inline-flex items-center space-x-2 mb-4">
-            <Heart className="h-10 w-10 text-primary" />
+            <Heart className="h-10 w-10 text-primary animate-pulse-soft" />
             <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
               EmotionsCare
             </h1>
           </div>
-          <p className="text-muted-foreground">
-            Votre parcours de bien-être commence ici
+          <p className="text-muted-foreground text-lg">
+            Ton voyage émotionnel commence ici ✨
           </p>
         </div>
 
-        <Card className="border-0 shadow-elegant">
+        <Card className="border-0 shadow-elegant backdrop-blur-sm bg-background/80">
           <CardHeader>
-            <CardTitle>Bienvenue</CardTitle>
-            <CardDescription>
-              Connectez-vous ou créez un compte pour accéder à la plateforme
+            <CardTitle className="text-2xl">Bienvenue 🌱</CardTitle>
+            <CardDescription className="text-base">
+              Entre dans ton espace de bien-être
             </CardDescription>
           </CardHeader>
           <CardContent>

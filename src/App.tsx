@@ -38,6 +38,7 @@ import AmbitionArcade from "./pages/AmbitionArcade";
 import RHDashboard from "./pages/RHDashboard";
 import ScreenSilk from "./pages/ScreenSilk";
 import Onboarding from "./pages/Onboarding";
+import Help from "./pages/Help";
 
 const queryClient = new QueryClient();
 
@@ -82,6 +83,7 @@ const App = () => (
             <Route path="/ambition-arcade" element={<ProtectedRoute><AmbitionArcade /></ProtectedRoute>} />
             <Route path="/app/rh" element={<ProtectedRoute><RHDashboard /></ProtectedRoute>} />
             <Route path="/app/screen-silk" element={<ProtectedRoute><ScreenSilk /></ProtectedRoute>} />
+            <Route path="/help" element={<Help />} />
             
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

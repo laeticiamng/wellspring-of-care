@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Bell, Heart, Menu, MessageCircle, Moon, Sun, User, LogOut, Settings as SettingsIcon, Building2 } from "lucide-react";
+import { Bell, Heart, Menu, MessageCircle, Moon, Sun, User, LogOut, Settings as SettingsIcon, Building2, HelpCircle } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -186,6 +186,12 @@ const Header = () => {
                 <Link to="/organizations" className="cursor-pointer">
                   <Building2 className="mr-2 h-4 w-4" />
                   Organisations B2B
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/help" className="cursor-pointer">
+                  <HelpCircle className="mr-2 h-4 w-4" />
+                  Aide & FAQ
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
