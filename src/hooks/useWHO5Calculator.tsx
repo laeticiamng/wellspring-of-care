@@ -27,8 +27,23 @@ export function useWHO5Calculator() {
     try {
       setLoading(true);
 
+      // Récupérer le token d'authentification
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        toast({
+          title: "Erreur",
+          description: "Vous devez être connecté pour cette fonctionnalité",
+          variant: "destructive",
+        });
+        return null;
+      }
+
       const { data, error } = await supabase.functions.invoke('calculate-who5-card', {
-        body: { implicitData }
+        body: { implicitData },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
       });
 
       if (error) throw error;
