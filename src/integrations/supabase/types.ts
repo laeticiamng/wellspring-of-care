@@ -2911,6 +2911,39 @@ export type Database = {
         }
         Relationships: []
       }
+      emotion_patterns: {
+        Row: {
+          created_at: string | null
+          dominant_emotions: Json
+          emotion_trends: Json | null
+          id: string
+          trigger_patterns: Json | null
+          user_id: string
+          week_end: string
+          week_start: string
+        }
+        Insert: {
+          created_at?: string | null
+          dominant_emotions: Json
+          emotion_trends?: Json | null
+          id?: string
+          trigger_patterns?: Json | null
+          user_id: string
+          week_end: string
+          week_start: string
+        }
+        Update: {
+          created_at?: string | null
+          dominant_emotions?: Json
+          emotion_trends?: Json | null
+          id?: string
+          trigger_patterns?: Json | null
+          user_id?: string
+          week_end?: string
+          week_start?: string
+        }
+        Relationships: []
+      }
       emotion_scans: {
         Row: {
           confidence: number | null
@@ -8957,6 +8990,33 @@ export type Database = {
           },
         ]
       }
+      user_activities: {
+        Row: {
+          activity_data: Json | null
+          activity_type: string
+          created_at: string | null
+          duration_seconds: number | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          activity_data?: Json | null
+          activity_type: string
+          created_at?: string | null
+          duration_seconds?: number | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          activity_data?: Json | null
+          activity_type?: string
+          created_at?: string | null
+          duration_seconds?: number | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_activity_logs: {
         Row: {
           activity_details: Json | null
@@ -9288,6 +9348,45 @@ export type Database = {
           title?: string
           unit?: string | null
           updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_insights: {
+        Row: {
+          action_items: Json | null
+          created_at: string | null
+          description: string
+          expires_at: string | null
+          id: string
+          insight_type: string
+          is_read: boolean | null
+          priority: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          action_items?: Json | null
+          created_at?: string | null
+          description: string
+          expires_at?: string | null
+          id?: string
+          insight_type: string
+          is_read?: boolean | null
+          priority?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          action_items?: Json | null
+          created_at?: string | null
+          description?: string
+          expires_at?: string | null
+          id?: string
+          insight_type?: string
+          is_read?: boolean | null
+          priority?: string
+          title?: string
           user_id?: string
         }
         Relationships: []
@@ -9734,6 +9833,45 @@ export type Database = {
           quota_reset_date?: string | null
           subscription_type?: string | null
           updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_reports: {
+        Row: {
+          created_at: string | null
+          highlights: Json | null
+          id: string
+          metrics: Json
+          pdf_url: string | null
+          period_end: string
+          period_start: string
+          recommendations: Json | null
+          report_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          highlights?: Json | null
+          id?: string
+          metrics: Json
+          pdf_url?: string | null
+          period_end: string
+          period_start: string
+          recommendations?: Json | null
+          report_type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          highlights?: Json | null
+          id?: string
+          metrics?: Json
+          pdf_url?: string | null
+          period_end?: string
+          period_start?: string
+          recommendations?: Json | null
+          report_type?: string
           user_id?: string
         }
         Relationships: []
@@ -11372,6 +11510,15 @@ export type Database = {
       sync_oic_competences: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      track_user_activity: {
+        Args: {
+          p_activity_data?: Json
+          p_activity_type: string
+          p_duration_seconds?: number
+          p_user_id: string
+        }
+        Returns: string
       }
       ultimate_security_validation: {
         Args: Record<PropertyKey, never>

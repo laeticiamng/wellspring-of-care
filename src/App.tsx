@@ -50,6 +50,7 @@ import Help from "./pages/Help";
 import Home from "./pages/Home";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
+import Analytics from "./pages/Analytics";
 
 const queryClient = new QueryClient();
 
@@ -83,7 +84,6 @@ const App = () => (
             } />
             <Route path="/auth" element={<Auth />} />
             <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
-            <Route path="/pricing" element={<Pricing />} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/app/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
 
@@ -121,6 +121,7 @@ const App = () => (
             <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
             <Route path="/story-synth" element={<ProtectedRoute><StorySynth /></ProtectedRoute>} />
             <Route path="/activity" element={<ProtectedRoute><Activity /></ProtectedRoute>} />
+            <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
             <Route path="/weekly-bars" element={<ProtectedRoute><WeeklyBars /></ProtectedRoute>} />
             <Route path="/ambition-arcade" element={<ProtectedRoute><AmbitionArcade /></ProtectedRoute>} />
           <Route path="/app/rh" element={
