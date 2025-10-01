@@ -1,187 +1,406 @@
-import Header from "@/components/Header";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Waves, Moon, Sun, Sparkles, Play, Pause, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Wind, Waves, Cloud } from "lucide-react";
-import { useState, useRef } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import Header from "@/components/Header";
+import OceanScene from "@/components/OceanScene";
+import BadgeReveal from "@/components/BadgeReveal";
 import { useImplicitTracking } from "@/hooks/useImplicitTracking";
-import { useCollections } from "@/hooks/useCollections";
+import { useToast } from "@/hooks/use-toast";
+
+type SessionType = 'quick' | 'sleep' | null;
+type BreathPhase = 'idle' | 'inhale' | 'hold' | 'exhale';
+
+interface BreathBadge {
+  id: string;
+  name: string;
+  emoji: string;
+  rarity: 'common' | 'rare' | 'epic' | 'legendary';
+  unlockedAt: number;
+  description: string;
+}
 
 const Breathwork = () => {
-  const [selectedTechnique, setSelectedTechnique] = useState<string>("");
-  const [isActive, setIsActive] = useState(false);
-  const [nightsUsed, setNightsUsed] = useState(0);
+  const [sessionType, setSessionType] = useState<SessionType>(null);
+  const [sessionActive, setSessionActive] = useState(false);
+  const [breathPhase, setBreathPhase] = useState<BreathPhase>('idle');
+  const [cyclesCompleted, setCyclesCompleted] = useState(0);
+  const [sessionStartTime, setSessionStartTime] = useState(0);
+  const [anxietyLevel, setAnxietyLevel] = useState(0.5); // 0-1, simulated
+  const [showBadge, setShowBadge] = useState(false);
+  const [currentBadge, setCurrentBadge] = useState<BreathBadge | null>(null);
+  const [badges, setBadges] = useState<BreathBadge[]>([]);
+  const [phaseTimer, setPhaseTimer] = useState(0);
+  
   const { track } = useImplicitTracking();
-  const { collections, unlockItem } = useCollections();
-  const startTime = useRef<number>(0);
-  const cadenceFollowed = useRef<number>(0);
-  const cadenceTotal = useRef<number>(0);
+  const { toast } = useToast();
 
-  const handleStartSession = (technique: string) => {
-    setSelectedTechnique(technique);
-    setIsActive(true);
-    startTime.current = Date.now();
-    cadenceFollowed.current = 0;
-    cadenceTotal.current = 0;
+  // Guided breathing patterns
+  const breathPatterns = {
+    quick: { inhale: 4, hold: 4, exhale: 6 }, // STAI-6 calming
+    sleep: { inhale: 4, hold: 7, exhale: 8 }  // 4-7-8 for ISI
   };
 
-  const handleBreathCycle = (followed: boolean) => {
-    cadenceTotal.current += 1;
-    if (followed) cadenceFollowed.current += 1;
+  // Simulate anxiety decrease during session
+  useEffect(() => {
+    if (sessionActive) {
+      const interval = setInterval(() => {
+        setAnxietyLevel(prev => Math.max(0.1, prev - 0.02)); // Decrease anxiety
+      }, 2000);
+      return () => clearInterval(interval);
+    }
+  }, [sessionActive]);
+
+  // Breath cycle management
+  useEffect(() => {
+    if (!sessionActive || !sessionType) return;
+
+    const pattern = breathPatterns[sessionType];
+    
+    const cycleInterval = setInterval(() => {
+      setPhaseTimer(prev => {
+        const newTimer = prev + 0.1;
+        
+        if (breathPhase === 'idle') {
+          setBreathPhase('inhale');
+          return 0;
+        }
+        
+        if (breathPhase === 'inhale' && newTimer >= pattern.inhale) {
+          setBreathPhase('hold');
+          return 0;
+        }
+        
+        if (breathPhase === 'hold' && newTimer >= pattern.hold) {
+          setBreathPhase('exhale');
+          return 0;
+        }
+        
+        if (breathPhase === 'exhale' && newTimer >= pattern.exhale) {
+          setBreathPhase('inhale');
+          setCyclesCompleted(prev => prev + 1);
+          
+          // Haptic feedback
+          if ('vibrate' in navigator) {
+            navigator.vibrate(30);
+          }
+          
+          return 0;
+        }
+        
+        return newTimer;
+      });
+    }, 100);
+
+    return () => clearInterval(cycleInterval);
+  }, [sessionActive, breathPhase, sessionType]);
+
+  const calculateBadgeRarity = (cycles: number, anxiety: number): BreathBadge['rarity'] => {
+    const score = cycles * 10 + (1 - anxiety) * 100;
+    const rand = Math.random();
+    
+    if (score > 150 && rand > 0.97) return 'legendary';
+    if (score > 100 && rand > 0.90) return 'epic';
+    if (score > 50 && rand > 0.75) return 'rare';
+    return 'common';
+  };
+
+  const badgeLibrary = {
+    common: [
+      { name: "Premier Souffle", emoji: "🫧", description: "Tu as commencé ton voyage océanique" },
+      { name: "Vague Douce", emoji: "🌊", description: "Respiration calme et posée" },
+      { name: "Bulles Zen", emoji: "✨", description: "Quelques cycles apaisants" }
+    ],
+    rare: [
+      { name: "Maître de l'Expire", emoji: "💨", description: "Expire longue maîtrisée" },
+      { name: "Océan Calme", emoji: "🌅", description: "Anxiété significativement réduite" },
+      { name: "Perle Marine", emoji: "🦪", description: "Session complète réussie" }
+    ],
+    epic: [
+      { name: "Gardien des Profondeurs", emoji: "🐋", description: "Respiration profonde exceptionnelle" },
+      { name: "Cristal Aquatique", emoji: "💎", description: "Clarté mentale atteinte" },
+      { name: "Marée Mystique", emoji: "🌙", description: "État méditatif avancé" }
+    ],
+    legendary: [
+      { name: "Gardien du Sommeil", emoji: "⭐", description: "Préparation sommeil parfaite" },
+      { name: "Souverain de l'Océan", emoji: "👑", description: "Maîtrise totale du souffle" },
+      { name: "Aurore Abyssale", emoji: "🌌", description: "Transformation complète" }
+    ]
+  };
+
+  const handleStartSession = (type: SessionType) => {
+    if (!type) return;
+    
+    setSessionType(type);
+    setSessionActive(true);
+    setSessionStartTime(Date.now());
+    setCyclesCompleted(0);
+    setAnxietyLevel(0.7); // Start with moderate anxiety
+    setBreathPhase('idle');
+    
+    // Track session start
+    track({
+      instrument: type === 'quick' ? 'STAI-6' : 'ISI',
+      item_id: `breathwork_${type}_start`,
+      proxy: 'start',
+      value: 'initiated',
+      context: { session_type: type }
+    });
+    
+    toast({
+      title: type === 'quick' ? "🌊 Océan activé" : "🌙 Plongée nocturne",
+      description: type === 'quick' ? "2-3 minutes de calme" : "10 minutes vers le sommeil",
+    });
   };
 
   const handleEndSession = () => {
-    const duration = Date.now() - startTime.current;
-    const followRatio = cadenceTotal.current > 0 
-      ? cadenceFollowed.current / cadenceTotal.current 
-      : 0;
-
-    // Track cadence followed for STAI
+    if (!sessionType) return;
+    
+    const duration = Date.now() - sessionStartTime;
+    const rarity = calculateBadgeRarity(cyclesCompleted, anxietyLevel);
+    const badgeOptions = badgeLibrary[rarity];
+    const selectedBadge = badgeOptions[Math.floor(Math.random() * badgeOptions.length)];
+    
+    const newBadge: BreathBadge = {
+      id: `badge-${Date.now()}`,
+      ...selectedBadge,
+      rarity,
+      unlockedAt: Date.now()
+    };
+    
+    setBadges(prev => [newBadge, ...prev]);
+    setCurrentBadge(newBadge);
+    setShowBadge(true);
+    
+    // Track session completion
     track({
-      instrument: "STAI6",
-      item_id: "calm",
-      proxy: "cadence_followed",
-      value: followRatio,
-      context: { technique: selectedTechnique, duration: String(duration) }
+      instrument: sessionType === 'quick' ? 'STAI-6' : 'ISI',
+      item_id: `breathwork_${sessionType}_complete`,
+      proxy: 'completion',
+      value: String(1 - anxietyLevel),
+      context: {
+        duration: String(duration),
+        cycles: String(cyclesCompleted),
+        anxiety_reduction: String(0.7 - anxietyLevel),
+        rarity
+      }
     });
-
-    // Track for ISI if sleep preset used repeatedly
-    if (selectedTechnique === "sleep") {
-      setNightsUsed(prev => {
-        const newNights = prev + 1;
-        if (newNights >= 2) {
-          track({
-            instrument: "ISI",
-            item_id: "sleep_onset",
-            proxy: "repeat",
-            value: "preset_sleep",
-            context: { nights: String(newNights) }
-          });
-        }
-        return newNights;
-      });
-    }
-
-    // Unlock badges after repeated use
-    if (followRatio >= 0.7 && collections.badges_resp?.items[0]) {
-      unlockItem('badges_resp', collections.badges_resp.items[0].id);
-    }
-
-    setIsActive(false);
+    
+    setSessionActive(false);
+    setBreathPhase('idle');
+    setTimeout(() => setShowBadge(false), 5000);
   };
+
+  const getPhaseInstruction = () => {
+    const instructions = {
+      idle: "Prépare-toi...",
+      inhale: "Inspire profondément 🌊",
+      hold: "Retiens ton souffle 💫",
+      exhale: "Expire lentement 🫧"
+    };
+    return instructions[breathPhase];
+  };
+
+  const targetDuration = sessionType === 'quick' ? 150 : 600; // seconds
+  const progress = sessionActive ? Math.min((Date.now() - sessionStartTime) / (targetDuration * 1000), 1) : 0;
+
   return (
-    <div className="min-h-screen bg-gradient-calm">
+    <div className="min-h-screen bg-gradient-to-b from-blue-950 via-indigo-950 to-purple-950">
       <Header />
       
       <main className="container mx-auto px-4 py-8 space-y-8">
-        <div className="text-center space-y-4">
-          <div className="flex items-center justify-center space-x-3">
-            <Waves className="h-12 w-12 text-primary animate-float" />
-            <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              L'Océan Intérieur
-            </h1>
-          </div>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Plongez dans un océan calme. À chaque expiration, une vague douce vient vous porter.
-          </p>
-          <p className="text-sm text-primary animate-pulse-soft">
-            🌊 Devenez "Maître des vagues" 🌊
-          </p>
-        </div>
-
-        <Card className="max-w-4xl mx-auto border-0 shadow-glow bg-gradient-healing/10">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Wind className="h-6 w-6 text-primary" />
-              <span>Breathwork guidé</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="aspect-video bg-gradient-primary/20 rounded-lg flex items-center justify-center">
-              <div className="text-center space-y-4">
-                <Cloud className="h-20 w-20 text-primary mx-auto animate-pulse-soft" />
-                <p className="text-xl font-semibold">Technique Wim Hof</p>
-                <p className="text-muted-foreground">30 respirations • 3 cycles</p>
-              </div>
+        {/* Welcome Section */}
+        {!sessionActive && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center space-y-6"
+          >
+            <div className="flex items-center justify-center space-x-3">
+              <Waves className="h-12 w-12 text-cyan-400 animate-pulse" />
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
+                L'Océan Intérieur
+              </h1>
             </div>
+            <p className="text-gray-300 max-w-2xl mx-auto">
+              Plonge dans ton souffle. Chaque respiration transforme ton océan intérieur.
+            </p>
+            <motion.p 
+              animate={{ opacity: [0.5, 1, 0.5] }}
+              transition={{ duration: 3, repeat: Infinity }}
+              className="text-sm text-cyan-400"
+            >
+              🌊 Laisse les vagues t'apaiser 🌊
+            </motion.p>
 
-            <div className="flex justify-center space-x-4">
-              <Button 
-                className="bg-gradient-primary text-primary-foreground shadow-glow"
-                onClick={() => handleStartSession("wim_hof")}
-                disabled={isActive}
-              >
-                {isActive ? "Session en cours..." : "Commencer la session"}
-              </Button>
-              {isActive && (
-                <Button variant="outline" onClick={handleEndSession}>
-                  Terminer
-                </Button>
-              )}
-            </div>
-
-            {isActive && (
-              <div className="space-y-4">
-                <div className="text-center space-y-3 p-6 bg-gradient-primary/10 rounded-lg">
-                  <Cloud className="h-16 w-16 text-primary mx-auto animate-pulse-soft" />
-                  <p className="text-lg font-semibold">Suivez le rythme</p>
-                  <div className="flex justify-center space-x-4">
-                    <Button size="sm" onClick={() => handleBreathCycle(true)}>
-                      ✓ Suivi
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => handleBreathCycle(false)}>
-                      Manqué
-                    </Button>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    {cadenceFollowed.current}/{cadenceTotal.current} cycles suivis
-                  </p>
-                </div>
-              </div>
-            )}
-
-            <div className="grid md:grid-cols-3 gap-4">
-              {[
-                { id: 'wim_hof', name: 'Wim Hof', desc: '30 respirations profondes' },
-                { id: 'pranayama', name: 'Pranayama', desc: 'Respiration yogique' },
-                { id: 'sleep', name: 'Sommeil', desc: 'Expiration longue (ISI)' }
-              ].map((technique) => (
+            {/* Session Type Selection */}
+            <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto mt-8">
+              <motion.div whileHover={{ scale: 1.02, y: -5 }} whileTap={{ scale: 0.98 }}>
                 <Card 
-                  key={technique.id} 
-                  className={`border-0 shadow-soft hover:shadow-glow transition-shadow cursor-pointer ${
-                    selectedTechnique === technique.id ? 'bg-gradient-primary/20' : ''
-                  }`}
-                  onClick={() => handleStartSession(technique.id)}
+                  className="border-2 border-cyan-500/50 bg-gradient-to-br from-cyan-950/50 to-blue-950/50 hover:shadow-glow-intense cursor-pointer"
+                  onClick={() => handleStartSession('quick')}
                 >
-                  <CardContent className="pt-6 text-center space-y-2">
-                    <Wind className="h-8 w-8 text-primary mx-auto" />
-                    <p className="font-medium">{technique.name}</p>
-                    <p className="text-sm text-muted-foreground">{technique.desc}</p>
+                  <CardContent className="pt-8 pb-8 text-center space-y-4">
+                    <Sun className="h-16 w-16 text-cyan-400 mx-auto" />
+                    <h3 className="text-2xl font-bold text-white">Session Rapide</h3>
+                    <p className="text-gray-300 text-sm">
+                      2-3 minutes de calme instantané
+                    </p>
+                    <div className="flex items-center justify-center gap-2 text-cyan-400 text-sm">
+                      <Sparkles className="h-4 w-4" />
+                      <span>Réduit l'anxiété immédiate</span>
+                    </div>
+                    <Button size="lg" className="bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-glow">
+                      <Play className="mr-2 h-5 w-5" />
+                      Commencer
+                    </Button>
                   </CardContent>
                 </Card>
-              ))}
-            </div>
+              </motion.div>
 
-            {/* Badges Collection */}
-            {collections.badges_resp && collections.badges_resp.unlockedCount > 0 && (
-              <div className="mt-6 p-4 rounded-lg bg-gradient-healing/10 border border-accent/20">
-                <div className="text-center space-y-2">
-                  <p className="text-sm font-semibold text-accent">🌊 Badges respiratoires</p>
-                  <div className="flex justify-center space-x-3">
-                    {collections.badges_resp.items.filter(item => item.unlocked).map(item => (
-                      <div key={item.id} className="text-center">
-                        <span className="text-2xl">{item.emoji}</span>
-                        <p className="text-xs text-muted-foreground">{item.name}</p>
-                      </div>
-                    ))}
+              <motion.div whileHover={{ scale: 1.02, y: -5 }} whileTap={{ scale: 0.98 }}>
+                <Card 
+                  className="border-2 border-indigo-500/50 bg-gradient-to-br from-indigo-950/50 to-purple-950/50 hover:shadow-glow-intense cursor-pointer"
+                  onClick={() => handleStartSession('sleep')}
+                >
+                  <CardContent className="pt-8 pb-8 text-center space-y-4">
+                    <Moon className="h-16 w-16 text-indigo-400 mx-auto" />
+                    <h3 className="text-2xl font-bold text-white">Session Sommeil</h3>
+                    <p className="text-gray-300 text-sm">
+                      10 minutes vers le sommeil profond
+                    </p>
+                    <div className="flex items-center justify-center gap-2 text-indigo-400 text-sm">
+                      <Sparkles className="h-4 w-4" />
+                      <span>Prépare au repos nocturne</span>
+                    </div>
+                    <Button size="lg" className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-glow">
+                      <Moon className="mr-2 h-5 w-5" />
+                      Plonger
+                    </Button>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Active Session */}
+        {sessionActive && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="space-y-6"
+          >
+            {/* Ocean Scene */}
+            <OceanScene 
+              breathPhase={breathPhase}
+              anxietyLevel={anxietyLevel}
+              cyclesCompleted={cyclesCompleted}
+              isActive={sessionActive}
+            />
+
+            {/* Controls Overlay */}
+            <div className="fixed top-24 right-8 z-20 space-y-4">
+              <Card className="bg-black/50 border-cyan-500/30 backdrop-blur-lg">
+                <CardContent className="p-4 space-y-3">
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-white">{getPhaseInstruction()}</p>
+                    <p className="text-sm text-cyan-300 mt-2">{cyclesCompleted} cycles</p>
                   </div>
-                  <p className="text-xs text-primary">
-                    {collections.badges_resp.unlockedCount}/{collections.badges_resp.totalItems} badges débloqués
-                  </p>
-                </div>
+                  
+                  {/* Progress bar */}
+                  <div className="w-full h-2 bg-white/20 rounded-full overflow-hidden">
+                    <motion.div
+                      className="h-full bg-gradient-to-r from-cyan-400 to-blue-600"
+                      animate={{ width: `${progress * 100}%` }}
+                    />
+                  </div>
+                  
+                  {/* Anxiety indicator */}
+                  <div className="flex items-center gap-2 text-xs text-white/70">
+                    <div className="flex-1 h-1.5 bg-white/20 rounded-full overflow-hidden">
+                      <motion.div
+                        className={`h-full ${
+                          anxietyLevel > 0.6 ? 'bg-red-400' :
+                          anxietyLevel > 0.3 ? 'bg-yellow-400' : 'bg-green-400'
+                        }`}
+                        animate={{ width: `${(1 - anxietyLevel) * 100}%` }}
+                      />
+                    </div>
+                    <span>{anxietyLevel > 0.6 ? 'Tendu' : anxietyLevel > 0.3 ? 'Calme' : 'Zen'}</span>
+                  </div>
+                  
+                  <Button
+                    variant="outline"
+                    className="w-full bg-black/30 hover:bg-black/50 border-cyan-500/50 text-white"
+                    onClick={handleEndSession}
+                  >
+                    <Pause className="mr-2 h-4 w-4" />
+                    Terminer
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Badge Reveal */}
+        <AnimatePresence>
+          {showBadge && currentBadge && (
+            <BadgeReveal badge={currentBadge} onClose={() => setShowBadge(false)} />
+          )}
+        </AnimatePresence>
+
+        {/* Badges Gallery */}
+        {!sessionActive && badges.length > 0 && (
+          <Card className="max-w-6xl mx-auto border-0 shadow-glow bg-gradient-to-br from-cyan-950/50 to-indigo-950/50 backdrop-blur">
+            <CardContent className="pt-6 space-y-4">
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <Award className="h-6 w-6 text-cyan-400" />
+                <h3 className="text-xl font-bold text-white">Coffre au Trésor Marin</h3>
               </div>
-            )}
-          </CardContent>
-        </Card>
+              
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {badges.slice(0, 12).map((badge, index) => (
+                  <motion.div
+                    key={badge.id}
+                    initial={{ opacity: 0, scale: 0.8, rotateY: 180 }}
+                    animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                  >
+                    <Card className={`border-2 ${
+                      badge.rarity === 'legendary' ? 'border-yellow-500 shadow-glow-legendary' :
+                      badge.rarity === 'epic' ? 'border-purple-500 shadow-glow-intense' :
+                      badge.rarity === 'rare' ? 'border-blue-500 shadow-glow' :
+                      'border-cyan-500/30'
+                    } bg-gradient-to-br from-blue-950/50 to-indigo-950/50 hover:scale-105 transition-transform`}>
+                      <CardContent className="p-4 text-center space-y-2">
+                        <motion.div
+                          className="text-5xl"
+                          animate={badge.rarity === 'legendary' ? {
+                            rotate: [0, 360],
+                            scale: [1, 1.2, 1]
+                          } : {}}
+                          transition={{ duration: 3, repeat: Infinity }}
+                        >
+                          {badge.emoji}
+                        </motion.div>
+                        <p className="text-sm font-semibold text-white">{badge.name}</p>
+                        <p className="text-xs text-gray-400">{badge.description}</p>
+                        <p className="text-xs text-cyan-400 capitalize">{badge.rarity}</p>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))}
+              </div>
+              
+              <p className="text-center text-sm text-gray-400 mt-4">
+                {badges.length} badges débloqués • Continue ta collection marine
+              </p>
+            </CardContent>
+          </Card>
+        )}
       </main>
     </div>
   );

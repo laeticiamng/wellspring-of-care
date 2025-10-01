@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import BreathingBubble from '@/components/BreathingBubble';
-import { BadgeReveal } from '@/components/BadgeReveal';
+import BadgeReveal from '@/components/BadgeReveal';
 import { CocoonGallery } from '@/components/CocoonGallery';
 import { NyveeTutorial } from '@/components/NyveeTutorial';
 import { useNyveeSession } from '@/hooks/useNyveeSession';
@@ -84,14 +84,13 @@ const Nyvee = () => {
   if (phase === 'badge' && badge) {
     return (
       <BadgeReveal
-        badge={badge.badge}
-        badgeColor={badge.badgeColor}
-        badgeEmoji={badge.badgeEmoji}
-        reductionPercent={badge.reductionPercent}
-        cocoonUnlocked={badge.cocoonUnlocked}
-        nextAction={badge.nextAction}
-        onContinue={handleContinue}
-        onRestart={handleRestart}
+        badge={{
+          name: badge.badge,
+          emoji: badge.badgeEmoji,
+          rarity: 'epic',
+          description: badge.message
+        }}
+        onClose={handleRestart}
       />
     );
   }
