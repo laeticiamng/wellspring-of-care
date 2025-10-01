@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -16,6 +16,7 @@ export function useSmartNotifications() {
   const { toast } = useToast();
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [permission, setPermission] = useState<NotificationPermission>('default');
+  const hasAnalyzed = useRef(false);
 
   useEffect(() => {
     // Vérifier permission notifications navigateur
@@ -52,8 +53,12 @@ export function useSmartNotifications() {
   };
 
   // Analyser les patterns utilisateur et envoyer nudges
-  const analyzeAndNudge = async () => {
+  const analyzeAndNudge = useCallback(async () => {
     if (!user) return;
+    
+    // Éviter les appels multiples
+    if (hasAnalyzed.current) return;
+    hasAnalyzed.current = true;
 
     try {
       // Récupérer l'historique WHO-5
@@ -123,7 +128,7 @@ export function useSmartNotifications() {
     } catch (error) {
       console.error('Erreur analyse patterns:', error);
     }
-  };
+  }, [user, toast]);
 
   // Rappel basé sur la carte de la semaine
   const sendWeeklyCardReminder = (cardMantra: string) => {

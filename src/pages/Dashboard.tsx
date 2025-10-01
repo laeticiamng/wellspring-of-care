@@ -46,7 +46,7 @@ const Dashboard = () => {
     // Track implicit: temps passé sur le dashboard
     const startTime = Date.now();
     
-    // Analyser patterns et envoyer nudges
+    // Analyser patterns et envoyer nudges (seulement au premier mount)
     analyzeAndNudge();
     
     return () => {
@@ -70,7 +70,8 @@ const Dashboard = () => {
         });
       }
     };
-  }, [calculateWHO5, interactionCount, revealComplete, analyzeAndNudge]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Appeler seulement au premier mount
 
   // Rappels carte hebdomadaire
   useEffect(() => {
