@@ -28,7 +28,10 @@ const Activity = () => {
             </h1>
           </div>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Votre activité quotidienne. Cultivez votre bien-être jour après jour.
+            Chaque semaine, une nouvelle plante pousse. Selon votre état, elle change de couleur et de forme.
+          </p>
+          <p className="text-sm text-primary animate-pulse-soft">
+            🌱 Votre jardin devient une galerie vivante d'émotions 🌱
           </p>
         </div>
 

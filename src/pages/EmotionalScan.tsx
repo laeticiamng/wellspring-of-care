@@ -17,7 +17,10 @@ const EmotionalScan = () => {
             </h1>
           </div>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Scannez vos émotions en temps réel. Découvrez ce que votre visage révèle.
+            Une galerie de masques flottants. À chaque geste, un masque s'anime et vient se poser près de vous.
+          </p>
+          <p className="text-sm text-primary animate-pulse-soft">
+            🎭 Votre avatar se transforme sous vos yeux 🎭
           </p>
         </div>
 

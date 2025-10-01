@@ -112,18 +112,24 @@ const Journal = () => {
       
       <main className="container mx-auto px-4 py-8 space-y-8">
         {/* Header Section */}
-        <div className="flex items-center justify-between">
-          <div className="space-y-2">
-            <h1 className="text-3xl font-bold flex items-center space-x-3">
-              <BookOpen className="h-8 w-8 text-primary" />
-              <span>Mon Journal Émotionnel</span>
+        <div className="text-center space-y-4">
+          <div className="flex items-center justify-center space-x-3">
+            <BookOpen className="h-12 w-12 text-primary animate-float" />
+            <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+              La Bibliothèque des Émotions
             </h1>
-            <p className="text-muted-foreground">
-              Explorez et comprenez vos émotions au quotidien
-            </p>
           </div>
-          
-          <Button className="bg-gradient-primary text-primary-foreground border-0 shadow-glow">
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            Des pages colorées volent autour de vous. Chaque mot devient une page brillante dans votre livre vivant.
+          </p>
+          <div className="flex justify-center space-x-2">
+            {['📖', '✨', '🌈', '💫'].map((emoji, i) => (
+              <span key={i} className="text-2xl animate-float" style={{ animationDelay: `${i * 0.2}s` }}>
+                {emoji}
+              </span>
+            ))}
+          </div>
+          <Button className="bg-gradient-primary text-primary-foreground border-0 shadow-glow mt-4">
             <Plus className="mr-2 h-4 w-4" />
             Nouvelle entrée
           </Button>

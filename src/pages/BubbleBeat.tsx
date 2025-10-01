@@ -17,7 +17,10 @@ const BubbleBeat = () => {
             </h1>
           </div>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Jeu rythmique interactif. Éclatez vos tensions au rythme de la musique.
+            Laboratoire coloré de bulles. Tendu, elles éclatent vite. Calme, elles flottent doucement.
+          </p>
+          <p className="text-sm text-primary animate-pulse-soft">
+            🫧 Collectionnez des bulles rares arc-en-ciel 🫧
           </p>
         </div>
 

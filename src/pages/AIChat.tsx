@@ -77,8 +77,23 @@ const AIChat = () => {
     <div className="min-h-screen bg-gradient-calm">
       <Header />
       
-      <main className="container mx-auto px-4 py-8">
-        <div className="grid lg:grid-cols-4 gap-6 h-[calc(100vh-12rem)]">
+      <main className="container mx-auto px-4 py-8 space-y-8">
+        <div className="text-center space-y-4">
+          <div className="flex items-center justify-center space-x-3">
+            <Brain className="h-12 w-12 text-primary animate-float" />
+            <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+              Le Jardin des Pensées
+            </h1>
+          </div>
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            Des bulles translucides portent des phrases-haïkus. Emma vous guide dans votre exploration intérieure.
+          </p>
+          <div className="inline-block animate-pulse-soft">
+            <p className="text-lg italic text-primary">☁️ "Observe, laisse passer..." ☁️</p>
+          </div>
+        </div>
+
+        <div className="grid lg:grid-cols-4 gap-6 h-[calc(100vh-20rem)]">
           {/* Sidebar */}
           <div className="lg:col-span-1 space-y-4">
             {/* AI Info */}

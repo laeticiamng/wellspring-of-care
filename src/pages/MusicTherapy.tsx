@@ -17,7 +17,10 @@ const MusicTherapy = () => {
             </h1>
           </div>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Laissez-vous bercer par des mélodies thérapeutiques adaptées à votre état émotionnel.
+            Les arbres vibrent et chantent avec les musiques. Touchez un tronc, marchez, le rythme change.
+          </p>
+          <p className="text-sm text-primary animate-pulse-soft">
+            🎶 Composez un fragment de mélodie rien qu'à vous 🎶
           </p>
         </div>
 

@@ -17,7 +17,10 @@ const Nyvee = () => {
             </h1>
           </div>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Nyvée est votre espace de respiration guidée. Laissez-vous porter par le souffle.
+            Une immense bulle suspendue respire avec vous. Plus vous respirez calmement, plus elle révèle des constellations cachées.
+          </p>
+          <p className="text-sm text-primary animate-pulse-soft">
+            ✨ Inspirez des étoiles, expirez la lumière ✨
           </p>
         </div>
 

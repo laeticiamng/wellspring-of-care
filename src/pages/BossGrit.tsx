@@ -18,7 +18,10 @@ const BossGrit = () => {
             </h1>
           </div>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Affrontez vos défis intérieurs. Développez votre résilience et votre grit.
+            Arène RPG émotionnelle. Chaque défi réussi agrandit votre aura héroïque, comme un chevalier émotionnel.
+          </p>
+          <p className="text-sm text-primary animate-pulse-soft">
+            ⚔️ Votre aura se renforce à chaque retour ⚔️
           </p>
         </div>
 

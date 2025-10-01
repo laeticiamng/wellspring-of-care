@@ -26,7 +26,10 @@ const WeeklyBars = () => {
             </h1>
           </div>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Vue d'ensemble de votre progression semaine par semaine.
+            Votre jardin intérieur s'étend. Chaque semaine ajoute une plante de couleur unique à votre galerie émotionnelle.
+          </p>
+          <p className="text-sm text-primary animate-pulse-soft">
+            🌈 Petit à petit, votre jardin devient une galerie vivante 🌈
           </p>
         </div>
 

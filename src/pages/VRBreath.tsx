@@ -17,7 +17,10 @@ const VRBreath = () => {
             </h1>
           </div>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Expérience de respiration en réalité virtuelle. Immersion totale dans la sérénité.
+            Temple suspendu dans le ciel. Chaque respiration peint une onde lumineuse sur les colonnes.
+          </p>
+          <p className="text-sm text-primary animate-pulse-soft">
+            🌬️ Votre souffle devient œuvre d'art 🌬️
           </p>
         </div>
 

@@ -18,7 +18,10 @@ const MoodMixer = () => {
             </h1>
           </div>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Mixez vos émotions musicales. Créez l'ambiance parfaite pour votre état d'esprit.
+            Studio futuriste. Les sliders modulent musique, basses et lumières en direct.
+          </p>
+          <p className="text-sm text-primary animate-pulse-soft">
+            🎛️ Devenez le DJ de votre état intérieur 🎛️
           </p>
         </div>
 

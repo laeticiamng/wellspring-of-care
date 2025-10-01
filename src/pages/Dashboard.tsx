@@ -13,7 +13,9 @@ import {
   Heart,
   TrendingUp,
   Clock,
-  Users
+  Users,
+  Sparkles,
+  BookOpen
 } from "lucide-react";
 
 const Dashboard = () => {
@@ -69,14 +71,47 @@ const Dashboard = () => {
       
       <main className="container mx-auto px-4 py-8 space-y-8">
         {/* Welcome Section */}
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold">
-            Bonjour {userName} 👋
-          </h1>
-          <p className="text-muted-foreground">
-            Voici un aperçu de votre bien-être aujourd'hui
+        <div className="text-center space-y-4">
+          <div className="flex items-center justify-center space-x-3">
+            <Heart className="h-12 w-12 text-primary animate-glow" />
+            <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+              La Salle des Cartes Vivantes
+            </h1>
+          </div>
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            Bonjour {userName} 👋 — Tirez votre carte magique de la semaine
           </p>
         </div>
+
+        {/* Magical Card Draw */}
+        <Card className="max-w-4xl mx-auto border-0 shadow-glow bg-gradient-primary/10 border border-primary/20">
+          <CardContent className="p-8">
+            <div className="flex flex-col md:flex-row items-center justify-between space-y-6 md:space-y-0 md:space-x-8">
+              <div className="flex-1 text-center md:text-left space-y-4">
+                <div className="inline-block animate-float">
+                  <div className="text-6xl">🌟</div>
+                </div>
+                <h3 className="text-2xl font-bold">Votre mantra de la semaine</h3>
+                <blockquote className="text-lg italic text-muted-foreground">
+                  "La guérison n'est pas un état de perfection, mais un processus de croissance."
+                </blockquote>
+                <p className="text-sm text-muted-foreground">
+                  Cette carte vous guidera dans votre voyage émotionnel cette semaine
+                </p>
+              </div>
+              <div className="flex flex-col space-y-3">
+                <Button className="bg-gradient-primary text-primary-foreground shadow-glow">
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Tirer une nouvelle carte
+                </Button>
+                <Button variant="outline">
+                  <BookOpen className="mr-2 h-4 w-4" />
+                  Mon grimoire de cartes
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Stats Dashboard */}
         <DashboardStats />

@@ -24,7 +24,10 @@ const StorySynth = () => {
             </h1>
           </div>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Histoires thérapeutiques générées par IA. Laissez-vous guider par des récits personnalisés.
+            Théâtre vivant où lumière et musique changent selon vos choix. Chaque histoire terminée est un fragment de conte.
+          </p>
+          <p className="text-sm text-primary animate-pulse-soft">
+            📖 Construisez votre bibliothèque magique d'histoires 📖
           </p>
         </div>
 

@@ -17,7 +17,10 @@ const VRGalaxy = () => {
             </h1>
           </div>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Voyagez à travers vos émotions dans un univers galactique immersif.
+            Chaque émotion vécue allume une étoile. Naviguez d'une galaxie à l'autre, dessinez votre carte céleste.
+          </p>
+          <p className="text-sm text-primary animate-pulse-soft">
+            🌠 Votre ciel émotionnel, à vous seul 🌠
           </p>
         </div>
 

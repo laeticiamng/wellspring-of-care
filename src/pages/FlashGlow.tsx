@@ -17,7 +17,10 @@ const FlashGlow = () => {
             </h1>
           </div>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Stimulation visuelle par flash lumineux. Ressentez l'énergie positive.
+            Salle obscure qui s'illumine à votre rythme. Chaque respiration allume une lampe magique.
+          </p>
+          <p className="text-sm text-primary animate-pulse-soft">
+            💡 Construisez votre mur de lumière 💡
           </p>
         </div>
 

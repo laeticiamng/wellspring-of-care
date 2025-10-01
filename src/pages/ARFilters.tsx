@@ -17,7 +17,10 @@ const ARFilters = () => {
             </h1>
           </div>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Filtres AR thérapeutiques. Transformez votre visage, transformez votre humeur.
+            Salle de miroirs magiques. Un clin d'œil déclenche une pluie d'étoiles, un sourire fait briller votre reflet.
+          </p>
+          <p className="text-sm text-primary animate-pulse-soft">
+            🪞 Les stickers évoluent avec vous 🪞
           </p>
         </div>
 

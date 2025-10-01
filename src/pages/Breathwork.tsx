@@ -17,7 +17,10 @@ const Breathwork = () => {
             </h1>
           </div>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Techniques de breathwork avancées. Plongez dans les profondeurs de votre souffle.
+            Plongez dans un océan calme. À chaque expiration, une vague douce vient vous porter.
+          </p>
+          <p className="text-sm text-primary animate-pulse-soft">
+            🌊 Devenez "Maître des vagues" 🌊
           </p>
         </div>
 
