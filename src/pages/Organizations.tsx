@@ -97,14 +97,23 @@ export default function Organizations() {
 
   const sendInvitation = useMutation({
     mutationFn: async ({ email, role, orgId, teamId }: any) => {
+      // Valider avec Zod
+      const { invitationSchema } = await import("@/lib/validations");
+      const validated = invitationSchema.parse({
+        email,
+        role,
+        orgId,
+        teamId,
+      });
+      
       const token = crypto.randomUUID();
       const { data: { user } } = await supabase.auth.getUser();
       
       const { data, error } = await supabase.from("invitations").insert({
-        email,
-        role,
-        org_id: orgId,
-        team_id: teamId || null,
+        email: validated.email,
+        role: validated.role,
+        org_id: validated.orgId,
+        team_id: validated.teamId || null,
         invited_by: user?.id,
         token,
         expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),

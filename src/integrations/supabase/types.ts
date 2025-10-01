@@ -10223,6 +10223,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      cleanup_expired_invitations: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       cleanup_expired_rate_limit_counters: {
         Args: Record<PropertyKey, never>
         Returns: number
