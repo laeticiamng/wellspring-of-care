@@ -10,6 +10,20 @@ import { toast } from "sonner";
 import { Building2, Users, Mail, Trash2, Plus } from "lucide-react";
 import { Helmet } from "react-helmet";
 
+interface Invitation {
+  id: string;
+  email: string;
+  role: string;
+  org_id: string;
+  team_id: string | null;
+  token: string;
+  status: string;
+  expires_at: string;
+  created_at: string;
+  invited_by: string | null;
+  accepted_at: string | null;
+}
+
 export default function Organizations() {
   const queryClient = useQueryClient();
   const [newOrgName, setNewOrgName] = useState("");
@@ -39,21 +53,21 @@ export default function Organizations() {
     enabled: !!selectedOrgId,
   });
 
-  const { data: invitationsData } = useQuery({
+  const fetchInvitations = async (): Promise<Invitation[]> => {
+    if (!selectedOrgId) return [];
+    const result = await (supabase as any)
+      .from("invitations")
+      .select("*")
+      .eq("org_id", selectedOrgId);
+    if (result.error) throw result.error;
+    return result.data as Invitation[] || [];
+  };
+
+  const { data: invitations = [] as Invitation[] } = useQuery({
     queryKey: ["invitations", selectedOrgId],
-    queryFn: async () => {
-      if (!selectedOrgId) return [];
-      const { data, error } = await supabase
-        .from("invitations")
-        .select("*")
-        .eq("org_id", selectedOrgId);
-      if (error) throw error;
-      return data || [];
-    },
+    queryFn: fetchInvitations,
     enabled: !!selectedOrgId,
   });
-  
-  const invitations = invitationsData || [];
 
   const createOrg = useMutation({
     mutationFn: async (name: string) => {
