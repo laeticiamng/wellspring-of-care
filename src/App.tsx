@@ -36,6 +36,7 @@ import Activity from "./pages/Activity";
 import WeeklyBars from "./pages/WeeklyBars";
 import AmbitionArcade from "./pages/AmbitionArcade";
 import RHDashboard from "./pages/RHDashboard";
+import ScreenSilk from "./pages/ScreenSilk";
 
 const queryClient = new QueryClient();
 
@@ -78,6 +79,7 @@ const App = () => (
             <Route path="/weekly-bars" element={<ProtectedRoute><WeeklyBars /></ProtectedRoute>} />
             <Route path="/ambition-arcade" element={<ProtectedRoute><AmbitionArcade /></ProtectedRoute>} />
             <Route path="/app/rh" element={<ProtectedRoute><RHDashboard /></ProtectedRoute>} />
+            <Route path="/app/screen-silk" element={<ProtectedRoute><ScreenSilk /></ProtectedRoute>} />
             
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

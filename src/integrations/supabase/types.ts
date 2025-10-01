@@ -7605,6 +7605,66 @@ export type Database = {
         }
         Relationships: []
       }
+      screen_silk_sessions: {
+        Row: {
+          badge: string | null
+          created_at: string | null
+          duration_seconds: number | null
+          hints: Json | null
+          id: string
+          session_id: string
+          user_id: string
+        }
+        Insert: {
+          badge?: string | null
+          created_at?: string | null
+          duration_seconds?: number | null
+          hints?: Json | null
+          id?: string
+          session_id: string
+          user_id: string
+        }
+        Update: {
+          badge?: string | null
+          created_at?: string | null
+          duration_seconds?: number | null
+          hints?: Json | null
+          id?: string
+          session_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      screen_silk_textures: {
+        Row: {
+          asset_url: string | null
+          id: string
+          name: string
+          rarity: string | null
+          texture_id: string
+          unlocked_at: string | null
+          user_id: string
+        }
+        Insert: {
+          asset_url?: string | null
+          id?: string
+          name: string
+          rarity?: string | null
+          texture_id: string
+          unlocked_at?: string | null
+          user_id: string
+        }
+        Update: {
+          asset_url?: string | null
+          id?: string
+          name?: string
+          rarity?: string | null
+          texture_id?: string
+          unlocked_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       security_audit_log: {
         Row: {
           action_taken: string
