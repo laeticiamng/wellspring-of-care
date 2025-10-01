@@ -8,3 +8,9 @@ verify_jwt = true
 
 [functions.nyvee-assess]
 verify_jwt = true
+
+[functions.music-therapy-start]
+verify_jwt = true
+
+[functions.music-therapy-submit]
+verify_jwt = true
