@@ -26,3 +26,6 @@ verify_jwt = true
 
 [functions.assess-aggregate]
 verify_jwt = true
+
+[functions.team-aggregate-b2b]
+verify_jwt = true

@@ -4545,6 +4545,53 @@ export type Database = {
           },
         ]
       }
+      manager_actions: {
+        Row: {
+          action_description: string
+          action_type: string
+          completed: boolean | null
+          completed_at: string | null
+          created_at: string | null
+          id: string
+          manager_id: string
+          org_id: string
+          scheduled_at: string | null
+          team_name: string
+        }
+        Insert: {
+          action_description: string
+          action_type: string
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          manager_id: string
+          org_id: string
+          scheduled_at?: string | null
+          team_name: string
+        }
+        Update: {
+          action_description?: string
+          action_type?: string
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          manager_id?: string
+          org_id?: string
+          scheduled_at?: string | null
+          team_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "manager_actions_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       med_mng_audio_access_logs: {
         Row: {
           access_type: string
@@ -8157,6 +8204,59 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      team_assessments: {
+        Row: {
+          can_show: boolean
+          color_mood: string | null
+          created_at: string | null
+          hints: Json
+          id: string
+          org_id: string
+          period_end: string
+          period_start: string
+          phrases: Json
+          response_count: number
+          team_name: string
+          updated_at: string | null
+        }
+        Insert: {
+          can_show?: boolean
+          color_mood?: string | null
+          created_at?: string | null
+          hints?: Json
+          id?: string
+          org_id: string
+          period_end: string
+          period_start: string
+          phrases?: Json
+          response_count?: number
+          team_name: string
+          updated_at?: string | null
+        }
+        Update: {
+          can_show?: boolean
+          color_mood?: string | null
+          created_at?: string | null
+          hints?: Json
+          id?: string
+          org_id?: string
+          period_end?: string
+          period_start?: string
+          phrases?: Json
+          response_count?: number
+          team_name?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_assessments_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
