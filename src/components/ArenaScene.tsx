@@ -18,6 +18,12 @@ export const ArenaScene = ({ auraLevel }: ArenaSceneProps) => {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
+    // Get computed CSS variable values
+    const computedStyle = getComputedStyle(document.documentElement);
+    const primaryHsl = computedStyle.getPropertyValue('--primary').trim();
+    const accentHsl = computedStyle.getPropertyValue('--accent').trim();
+    const chartHsl = computedStyle.getPropertyValue('--chart-1').trim();
+
     const particles: Array<{
       x: number;
       y: number;
@@ -28,10 +34,11 @@ export const ArenaScene = ({ auraLevel }: ArenaSceneProps) => {
       color: string;
     }> = [];
 
+    const alpha = 0.3 + auraLevel * 0.05;
     const colors = [
-      `hsla(var(--primary), ${0.3 + auraLevel * 0.05})`,
-      `hsla(var(--accent), ${0.3 + auraLevel * 0.05})`,
-      `hsla(var(--chart-1), ${0.3 + auraLevel * 0.05})`
+      `hsla(${primaryHsl}, ${alpha})`,
+      `hsla(${accentHsl}, ${alpha})`,
+      `hsla(${chartHsl}, ${alpha})`
     ];
 
     // Create particles based on aura level
