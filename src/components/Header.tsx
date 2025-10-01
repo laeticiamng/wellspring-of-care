@@ -51,35 +51,73 @@ const Header = () => {
         </Link>
 
         {/* Navigation */}
-        <nav className="hidden md:flex items-center space-x-6">
-          <Button 
-            variant="ghost" 
-            className={`text-foreground hover:text-primary ${isActive('/dashboard') ? 'text-primary bg-primary/10' : ''}`}
-            asChild
-          >
-            <Link to="/dashboard">Dashboard</Link>
-          </Button>
-          <Button 
-            variant="ghost" 
-            className={`text-foreground hover:text-primary ${isActive('/journal') ? 'text-primary bg-primary/10' : ''}`}
-            asChild
-          >
-            <Link to="/journal">Journal</Link>
-          </Button>
-          <Button 
-            variant="ghost" 
-            className={`text-foreground hover:text-primary ${isActive('/meditation') ? 'text-primary bg-primary/10' : ''}`}
-            asChild
-          >
-            <Link to="/meditation">Méditation</Link>
-          </Button>
-          <Button 
-            variant="ghost" 
-            className={`text-foreground hover:text-primary ${isActive('/community') ? 'text-primary bg-primary/10' : ''}`}
-            asChild
-          >
-            <Link to="/community">Communauté</Link>
-          </Button>
+        <nav className="hidden md:flex items-center space-x-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="text-foreground hover:text-primary">
+                Modules ▾
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-64">
+              <DropdownMenuItem asChild>
+                <Link to="/dashboard" className="cursor-pointer">Dashboard</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/nyvee" className="cursor-pointer">Nyvée - Bulle Respirante</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/scan" className="cursor-pointer">Scan émotionnel</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/music" className="cursor-pointer">Thérapie musicale</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/chat" className="cursor-pointer">Coach IA</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/journal" className="cursor-pointer">Journal</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/vr-breath" className="cursor-pointer">VR Breath</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/vr-galaxy" className="cursor-pointer">VR Galaxy</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/flash-glow" className="cursor-pointer">Flash Glow</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/breath" className="cursor-pointer">Breathwork</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/face-ar" className="cursor-pointer">AR Filters</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/bubble-beat" className="cursor-pointer">Bubble Beat</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/boss-grit" className="cursor-pointer">Boss Level Grit</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/mood-mixer" className="cursor-pointer">Mood Mixer</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/community" className="cursor-pointer">Communauté</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/leaderboard" className="cursor-pointer">Leaderboard</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/story-synth" className="cursor-pointer">Story Synth Lab</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/activity" className="cursor-pointer">Activity</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/weekly-bars" className="cursor-pointer">Weekly Bars</Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button 
             variant="ghost" 
             className={`text-foreground hover:text-primary ${isActive('/therapy') ? 'text-primary bg-primary/10' : ''}`}

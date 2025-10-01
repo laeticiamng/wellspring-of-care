@@ -17,6 +17,21 @@ import Settings from "./pages/Settings";
 import Organizations from "./pages/Organizations";
 import Pricing from "./pages/Pricing";
 import NotFound from "./pages/NotFound";
+import Nyvee from "./pages/Nyvee";
+import EmotionalScan from "./pages/EmotionalScan";
+import MusicTherapy from "./pages/MusicTherapy";
+import VRBreath from "./pages/VRBreath";
+import VRGalaxy from "./pages/VRGalaxy";
+import FlashGlow from "./pages/FlashGlow";
+import Breathwork from "./pages/Breathwork";
+import ARFilters from "./pages/ARFilters";
+import BubbleBeat from "./pages/BubbleBeat";
+import BossGrit from "./pages/BossGrit";
+import MoodMixer from "./pages/MoodMixer";
+import Leaderboard from "./pages/Leaderboard";
+import StorySynth from "./pages/StorySynth";
+import Activity from "./pages/Activity";
+import WeeklyBars from "./pages/WeeklyBars";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +54,24 @@ const App = () => (
             <Route path="/chat" element={<ProtectedRoute><AIChat /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/organizations" element={<ProtectedRoute><Organizations /></ProtectedRoute>} />
+            
+            {/* Nouveaux modules EmotionsCare */}
+            <Route path="/nyvee" element={<ProtectedRoute><Nyvee /></ProtectedRoute>} />
+            <Route path="/scan" element={<ProtectedRoute><EmotionalScan /></ProtectedRoute>} />
+            <Route path="/music" element={<ProtectedRoute><MusicTherapy /></ProtectedRoute>} />
+            <Route path="/vr-breath" element={<ProtectedRoute><VRBreath /></ProtectedRoute>} />
+            <Route path="/vr-galaxy" element={<ProtectedRoute><VRGalaxy /></ProtectedRoute>} />
+            <Route path="/flash-glow" element={<ProtectedRoute><FlashGlow /></ProtectedRoute>} />
+            <Route path="/breath" element={<ProtectedRoute><Breathwork /></ProtectedRoute>} />
+            <Route path="/face-ar" element={<ProtectedRoute><ARFilters /></ProtectedRoute>} />
+            <Route path="/bubble-beat" element={<ProtectedRoute><BubbleBeat /></ProtectedRoute>} />
+            <Route path="/boss-grit" element={<ProtectedRoute><BossGrit /></ProtectedRoute>} />
+            <Route path="/mood-mixer" element={<ProtectedRoute><MoodMixer /></ProtectedRoute>} />
+            <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
+            <Route path="/story-synth" element={<ProtectedRoute><StorySynth /></ProtectedRoute>} />
+            <Route path="/activity" element={<ProtectedRoute><Activity /></ProtectedRoute>} />
+            <Route path="/weekly-bars" element={<ProtectedRoute><WeeklyBars /></ProtectedRoute>} />
+            
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
