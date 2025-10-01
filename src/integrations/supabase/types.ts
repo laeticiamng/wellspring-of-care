@@ -9514,6 +9514,81 @@ export type Database = {
         }
         Relationships: []
       }
+      user_settings: {
+        Row: {
+          consent_anonymous_aggregation: boolean | null
+          consent_cbi: boolean | null
+          consent_cvsq: boolean | null
+          consent_panas: boolean | null
+          consent_swemwbs: boolean | null
+          consent_uwes: boolean | null
+          consent_who5: boolean | null
+          created_at: string | null
+          haptics_enabled: boolean | null
+          high_contrast: boolean | null
+          id: string
+          journal_reminders: boolean | null
+          low_stim_mode: boolean | null
+          nyvee_reminders: boolean | null
+          onboarding_completed: boolean | null
+          onboarding_step: number | null
+          reminder_frequency: string | null
+          screen_silk_reminders: boolean | null
+          theme_palette: string | null
+          tts_enabled: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          consent_anonymous_aggregation?: boolean | null
+          consent_cbi?: boolean | null
+          consent_cvsq?: boolean | null
+          consent_panas?: boolean | null
+          consent_swemwbs?: boolean | null
+          consent_uwes?: boolean | null
+          consent_who5?: boolean | null
+          created_at?: string | null
+          haptics_enabled?: boolean | null
+          high_contrast?: boolean | null
+          id?: string
+          journal_reminders?: boolean | null
+          low_stim_mode?: boolean | null
+          nyvee_reminders?: boolean | null
+          onboarding_completed?: boolean | null
+          onboarding_step?: number | null
+          reminder_frequency?: string | null
+          screen_silk_reminders?: boolean | null
+          theme_palette?: string | null
+          tts_enabled?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          consent_anonymous_aggregation?: boolean | null
+          consent_cbi?: boolean | null
+          consent_cvsq?: boolean | null
+          consent_panas?: boolean | null
+          consent_swemwbs?: boolean | null
+          consent_uwes?: boolean | null
+          consent_who5?: boolean | null
+          created_at?: string | null
+          haptics_enabled?: boolean | null
+          high_contrast?: boolean | null
+          id?: string
+          journal_reminders?: boolean | null
+          low_stim_mode?: boolean | null
+          nyvee_reminders?: boolean | null
+          onboarding_completed?: boolean | null
+          onboarding_step?: number | null
+          reminder_frequency?: string | null
+          screen_silk_reminders?: boolean | null
+          theme_palette?: string | null
+          tts_enabled?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_stats: {
         Row: {
           completed_challenges: number | null

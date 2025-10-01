@@ -37,6 +37,7 @@ import WeeklyBars from "./pages/WeeklyBars";
 import AmbitionArcade from "./pages/AmbitionArcade";
 import RHDashboard from "./pages/RHDashboard";
 import ScreenSilk from "./pages/ScreenSilk";
+import Onboarding from "./pages/Onboarding";
 
 const queryClient = new QueryClient();
 
@@ -50,6 +51,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/journal" element={<ProtectedRoute><JournalNew /></ProtectedRoute>} />
