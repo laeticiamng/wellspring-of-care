@@ -65,33 +65,53 @@ serve(async (req) => {
       }
     }
 
-    // Appel Suno API
+    // Appel Suno API avec fallback
+    let musicUrl = null;
+    let musicMetadata = { fallback: true };
+    
     const sunoApiKey = Deno.env.get('SUNO_API_KEY');
-    if (!sunoApiKey) {
-      throw new Error('SUNO_API_KEY not configured');
+    
+    // Musiques d'ambiance de fallback selon le thème
+    const fallbackMusic = {
+      calming: 'https://cdn.pixabay.com/audio/2022/03/10/audio_2c87ba15c3.mp3',
+      energizing: 'https://cdn.pixabay.com/audio/2022/05/27/audio_1808fbf07a.mp3',
+      expansive: 'https://cdn.pixabay.com/audio/2022/03/22/audio_5bac687fe3.mp3'
+    };
+
+    if (sunoApiKey) {
+      try {
+        const sunoResponse = await fetch('https://api.suno.ai/v1/generate', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${sunoApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            prompt,
+            tags,
+            duration: 180,
+            instrumental: true,
+          }),
+        });
+
+        if (sunoResponse.ok) {
+          const sunoData = await sunoResponse.json();
+          musicUrl = sunoData.audio_url;
+          musicMetadata = sunoData;
+          console.log('Suno API success');
+        } else {
+          const errorText = await sunoResponse.text();
+          console.warn('Suno API unavailable, using fallback:', errorText);
+          musicUrl = fallbackMusic[visualTheme];
+        }
+      } catch (error) {
+        console.warn('Suno API error, using fallback:', error);
+        musicUrl = fallbackMusic[visualTheme];
+      }
+    } else {
+      console.log('No Suno API key, using fallback music');
+      musicUrl = fallbackMusic[visualTheme];
     }
-
-    const sunoResponse = await fetch('https://api.suno.ai/v1/generate', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${sunoApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        prompt,
-        tags,
-        duration: 180, // 3 minutes
-        instrumental: true,
-      }),
-    });
-
-    if (!sunoResponse.ok) {
-      const errorText = await sunoResponse.text();
-      console.error('Suno API error:', errorText);
-      throw new Error('Failed to generate music');
-    }
-
-    const sunoData = await sunoResponse.json();
 
     // Créer session de thérapie musicale
     const sessionId = crypto.randomUUID();
@@ -100,8 +120,8 @@ serve(async (req) => {
       .insert({
         id: sessionId,
         user_id: user.id,
-        music_url: sunoData.audio_url || null,
-        music_metadata: sunoData,
+        music_url: musicUrl,
+        music_metadata: musicMetadata,
         mood_state_pre: moodState || {},
         started_at: new Date().toISOString(),
       });
@@ -114,7 +134,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         sessionId,
-        musicUrl: sunoData.audio_url,
+        musicUrl,
         visualTheme,
         duration: 180,
       }),
