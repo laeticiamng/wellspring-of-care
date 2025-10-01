@@ -30,79 +30,156 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    const { instrument, period = 'last_week', locale = 'fr' } = await req.json();
+    const { instrument, period = 'last_week', locale = 'fr-FR', start_date, end_date } = await req.json();
 
-    if (instrument !== 'WHO5') {
-      throw new Error('Only WHO5 instrument is supported for aggregation');
+    if (!instrument) {
+      return new Response(
+        JSON.stringify({ error: 'Missing instrument parameter' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    // Calculate week ISO
-    const now = new Date();
-    const weekStart = new Date(now);
-    weekStart.setDate(now.getDate() - 7);
-    const weekISO = getWeekISO(period === 'this_week' ? now : weekStart);
+    // Calculate date range
+    let fromDate: Date;
+    let toDate = new Date();
 
-    // Check if we already have a summary
-    const { data: existingSummary } = await supabase
-      .from('weekly_summary')
+    if (period === 'custom' && start_date && end_date) {
+      fromDate = new Date(start_date);
+      toDate = new Date(end_date);
+    } else if (period === 'last_month') {
+      fromDate = new Date();
+      fromDate.setMonth(fromDate.getMonth() - 1);
+    } else {
+      // last_week
+      fromDate = new Date();
+      fromDate.setDate(fromDate.getDate() - 7);
+    }
+
+    // Get sessions for this period
+    const { data: sessions, error: sessionsError } = await supabase
+      .from('assessment_sessions')
       .select('*')
       .eq('user_id', user.id)
-      .eq('week_iso', weekISO)
-      .single();
+      .eq('instrument', instrument)
+      .gte('completed_at', fromDate.toISOString())
+      .lte('completed_at', toDate.toISOString())
+      .not('completed_at', 'is', null)
+      .order('completed_at', { ascending: true });
 
-    if (existingSummary) {
-      return new Response(JSON.stringify({
-        can_show: true,
-        verbal_week: existingSummary.verbal_week || [],
-        hints: existingSummary.hints || {},
-        helps: existingSummary.helps || [],
-        season: existingSummary.season,
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    if (sessionsError) {
+      console.error('Error fetching sessions:', sessionsError);
     }
 
-    // Aggregate week signals
-    const signals = await aggregateWeekSignals(supabase, user.id, weekStart, now);
-    const { verbal_week, hints, helps, season } = computeWeeklyInsights(signals);
+    const sessionCount = sessions?.length || 0;
+    const canShow = sessionCount >= 2;
 
-    // Save summary
-    const { error: saveError } = await supabase
-      .from('weekly_summary')
-      .insert({
-        user_id: user.id,
-        week_iso: weekISO,
-        verbal_week,
-        helps,
-        season,
-        hints,
-      });
-
-    if (saveError) {
-      console.error('Error saving summary:', saveError);
+    if (!canShow) {
+      return new Response(
+        JSON.stringify({
+          can_show: false,
+          verbal_week: [],
+          helps: [],
+          summary: 'Pas encore assez de données',
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    // Create garden state
-    const plantState = computePlantState(signals);
-    const skyState = computeSkyState(signals, verbal_week);
-    const rarity = await computeRarity(supabase, user.id, signals);
+    // Generate verbal summary using OpenAI
+    const openaiKey = Deno.env.get('OPENAI_API_KEY');
+    let verbalWeek: string[] = [];
+    let helps: string[] = [];
 
-    await supabase
-      .from('weekly_garden')
-      .insert({
-        user_id: user.id,
-        week_iso: weekISO,
-        plant_state: plantState,
-        sky_state: skyState,
-        rarity,
-      });
+    if (openaiKey && sessions) {
+      try {
+        const prompt = `Génère 3 phrases courtes (≤10 mots) résumant l'évolution émotionnelle sur ${sessionCount} sessions de ${instrument}. Ton: doux, encourageant. Puis suggère 3 micro-actions concrètes.`;
+        
+        const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${openaiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'gpt-4o-mini',
+            messages: [
+              { role: 'system', content: 'Tu génères des résumés émotionnels et suggestions. Format: 3 phrases de résumé, puis 3 suggestions séparées par "---".' },
+              { role: 'user', content: prompt }
+            ],
+            max_tokens: 200,
+            temperature: 0.7,
+          }),
+        });
+
+        if (openaiResponse.ok) {
+          const data = await openaiResponse.json();
+          const content = data.choices?.[0]?.message?.content?.trim() || '';
+          const parts = content.split('---');
+          verbalWeek = parts[0]?.split('\n').filter((l: string) => l.trim()).slice(0, 3) || [];
+          helps = parts[1]?.split('\n').filter((l: string) => l.trim()).slice(0, 3) || [];
+        }
+      } catch (error) {
+        console.warn('OpenAI aggregate generation failed:', error);
+      }
+    }
+
+    // Fallbacks
+    if (verbalWeek.length === 0) {
+      verbalWeek = [
+        'Belle régularité cette semaine ✨',
+        `${sessionCount} sessions complétées`,
+        'Continue sur cette lancée 🌱'
+      ];
+    }
+
+    if (helps.length === 0) {
+      helps = [
+        '2 min de respiration par jour',
+        'Noter 3 gratitudes le soir',
+        'Pause écran toutes les heures'
+      ];
+    }
+
+    // For WHO5 specifically, also maintain backward compatibility with weekly_summary
+    if (instrument === 'WHO5') {
+
+      const weekISO = getWeekISO(toDate);
+      const signals = await aggregateWeekSignals(supabase, user.id, fromDate, toDate);
+      const { hints, season } = computeWeeklyInsights(signals);
+
+      // Save/update summary
+      await supabase
+        .from('weekly_summary')
+        .upsert({
+          user_id: user.id,
+          week_iso: weekISO,
+          verbal_week: verbalWeek,
+          helps,
+          season,
+          hints,
+        });
+
+      // Create garden state
+      const plantState = computePlantState(signals);
+      const skyState = computeSkyState(signals, verbalWeek);
+      const rarity = await computeRarity(supabase, user.id, signals);
+
+      await supabase
+        .from('weekly_garden')
+        .upsert({
+          user_id: user.id,
+          week_iso: weekISO,
+          plant_state: plantState,
+          sky_state: skyState,
+          rarity,
+        });
+    }
 
     return new Response(JSON.stringify({
-      can_show: true,
-      verbal_week,
-      hints,
+      verbal_week: verbalWeek,
       helps,
-      season,
+      can_show: true,
+      summary: `${sessionCount} sessions sur ${period === 'last_week' ? '7 jours' : '30 jours'}`,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
