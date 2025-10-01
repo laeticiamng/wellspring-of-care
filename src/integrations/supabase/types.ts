@@ -3806,6 +3806,42 @@ export type Database = {
         }
         Relationships: []
       }
+      generated_songs: {
+        Row: {
+          audio_url: string
+          created_at: string | null
+          duration: number
+          emotion_input: string
+          id: string
+          metadata: Json | null
+          style: string
+          suno_job_id: string | null
+          user_id: string
+        }
+        Insert: {
+          audio_url: string
+          created_at?: string | null
+          duration: number
+          emotion_input: string
+          id?: string
+          metadata?: Json | null
+          style: string
+          suno_job_id?: string | null
+          user_id: string
+        }
+        Update: {
+          audio_url?: string
+          created_at?: string | null
+          duration?: number
+          emotion_input?: string
+          id?: string
+          metadata?: Json | null
+          style?: string
+          suno_job_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       generated_voice_tracks: {
         Row: {
           audio_base64: string | null

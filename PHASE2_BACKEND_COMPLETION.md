@@ -383,7 +383,7 @@ METRICS (anonymisées):
 | Catégorie | Complété | Total | % |
 |-----------|----------|-------|---|
 | Hume AI Integration | 1 | 3 | 33% |
-| Suno AI Integration | 0 | 3 | 0% |
+| Suno AI Integration | 3 | 3 | 100% |
 | Coach IA Improvements | 0 | 3 | 0% |
 | Stripe Payments | 0 | 4 | 0% |
 | Clinical Instruments | 0 | 3 | 0% |
