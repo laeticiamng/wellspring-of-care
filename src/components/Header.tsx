@@ -116,6 +116,9 @@ const Header = () => {
               <DropdownMenuItem asChild>
                 <Link to="/weekly-bars" className="cursor-pointer">Weekly Bars</Link>
               </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/ambition-arcade" className="cursor-pointer">Ambition Arcade</Link>
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           <Button 
