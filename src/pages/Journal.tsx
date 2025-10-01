@@ -15,9 +15,11 @@ import {
   BookOpen,
   Star
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useMoodEntries } from "@/hooks/useMoodEntries";
 import { useToast } from "@/hooks/use-toast";
+import { useImplicitTracking } from "@/hooks/useImplicitTracking";
+import { useCollections } from "@/hooks/useCollections";
 
 const Journal = () => {
   const [selectedMood, setSelectedMood] = useState<string>("");
@@ -25,6 +27,10 @@ const Journal = () => {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const { entries, loading, createEntry } = useMoodEntries();
   const { toast } = useToast();
+  const { track } = useImplicitTracking();
+  const { collections, unlockItem } = useCollections();
+  const [audioRecording, setAudioRecording] = useState(false);
+  const audioStartTime = useRef<number>(0);
   
   const moodOptions = [
     { emoji: "😊", name: "Joyeux", color: "bg-gradient-secondary", value: "happy" },
@@ -48,9 +54,42 @@ const Journal = () => {
     const moodLevel = moodOptions.findIndex(m => m.value === selectedMood) + 1;
     await createEntry(moodLevel, selectedTags, journalText);
     
+    // Track journal completion with PANAS proxy
+    const hasPositiveMood = ['happy', 'calm'].includes(selectedMood);
+    track({
+      instrument: "PANAS",
+      item_id: hasPositiveMood ? "pa_calm" : "na_mark",
+      proxy: "duration",
+      value: journalText.length * 10, // approx writing time
+      context: { mood: selectedMood, tags: selectedTags.join(',') }
+    });
+    
+    // Unlock pages collection
+    const entriesCount = entries.length + 1;
+    if (entriesCount >= 3 && collections.pages?.items[0]) {
+      unlockItem('pages', collections.pages.items[0].id);
+    }
+    
     setSelectedMood("");
     setJournalText("");
     setSelectedTags([]);
+  };
+  
+  const handleAudioNote = () => {
+    if (!audioRecording) {
+      audioStartTime.current = Date.now();
+      setAudioRecording(true);
+    } else {
+      const duration = Date.now() - audioStartTime.current;
+      track({
+        instrument: "PANAS",
+        item_id: "pa_calm",
+        proxy: "duration",
+        value: duration,
+        context: { type: "voice" }
+      });
+      setAudioRecording(false);
+    }
   };
 
   const toggleTag = (tag: string) => {
@@ -153,7 +192,15 @@ const Journal = () => {
                     {moodOptions.map((mood) => (
                       <button
                         key={mood.value}
-                        onClick={() => setSelectedMood(mood.value)}
+                        onClick={() => {
+                          setSelectedMood(mood.value);
+                          track({
+                            instrument: "PANAS",
+                            item_id: "pa_theme",
+                            proxy: "choice",
+                            value: mood.value
+                          });
+                        }}
                         className={`p-4 rounded-lg border transition-all hover:scale-105 ${
                           selectedMood === mood.value 
                             ? `${mood.color} border-primary shadow-glow` 
@@ -210,6 +257,13 @@ const Journal = () => {
                   >
                     <Heart className="mr-2 h-4 w-4" />
                     Sauvegarder
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    onClick={handleAudioNote}
+                    className={audioRecording ? "border-primary" : ""}
+                  >
+                    {audioRecording ? "⏹️ Arrêter" : "🎤 Note vocale"}
                   </Button>
                   <Button 
                     variant="outline"
@@ -334,6 +388,26 @@ const Journal = () => {
                 </p>
               </CardContent>
             </Card>
+            
+            {/* Pages Collection */}
+            {collections.pages && collections.pages.unlockedCount > 0 && (
+              <Card className="border-0 shadow-soft bg-gradient-primary/10 border border-primary/20">
+                <CardHeader>
+                  <CardTitle className="text-sm">📖 Pages brillantes</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {collections.pages.items.filter(item => item.unlocked).map(item => (
+                    <div key={item.id} className="flex items-center space-x-2 text-sm">
+                      <span className="text-lg">{item.emoji}</span>
+                      <span className="text-muted-foreground">{item.name}</span>
+                    </div>
+                  ))}
+                  <div className="text-xs text-center text-primary mt-2">
+                    {collections.pages.unlockedCount}/{collections.pages.totalItems} pages débloquées
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </main>

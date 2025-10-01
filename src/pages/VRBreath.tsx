@@ -2,8 +2,53 @@ import Header from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Glasses, Wind, Sparkles } from "lucide-react";
+import { useState } from "react";
+import { useImplicitTracking } from "@/hooks/useImplicitTracking";
+import { useCollections } from "@/hooks/useCollections";
 
 const VRBreath = () => {
+  const [particlesReduced, setParticlesReduced] = useState(false);
+  const [sessionActive, setSessionActive] = useState(false);
+  const [sessionStartTime, setSessionStartTime] = useState<number>(0);
+  const { track } = useImplicitTracking();
+  const { collections, unlockItem } = useCollections();
+
+  const handleStartSession = () => {
+    setSessionActive(true);
+    setSessionStartTime(Date.now());
+  };
+
+  const handleEndSession = () => {
+    const duration = Date.now() - sessionStartTime;
+    
+    // Track SSQ discomfort if quit early
+    if (duration < 45000) {
+      track({
+        instrument: "SSQ",
+        item_id: "discomfort",
+        proxy: "skip",
+        value: "<45s",
+        context: { duration: String(duration) }
+      });
+    } else {
+      // Success - unlock temple cocons
+      if (collections.cocons?.items[1]) {
+        unlockItem('cocons', collections.cocons.items[1].id);
+      }
+    }
+    
+    setSessionActive(false);
+  };
+
+  const handleReduceParticles = () => {
+    setParticlesReduced(true);
+    track({
+      instrument: "SSQ",
+      item_id: "nausea",
+      proxy: "choice",
+      value: "reduce_particles"
+    });
+  };
   return (
     <div className="min-h-screen bg-gradient-calm">
       <Header />
@@ -41,13 +86,27 @@ const VRBreath = () => {
             </div>
 
             <div className="flex justify-center space-x-4">
-              <Button className="bg-gradient-primary text-primary-foreground shadow-glow">
-                Lancer l'expérience
+              <Button 
+                className="bg-gradient-primary text-primary-foreground shadow-glow"
+                onClick={sessionActive ? handleEndSession : handleStartSession}
+              >
+                {sessionActive ? "Terminer l'expérience" : "Lancer l'expérience"}
               </Button>
               <Button variant="outline">
                 Mode 2D
               </Button>
+              {sessionActive && (
+                <Button variant="outline" onClick={handleReduceParticles}>
+                  {particlesReduced ? "✓ Particules réduites" : "Réduire particules"}
+                </Button>
+              )}
             </div>
+
+            {sessionActive && (
+              <div className="text-center p-4 bg-gradient-primary/10 rounded-lg">
+                <p className="text-sm text-primary">Session en cours... Respirez profondément 🌬️</p>
+              </div>
+            )}
 
             <div className="grid md:grid-cols-3 gap-4">
               {['Temple zen', 'Forêt mystique', 'Plage céleste'].map((env) => (
@@ -59,6 +118,26 @@ const VRBreath = () => {
                 </Card>
               ))}
             </div>
+
+            {/* Temple Cocons Collection */}
+            {collections.cocons && collections.cocons.unlockedCount > 0 && (
+              <div className="mt-4 p-4 rounded-lg bg-gradient-healing/10 border border-accent/20">
+                <div className="text-center space-y-2">
+                  <p className="text-sm font-semibold text-accent">🏛️ Cocons temples</p>
+                  <div className="flex justify-center space-x-3">
+                    {collections.cocons.items.filter(item => item.unlocked).map(item => (
+                      <div key={item.id} className="text-center">
+                        <span className="text-2xl">{item.emoji}</span>
+                        <p className="text-xs text-muted-foreground">{item.name}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-primary">
+                    {collections.cocons.unlockedCount}/{collections.cocons.totalItems} cocons débloqués
+                  </p>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </main>

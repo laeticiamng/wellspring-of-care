@@ -15,15 +15,21 @@ import {
   User,
   Bot
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAIChat } from "@/hooks/useAIChat";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useImplicitTracking } from "@/hooks/useImplicitTracking";
+import { useCollections } from "@/hooks/useCollections";
 
 const AIChat = () => {
   const [message, setMessage] = useState("");
   const [conversationId, setConversationId] = useState<string>("");
   const { messages, sendMessage, isLoading } = useAIChat(conversationId);
+  const { track } = useImplicitTracking();
+  const { collections, unlockItem } = useCollections();
+  const readStartTime = useRef<number>(0);
+  const [cardAcceptCount, setCardAcceptCount] = useState(0);
 
   useEffect(() => {
     // Create or get conversation on mount
@@ -55,7 +61,52 @@ const AIChat = () => {
     
     const messageToSend = message;
     setMessage("");
+    
+    // Track message send (défusion/avoidance)
+    track({
+      instrument: "AAQ2",
+      item_id: "action",
+      proxy: "choice",
+      value: "send_message",
+      context: { message_length: String(messageToSend.length) }
+    });
+    
+    // Track read time if available
+    if (readStartTime.current > 0) {
+      const readDuration = Date.now() - readStartTime.current;
+      track({
+        instrument: "AAQ2",
+        item_id: "avoidance",
+        proxy: "duration",
+        value: readDuration,
+        context: { type: "centrage" }
+      });
+      readStartTime.current = 0;
+    }
+    
     await sendMessage(messageToSend);
+    
+    // Unlock haïkus after engagement
+    setCardAcceptCount(prev => {
+      const newCount = prev + 1;
+      if (newCount >= 5 && collections.haikus?.items[0]) {
+        unlockItem('haikus', collections.haikus.items[0].id);
+      }
+      return newCount;
+    });
+  };
+  
+  const handleAcceptCard = (accepted: boolean) => {
+    track({
+      instrument: "AAQ2",
+      item_id: "avoidance",
+      proxy: "choice",
+      value: accepted ? "accept" : "skip"
+    });
+    
+    if (accepted) {
+      readStartTime.current = Date.now();
+    }
   };
 
   const quickSuggestions = [
@@ -152,7 +203,10 @@ const AIChat = () => {
                     variant="outline"
                     size="sm"
                     className="w-full text-left justify-start text-xs h-auto p-2"
-                    onClick={() => setMessage(suggestion)}
+                    onClick={() => {
+                      setMessage(suggestion);
+                      handleAcceptCard(true);
+                    }}
                   >
                     {suggestion}
                   </Button>
@@ -280,12 +334,24 @@ const AIChat = () => {
                       size="sm"
                       variant="outline"
                       className="text-xs h-6"
-                      onClick={() => setMessage(suggestion)}
+                      onClick={() => {
+                        setMessage(suggestion);
+                        handleAcceptCard(true);
+                      }}
                     >
                       {suggestion}
                     </Button>
                   ))}
                 </div>
+                
+                {/* Unlocked Haïkus Collection */}
+                {collections.haikus && collections.haikus.unlockedCount > 0 && (
+                  <div className="mt-3 p-2 rounded-lg bg-gradient-primary/10 border border-primary/20">
+                    <div className="text-xs text-center text-primary">
+                      ☁️ {collections.haikus.unlockedCount}/{collections.haikus.totalItems} haïkus débloqués
+                    </div>
+                  </div>
+                )}
               </div>
             </Card>
           </div>
