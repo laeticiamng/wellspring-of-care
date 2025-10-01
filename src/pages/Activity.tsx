@@ -1,185 +1,166 @@
-import Header from "@/components/Header";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, TrendingUp, Activity as ActivityIcon, Heart } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { useState, useEffect } from "react";
-import { useImplicitTracking } from "@/hooks/useImplicitTracking";
-import { useCollections } from "@/hooks/useCollections";
+import { Helmet } from 'react-helmet';
+import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { useWeekly } from '@/hooks/useWeekly';
+import { SeasonGarden } from '@/components/SeasonGarden';
+import { HelpsList } from '@/components/HelpsList';
+import { WeeksCarousel } from '@/components/WeeksCarousel';
+import { RarePlantReveal } from '@/components/RarePlantReveal';
+import { Skeleton } from '@/components/ui/skeleton';
+import { getPlantByRarity } from '@/utils/gardenAssets';
 
-const Activity = () => {
-  const [softModulesUsed, setSoftModulesUsed] = useState(0);
-  const { track } = useImplicitTracking();
-  const { collections, unlockItem } = useCollections();
+export default function Activity() {
+  const { currentSummary, weeklySummaries, weeklyGardens, isLoadingSummary, isLoadingHistory } = useWeekly();
+  const [showRarePlant, setShowRarePlant] = useState(false);
+  const [rarePlant, setRarePlant] = useState<any>(null);
 
-  const weekDays = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
-  const activities = [
-    { day: 'Lun', sessions: 3, mood: 'Excellent', score: 85, softModules: 2 },
-    { day: 'Mar', sessions: 2, mood: 'Bien', score: 75, softModules: 1 },
-    { day: 'Mer', sessions: 4, mood: 'Excellent', score: 90, softModules: 3 },
-    { day: 'Jeu', sessions: 2, mood: 'Moyen', score: 65, softModules: 0 },
-    { day: 'Ven', sessions: 5, mood: 'Excellent', score: 95, softModules: 4 },
-    { day: 'Sam', sessions: 3, mood: 'Bien', score: 80, softModules: 2 },
-    { day: 'Dim', sessions: 2, mood: 'Bien', score: 70, softModules: 1 }
-  ];
+  const currentGarden = weeklyGardens?.[0];
+  const rarity = currentGarden?.rarity || 1;
 
   useEffect(() => {
-    // Track engagement with soft modules
-    const totalSoft = activities.reduce((sum, act) => sum + act.softModules, 0);
-    if (totalSoft >= 10) {
-      track({
-        instrument: "WHO5",
-        item_id: "overall",
-        proxy: "repeat",
-        value: "soft_modules",
-        context: { count: String(totalSoft) }
-      });
-
-      // Unlock plantes
-      setSoftModulesUsed(totalSoft);
-      if (totalSoft >= 10 && collections.plantes?.items[0]) {
-        unlockItem('plantes', collections.plantes.items[0].id);
+    // Show rare plant reveal if rarity >= 3 and not shown before
+    if (rarity >= 3 && currentGarden) {
+      const hasShown = sessionStorage.getItem(`rare-plant-${currentGarden.id}`);
+      if (!hasShown) {
+        setRarePlant(getPlantByRarity(rarity));
+        setShowRarePlant(true);
+        sessionStorage.setItem(`rare-plant-${currentGarden.id}`, 'true');
       }
     }
-  }, []);
+  }, [rarity, currentGarden]);
+
+  if (isLoadingSummary) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-background to-background/95 p-6">
+        <div className="max-w-6xl mx-auto space-y-8">
+          <Skeleton className="h-12 w-64 mx-auto" />
+          <Skeleton className="h-[400px] w-full rounded-lg" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <Skeleton className="h-64" />
+            <Skeleton className="h-64" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const season = (currentSummary?.season as 'spring' | 'summer' | 'autumn' | 'winter') || 'spring';
+  const helps = currentSummary?.helps || [];
 
   return (
-    <div className="min-h-screen bg-gradient-calm">
-      <Header />
-      
-      <main className="container mx-auto px-4 py-8 space-y-8">
-        <div className="text-center space-y-4">
-          <div className="flex items-center justify-center space-x-3">
-            <ActivityIcon className="h-12 w-12 text-primary animate-pulse-soft" />
-            <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              Le Jardin des Saisons
+    <>
+      <Helmet>
+        <title>Jardin des Saisons | EmotionsCare</title>
+        <meta name="description" content="Découvre ta semaine en douceur avec ton jardin personnel" />
+      </Helmet>
+
+      {/* Rare plant reveal */}
+      {showRarePlant && rarePlant && (
+        <RarePlantReveal
+          plant={rarePlant}
+          onComplete={() => setShowRarePlant(false)}
+        />
+      )}
+
+      <div className="min-h-screen bg-gradient-to-b from-background to-background/95">
+        <div className="max-w-6xl mx-auto p-6 space-y-12">
+          {/* Header */}
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center space-y-2"
+          >
+            <h1 
+              className="text-4xl font-bold text-foreground"
+              tabIndex={0}
+            >
+              Ta semaine, en douceur
             </h1>
-          </div>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Chaque semaine, une nouvelle plante pousse. Selon votre état, elle change de couleur et de forme.
-          </p>
-          <p className="text-sm text-primary animate-pulse-soft">
-            🌱 Votre jardin devient une galerie vivante d'émotions 🌱
-          </p>
-        </div>
+            <p className="text-muted-foreground">
+              Le jardin se transforme à ton rythme
+            </p>
+            {rarity >= 3 && (
+              <motion.p
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="text-sm text-primary font-medium"
+                role="status"
+                aria-live="polite"
+              >
+                ✨ {rarity >= 4 ? 'Plante légendaire' : 'Plante rare'} débloquée !
+              </motion.p>
+            )}
+          </motion.div>
 
-        <div className="grid md:grid-cols-4 gap-6 max-w-6xl mx-auto">
-          <Card className="border-0 shadow-soft">
-            <CardContent className="pt-6 text-center space-y-2">
-              <Calendar className="h-8 w-8 text-primary mx-auto" />
-              <p className="text-3xl font-bold text-primary">21</p>
-              <p className="text-sm text-muted-foreground">Jours actifs</p>
-            </CardContent>
-          </Card>
-          <Card className="border-0 shadow-soft">
-            <CardContent className="pt-6 text-center space-y-2">
-              <Heart className="h-8 w-8 text-primary mx-auto" />
-              <p className="text-3xl font-bold text-primary">82%</p>
-              <p className="text-sm text-muted-foreground">Bien-être moyen</p>
-            </CardContent>
-          </Card>
-          <Card className="border-0 shadow-soft">
-            <CardContent className="pt-6 text-center space-y-2">
-              <ActivityIcon className="h-8 w-8 text-primary mx-auto" />
-              <p className="text-3xl font-bold text-primary">45</p>
-              <p className="text-sm text-muted-foreground">Sessions totales</p>
-            </CardContent>
-          </Card>
-          <Card className="border-0 shadow-soft">
-            <CardContent className="pt-6 text-center space-y-2">
-              <TrendingUp className="h-8 w-8 text-primary mx-auto" />
-              <p className="text-3xl font-bold text-primary">+12%</p>
-              <p className="text-sm text-muted-foreground">Progression</p>
-            </CardContent>
-          </Card>
-        </div>
+          {/* Garden Scene */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2 }}
+            className="bg-card border border-border rounded-xl overflow-hidden shadow-2xl"
+          >
+            <SeasonGarden 
+              season={season}
+              rarity={rarity}
+              lowStim={false}
+            />
+          </motion.div>
 
-        <Card className="max-w-6xl mx-auto border-0 shadow-glow">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Calendar className="h-6 w-6 text-primary" />
-              <span>Activité de la semaine</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-7 gap-4">
-              {activities.map((activity) => (
-                <Card key={activity.day} className="border-0 bg-gradient-primary/5">
-                  <CardContent className="pt-6 text-center space-y-3">
-                    <p className="font-medium">{activity.day}</p>
-                    <div className="space-y-2">
-                      <div className="h-24 bg-gradient-primary rounded-lg flex items-center justify-center" 
-                           style={{ opacity: activity.score / 100 }}>
-                        <p className="text-2xl font-bold text-primary-foreground">{activity.sessions}</p>
-                      </div>
-                      <Badge variant="outline" className="text-xs">
-                        {activity.mood}
-                      </Badge>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+          {/* Content Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Helps List */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.4 }}
+              className="bg-card border border-border rounded-xl p-6"
+            >
+              <HelpsList helps={helps} />
+            </motion.div>
 
-        <Card className="max-w-6xl mx-auto border-0 shadow-soft">
-          <CardHeader>
-            <CardTitle>Historique détaillé</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {activities.map((activity) => (
-                <div key={activity.day} className="flex items-center justify-between p-4 rounded-lg bg-muted/30">
-                  <div className="flex items-center space-x-4">
-                    <div className="font-bold text-primary">{activity.day}</div>
-                    <div>
-                      <p className="font-medium">{activity.sessions} sessions</p>
-                      <p className="text-sm text-muted-foreground">Score: {activity.score}/100</p>
-                    </div>
+            {/* Weekly Summary */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.5 }}
+              className="bg-card border border-border rounded-xl p-6 space-y-4"
+            >
+              <h3 className="text-xl font-semibold text-foreground">
+                Cette semaine
+              </h3>
+              <div className="space-y-3">
+                {(currentSummary?.verbal_week || []).map((verbal: string) => (
+                  <div
+                    key={verbal}
+                    className="flex items-center gap-3 p-3 rounded-lg bg-muted"
+                  >
+                    <div className="w-2 h-2 rounded-full bg-primary" />
+                    <span className="text-sm font-medium capitalize">{verbal}</span>
                   </div>
-                  <Badge className={
-                    activity.mood === 'Excellent' ? 'bg-gradient-primary text-primary-foreground' :
-                    activity.mood === 'Bien' ? 'bg-gradient-secondary text-secondary-foreground' :
-                    'bg-muted'
-                  }>
-                    {activity.mood}
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Plantes Collection */}
-        {collections.plantes && collections.plantes.unlockedCount > 0 && (
-          <Card className="max-w-6xl mx-auto border-0 shadow-soft bg-gradient-healing/10 border border-accent/20">
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Heart className="h-6 w-6 text-accent" />
-                <span>Jardin émotionnel</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid md:grid-cols-4 gap-4">
-                {collections.plantes.items.filter(item => item.unlocked).map(item => (
-                  <Card key={item.id} className="border-0 bg-gradient-primary/5 hover:scale-105 transition-transform">
-                    <CardContent className="pt-6 text-center space-y-2">
-                      <div className="text-4xl animate-float">{item.emoji}</div>
-                      <p className="text-sm font-medium">{item.name}</p>
-                      <Badge variant="outline" className="text-xs">{item.rarity}</Badge>
-                    </CardContent>
-                  </Card>
                 ))}
               </div>
-              <div className="text-center text-xs text-primary mt-4">
-                🌱 {collections.plantes.unlockedCount}/{collections.plantes.totalItems} plantes cultivées
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </main>
-    </div>
-  );
-};
+            </motion.div>
+          </div>
 
-export default Activity;
+          {/* Weeks History */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            className="bg-card border border-border rounded-xl p-6"
+          >
+            {isLoadingHistory ? (
+              <div className="grid grid-cols-4 gap-4">
+                {[...Array(8)].map((_, i) => (
+                  <Skeleton key={i} className="aspect-square rounded-lg" />
+                ))}
+              </div>
+            ) : (
+              <WeeksCarousel weeks={weeklySummaries || []} />
+            )}
+          </motion.div>
+        </div>
+      </div>
+    </>
+  );
+}

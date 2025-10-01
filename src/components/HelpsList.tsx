@@ -33,11 +33,18 @@ export function HelpsList({ helps = [] }: HelpsListProps) {
 
   return (
     <div className="space-y-4">
-      <h3 className="text-xl font-semibold text-center text-foreground">
+      <h3 
+        className="text-xl font-semibold text-center text-foreground"
+        id="helps-title"
+      >
         3 petites choses qui aident
       </h3>
 
-      <div className="space-y-3">
+      <div 
+        className="space-y-3"
+        role="list"
+        aria-labelledby="helps-title"
+      >
         {helps.slice(0, 3).map((help, index) => {
           const Icon = getIcon(help);
           const route = getRoute(help);
@@ -58,7 +65,10 @@ export function HelpsList({ helps = [] }: HelpsListProps) {
                 transition-all duration-200
                 flex items-center gap-4
                 text-left
+                focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2
               "
+              role="listitem"
+              aria-label={`Action suggérée: ${help}`}
             >
               <div className="
                 p-2 rounded-full

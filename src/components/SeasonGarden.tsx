@@ -13,6 +13,7 @@ interface SeasonGardenProps {
     weather: 'clear' | 'calm' | 'stars';
     particles: boolean;
   };
+  rarity?: number;
   lowStim?: boolean;
 }
 
@@ -20,6 +21,7 @@ export function SeasonGarden({
   season, 
   plantState = { growth: 50, type: 'bush', flowers: 3 },
   skyState = { time: 'day', weather: 'clear', particles: true },
+  rarity = 1,
   lowStim = false 
 }: SeasonGardenProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -66,7 +68,7 @@ export function SeasonGarden({
     ctx.fillRect(0, canvas.height * 0.7, canvas.width, canvas.height * 0.3);
 
     // Draw plant
-    drawPlant(ctx, canvas.width / 2, canvas.height * 0.7, plantState, palette.accent, timeMod.multiply);
+    drawPlant(ctx, canvas.width / 2, canvas.height * 0.7, plantState, palette.accent, timeMod.multiply, rarity);
 
     // Draw particles (if not low-stim)
     if (skyState.particles && !lowStim) {
@@ -122,17 +124,27 @@ function drawPlant(
   y: number,
   state: { growth: number; type: string; flowers: number },
   color: string,
-  timeMod: number
+  timeMod: number,
+  rarity: number = 1
 ) {
   const height = (state.growth / 100) * 150;
   
-  // Stem
-  ctx.strokeStyle = adjustColor('#228B22', timeMod);
-  ctx.lineWidth = 4;
+  // Stem (golden if rare/legendary)
+  const stemColor = rarity >= 3 ? '#FFD700' : '#228B22';
+  ctx.strokeStyle = adjustColor(stemColor, timeMod);
+  ctx.lineWidth = rarity >= 3 ? 5 : 4;
   ctx.beginPath();
   ctx.moveTo(x, y);
   ctx.lineTo(x, y - height);
   ctx.stroke();
+  
+  // Glow effect for rare plants
+  if (rarity >= 3) {
+    ctx.shadowBlur = 20;
+    ctx.shadowColor = rarity >= 4 ? 'rgba(255, 215, 0, 0.8)' : 'rgba(138, 43, 226, 0.6)';
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  }
 
   // Branches based on type
   if (state.type === 'bush' || state.type === 'tree') {
@@ -150,14 +162,28 @@ function drawPlant(
     }
   }
 
-  // Flowers
-  ctx.fillStyle = adjustColor(color, timeMod);
+  // Flowers (rainbow for legendary)
+  const flowerColors = rarity >= 4 
+    ? ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFD93D', '#6BCB77']
+    : [adjustColor(color, timeMod)];
+  
   for (let i = 0; i < Math.min(state.flowers, 5); i++) {
+    ctx.fillStyle = flowerColors[i % flowerColors.length];
     const flowerX = x + (Math.random() - 0.5) * 40;
     const flowerY = y - height * 0.8 + (Math.random() - 0.5) * 30;
+    const flowerSize = rarity >= 3 ? 6 : 4;
+    
     ctx.beginPath();
-    ctx.arc(flowerX, flowerY, 4, 0, Math.PI * 2);
+    ctx.arc(flowerX, flowerY, flowerSize, 0, Math.PI * 2);
     ctx.fill();
+    
+    // Sparkle for rare flowers
+    if (rarity >= 3) {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+      ctx.beginPath();
+      ctx.arc(flowerX, flowerY, 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
 }
 

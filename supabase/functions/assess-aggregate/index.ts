@@ -85,7 +85,7 @@ serve(async (req) => {
     // Create garden state
     const plantState = computePlantState(signals);
     const skyState = computeSkyState(signals, verbal_week);
-    const rarity = computeRarity(signals);
+    const rarity = await computeRarity(supabase, user.id, signals);
 
     await supabase
       .from('weekly_garden')
@@ -241,8 +241,45 @@ function computeSkyState(signals: any, verbal_week: string[]) {
   return { time, weather, particles: signals.badges.length > 5 };
 }
 
-function computeRarity(signals: any) {
-  // Rare plant if 3+ weeks of consistent engagement
-  const streak = signals.sessions.length >= 10 && signals.badges.length >= 5;
-  return streak ? 3 : signals.sessions.length > 5 ? 2 : 1;
+async function computeRarity(supabase: any, userId: string, signals: any) {
+  // Check week streak
+  const { data: recentWeeks } = await supabase
+    .from('weekly_summary')
+    .select('week_iso, created_at')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(5);
+
+  let streak = 0;
+  if (recentWeeks && recentWeeks.length > 0) {
+    // Count consecutive weeks
+    const now = new Date();
+    for (let i = 0; i < recentWeeks.length; i++) {
+      const weekDate = new Date(recentWeeks[i].created_at);
+      const daysDiff = Math.floor((now.getTime() - weekDate.getTime()) / (1000 * 60 * 60 * 24));
+      const weeksDiff = Math.floor(daysDiff / 7);
+      
+      if (weeksDiff === i) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+  }
+
+  // Calculate rarity based on engagement and streak
+  const engagementScore = signals.sessions.length * 2 + signals.badges.length;
+  
+  // Legendary: 3+ week streak + high engagement
+  if (streak >= 3 && engagementScore >= 15) {
+    return Math.random() < 0.05 ? 4 : 3; // 5% chance of legendary
+  }
+  
+  // Rare: 2+ week streak or good engagement
+  if (streak >= 2 || engagementScore >= 10) {
+    return Math.random() < 0.15 ? 3 : 2; // 15% chance of rare
+  }
+  
+  // Common
+  return signals.sessions.length > 3 ? 2 : 1;
 }

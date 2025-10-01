@@ -43,16 +43,28 @@ export function WeeklyBars({
     >
       {/* Header */}
       <div className="text-center space-y-2">
-        <h2 className="text-2xl font-semibold text-foreground">
+        <h2 
+          className="text-2xl font-semibold text-foreground"
+          id="weekly-bars-title"
+          tabIndex={0}
+        >
           Ta semaine
         </h2>
-        <p className="text-muted-foreground">
+        <p 
+          className="text-muted-foreground"
+          role="status"
+          aria-live="polite"
+        >
           {verbalWeek.join(' • ')}
         </p>
       </div>
 
       {/* Bars */}
-      <div className="space-y-4">
+      <div 
+        className="space-y-4"
+        role="list"
+        aria-labelledby="weekly-bars-title"
+      >
         {verbalWeek.slice(0, 3).map((verbal, index) => (
           <motion.div
             key={verbal}
@@ -64,6 +76,8 @@ export function WeeklyBars({
               bg-gradient-to-r ${barColors[verbal] || barColors['doux']}
               overflow-hidden
             `}
+            role="listitem"
+            aria-label={`État émotionnel: ${barLabels[verbal] || verbal}`}
           >
             {/* Halo effect */}
             <motion.div
@@ -107,7 +121,9 @@ export function WeeklyBars({
             disabled:opacity-50 disabled:cursor-not-allowed
             transition-all duration-200
             shadow-lg hover:shadow-xl
+            focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2
           "
+          aria-label={isExecuting ? 'Action en cours' : ctaText}
         >
           {isExecuting ? 'En cours...' : ctaText}
         </motion.button>
