@@ -118,6 +118,7 @@ const App = () => (
             <Route path="/vr-galaxy" element={<ProtectedRoute><VRGalaxy /></ProtectedRoute>} />
             <Route path="/flash-glow" element={<ProtectedRoute><FlashGlow /></ProtectedRoute>} />
             <Route path="/breath" element={<ProtectedRoute><Breathwork /></ProtectedRoute>} />
+            <Route path="/breathwork" element={<ProtectedRoute><Breathwork /></ProtectedRoute>} />
             <Route path="/face-ar" element={<ProtectedRoute><ARFilters /></ProtectedRoute>} />
             <Route path="/bubble-beat" element={<ProtectedRoute><BubbleBeat /></ProtectedRoute>} />
             <Route path="/boss-grit" element={<ProtectedRoute><BossGrit /></ProtectedRoute>} />
