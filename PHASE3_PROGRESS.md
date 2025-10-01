@@ -4,7 +4,7 @@
 
 **Date de début**: 1 Oct 2025  
 **Durée estimée**: 150 heures  
-**Progression**: 15%
+**Progression**: 30%
 
 ---
 
@@ -36,12 +36,32 @@
 - ✅ Détection de séries (streaks)
 - ✅ Notifications d'engagement
 
-### 2. Social Features (0%)
-- ⏳ Community feed
-- ⏳ Support groups
-- ⏳ Buddy system
-- ⏳ Challenges
-- ⏳ Achievement sharing
+### 2. Social Features ✅ (100%)
+
+#### Tables créées
+- ✅ `community_posts` - Posts communautaires
+- ✅ `post_reactions` - Réactions aux posts
+- ✅ `post_comments` - Commentaires
+- ✅ `support_groups` - Groupes de soutien
+- ✅ `group_memberships` - Membres des groupes
+- ✅ `user_achievements` - Succès utilisateurs
+- ✅ `achievement_shares` - Partage de succès
+
+#### Hooks & Components
+- ✅ `useCommunity` - Hook gestion communauté
+- ✅ `useSupportGroups` - Hook gestion groupes
+- ✅ `CommunityFeed` - Fil d'actualité
+- ✅ `SupportGroupsList` - Liste groupes de soutien
+- ✅ Page `/community` - Page communauté complète
+
+#### Fonctionnalités
+- ✅ Community feed avec posts
+- ✅ Support groups avec création/rejoindre
+- ✅ Système de réactions et commentaires
+- ✅ Posts anonymes
+- ✅ Groupes publics/privés
+- ✅ Tags et catégories
+- ✅ Compteurs automatiques (likes, commentaires, membres)
 
 ### 3. Content Personalization (0%)
 - ⏳ AI recommendations
@@ -90,6 +110,7 @@
 | Route | Component | Description |
 |-------|-----------|-------------|
 | `/analytics` | Analytics | Dashboard analytics & insights |
+| `/community` | Community | Feed communautaire & groupes |
 
 ---
 
@@ -97,11 +118,11 @@
 
 | Métrique | Valeur |
 |----------|--------|
-| Tables créées | 4 |
+| Tables créées | 11 |
 | Edge Functions | 1 |
-| Hooks créés | 1 |
-| Components créés | 2 |
-| Pages créées | 1 |
+| Hooks créés | 3 |
+| Components créés | 4 |
+| Pages créées | 1 (+ tabs) |
 | APIs intégrées | 0 |
 
 ---
@@ -109,7 +130,8 @@
 ## Prochaines Étapes
 
 ✅ Analytics & Insights (100%)  
-➡️ Social Features (0%)  
+✅ Social Features (100%)  
+➡️ Content Personalization (0%)
 ⏳ Content Personalization (0%)  
 ⏳ Integration & Export (0%)  
 ⏳ Performance Optimization (0%)  
@@ -134,4 +156,4 @@
 
 ---
 
-**🎯 Phase 3 en cours - 15% complété**
+**🎯 Phase 3 en cours - 30% complété**
