@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { NotificationBell } from "./NotificationBell";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -140,12 +141,7 @@ const Header = () => {
         {/* Actions */}
         <div className="flex items-center space-x-3">
           {/* Notifications */}
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="h-5 w-5" />
-            <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 bg-gradient-secondary text-secondary-foreground">
-              3
-            </Badge>
-          </Button>
+          <NotificationBell />
 
           {/* Messages */}
           <Button variant="ghost" size="icon" className="relative">

@@ -47,3 +47,6 @@ verify_jwt = true
 
 [functions.generate-pdf-report]
 verify_jwt = true
+
+[functions.team-notifications]
+verify_jwt = true
