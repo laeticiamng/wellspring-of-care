@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { BreathingBubble } from '@/components/BreathingBubble';
 import { BadgeReveal } from '@/components/BadgeReveal';
 import { CocoonGallery } from '@/components/CocoonGallery';
+import { NyveeTutorial } from '@/components/NyveeTutorial';
 import { useNyveeSession } from '@/hooks/useNyveeSession';
 import { Sparkles, ArrowLeft } from 'lucide-react';
 import Header from '@/components/Header';
@@ -12,7 +13,7 @@ import Header from '@/components/Header';
 const Nyvee = () => {
   const navigate = useNavigate();
   const { session, badge, loading, startSession, submitSession, reset } = useNyveeSession();
-  const [phase, setPhase] = useState<'welcome' | 'breathing' | 'badge'>('welcome');
+  const [phase, setPhase] = useState<'tutorial' | 'welcome' | 'breathing' | 'badge'>('tutorial');
   const [breathStartTime, setBreathStartTime] = useState<number>(0);
   const [currentPhase, setCurrentPhase] = useState<'inhale' | 'exhale'>('inhale');
 
@@ -62,6 +63,14 @@ const Nyvee = () => {
     reset();
     setPhase('welcome');
   };
+
+  const handleTutorialComplete = () => {
+    setPhase('welcome');
+  };
+
+  if (phase === 'tutorial') {
+    return <NyveeTutorial onComplete={handleTutorialComplete} />;
+  }
 
   if (phase === 'breathing') {
     return (

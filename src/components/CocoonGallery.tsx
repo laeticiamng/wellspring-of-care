@@ -21,11 +21,41 @@ export function CocoonGallery() {
   const [loading, setLoading] = useState(true);
 
   const allCocoonTypes = [
-    { name: 'Cocon cristal', locked: true },
-    { name: 'Cocon cosmos', locked: true },
-    { name: 'Cocon eau', locked: true },
-    { name: 'Cocon feuillage', locked: true },
-    { name: 'Cocon aurore', locked: true },
+    { 
+      name: 'Cocon cristal', 
+      locked: true,
+      emoji: '💎',
+      color: 'from-cyan-400 to-blue-600',
+      description: 'Transparence et clarté'
+    },
+    { 
+      name: 'Cocon cosmos', 
+      locked: true,
+      emoji: '🌌',
+      color: 'from-purple-600 to-indigo-900',
+      description: 'Infini et mystère'
+    },
+    { 
+      name: 'Cocon eau', 
+      locked: true,
+      emoji: '💧',
+      color: 'from-blue-400 to-teal-500',
+      description: 'Fluidité et paix'
+    },
+    { 
+      name: 'Cocon feuillage', 
+      locked: true,
+      emoji: '🍃',
+      color: 'from-green-400 to-emerald-600',
+      description: 'Nature et renaissance'
+    },
+    { 
+      name: 'Cocon aurore', 
+      locked: true,
+      emoji: '🌅',
+      color: 'from-pink-400 via-purple-400 to-orange-400',
+      description: 'Éveil et nouveaux départs'
+    },
   ];
 
   useEffect(() => {
@@ -90,26 +120,58 @@ export function CocoonGallery() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              className={`relative p-6 rounded-2xl border-2 ${
+              className={`relative p-6 rounded-2xl border-2 overflow-hidden ${
                 item.locked
                   ? 'bg-white/5 border-white/10'
-                  : 'bg-white/10 border-white/30 shadow-glow'
+                  : 'border-white/30 shadow-glow'
               } backdrop-blur-lg`}
+              whileHover={!item.locked ? { scale: 1.05 } : {}}
             >
+              {!item.locked && (
+                <motion.div
+                  className={`absolute inset-0 bg-gradient-to-br ${item.color} opacity-20`}
+                  animate={{
+                    opacity: [0.2, 0.4, 0.2],
+                  }}
+                  transition={{
+                    duration: 3,
+                    repeat: Infinity,
+                    ease: 'easeInOut',
+                  }}
+                />
+              )}
+              
               {item.locked ? (
-                <div className="flex flex-col items-center justify-center h-32 text-center">
+                <div className="relative flex flex-col items-center justify-center h-32 text-center">
                   <Lock className="w-12 h-12 text-white/30 mb-3" />
-                  <p className="text-white/40 text-sm">À débloquer</p>
+                  <p className="text-white/40 text-xs">À débloquer</p>
                 </div>
               ) : (
-                <div className="flex flex-col items-center text-center">
-                  <Sparkles className="w-12 h-12 text-yellow-400 mb-3 animate-pulse" />
+                <div className="relative flex flex-col items-center text-center">
+                  <motion.div
+                    className="text-5xl mb-3"
+                    animate={{
+                      rotate: [0, 10, -10, 0],
+                      scale: [1, 1.1, 1],
+                    }}
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: 'easeInOut',
+                    }}
+                  >
+                    {item.emoji}
+                  </motion.div>
                   <p className="text-white font-medium text-sm mb-1">
                     {item.name.replace('Cocon ', '')}
                   </p>
-                  <p className="text-white/60 text-xs">
+                  <p className="text-white/50 text-xs italic mb-2">
+                    {item.description}
+                  </p>
+                  <p className="text-white/40 text-xs">
                     {new Date(item.cocoon!.awarded_at).toLocaleDateString('fr-FR')}
                   </p>
+                  <Sparkles className="w-4 h-4 text-yellow-400 mt-2 animate-pulse" />
                 </div>
               )}
             </motion.div>
