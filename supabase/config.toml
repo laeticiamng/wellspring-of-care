@@ -41,3 +41,6 @@ verify_jwt = true
 
 [functions.team-aggregate-b2b]
 verify_jwt = true
+
+[functions.send-invitation-email]
+verify_jwt = true

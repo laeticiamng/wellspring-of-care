@@ -39,7 +39,7 @@ export default function AcceptInvitation() {
       if (!invitation) throw new Error("Invitation non trouvée");
       
       const { data, error } = await supabase.rpc("accept_invitation", {
-        token_param: token,
+        invitation_token: token,
       });
       
       if (error) throw error;

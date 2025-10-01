@@ -10033,8 +10033,8 @@ export type Database = {
     }
     Functions: {
       accept_invitation: {
-        Args: { token_param: string }
-        Returns: boolean
+        Args: { invitation_token: string }
+        Returns: Json
       }
       audit_and_correct_edn_content: {
         Args: Record<PropertyKey, never>
@@ -10779,11 +10779,8 @@ export type Database = {
       get_user_subscription: {
         Args: { user_uuid: string }
         Returns: {
-          features: Json
           monthly_quota: number
-          plan_id: string
           plan_name: string
-          status: string
         }[]
       }
       increment_aura_interaction: {

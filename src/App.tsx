@@ -43,6 +43,7 @@ import RHDashboard from "./pages/RHDashboard";
 import ScreenSilk from "./pages/ScreenSilk";
 import Onboarding from "./pages/Onboarding";
 import Help from "./pages/Help";
+import Home from "./pages/Home";
 
 const queryClient = new QueryClient();
 
@@ -75,7 +76,16 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
             <Route path="/pricing" element={<Pricing />} />
+            <Route path="/app/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/app/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/app/rh-dashboard" element={
+              <ProtectedRoute>
+                <RoleBasedRoute allowedRoles={['manager_b2b', 'admin']}>
+                  <RHDashboard />
+                </RoleBasedRoute>
+              </ProtectedRoute>
+            } />
             <Route path="/journal" element={<ProtectedRoute><JournalNew /></ProtectedRoute>} />
             <Route path="/meditation" element={<ProtectedRoute><Meditation /></ProtectedRoute>} />
             <Route path="/community" element={<ProtectedRoute><Community /></ProtectedRoute>} />

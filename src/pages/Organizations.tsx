@@ -112,13 +112,22 @@ export default function Organizations() {
       
       if (error) throw error;
       
-      // TODO: Envoyer l'email d'invitation via edge function
+      // Envoyer l'email d'invitation via edge function
+      try {
+        await supabase.functions.invoke("send-invitation-email", {
+          body: { invitationId: data.id },
+        });
+      } catch (emailError) {
+        console.error("Erreur envoi email:", emailError);
+        // Ne pas bloquer si l'email échoue
+      }
+      
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["invitations"] });
       setInviteEmail("");
-      toast.success("Invitation créée ✅ (email à implémenter)");
+      toast.success("Invitation envoyée par email ✅");
     },
   });
 
