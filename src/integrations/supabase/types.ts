@@ -9568,6 +9568,69 @@ export type Database = {
           },
         ]
       }
+      weekly_garden: {
+        Row: {
+          created_at: string | null
+          id: string
+          plant_state: Json | null
+          rarity: number | null
+          sky_state: Json | null
+          user_id: string
+          week_iso: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          plant_state?: Json | null
+          rarity?: number | null
+          sky_state?: Json | null
+          user_id: string
+          week_iso: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          plant_state?: Json | null
+          rarity?: number | null
+          sky_state?: Json | null
+          user_id?: string
+          week_iso?: string
+        }
+        Relationships: []
+      }
+      weekly_summary: {
+        Row: {
+          created_at: string | null
+          helps: string[] | null
+          hints: Json | null
+          id: string
+          season: string | null
+          user_id: string
+          verbal_week: string[] | null
+          week_iso: string
+        }
+        Insert: {
+          created_at?: string | null
+          helps?: string[] | null
+          hints?: Json | null
+          id?: string
+          season?: string | null
+          user_id: string
+          verbal_week?: string[] | null
+          week_iso: string
+        }
+        Update: {
+          created_at?: string | null
+          helps?: string[] | null
+          hints?: Json | null
+          id?: string
+          season?: string | null
+          user_id?: string
+          verbal_week?: string[] | null
+          week_iso?: string
+        }
+        Relationships: []
+      }
       who5_assessments: {
         Row: {
           completed: boolean | null
