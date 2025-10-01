@@ -1461,6 +1461,42 @@ export type Database = {
           },
         ]
       }
+      coach_sessions: {
+        Row: {
+          aaq_score: number | null
+          completed_at: string | null
+          created_at: string
+          flexibility_level: string | null
+          id: string
+          session_duration: number | null
+          thoughts_collected: number | null
+          thoughts_shown: Json | null
+          user_id: string
+        }
+        Insert: {
+          aaq_score?: number | null
+          completed_at?: string | null
+          created_at?: string
+          flexibility_level?: string | null
+          id?: string
+          session_duration?: number | null
+          thoughts_collected?: number | null
+          thoughts_shown?: Json | null
+          user_id: string
+        }
+        Update: {
+          aaq_score?: number | null
+          completed_at?: string | null
+          created_at?: string
+          flexibility_level?: string | null
+          id?: string
+          session_duration?: number | null
+          thoughts_collected?: number | null
+          thoughts_shown?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       cocon_content: {
         Row: {
           content: string
@@ -7707,6 +7743,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      thought_grimoire: {
+        Row: {
+          category: string
+          collected_at: string
+          id: string
+          is_favorite: boolean | null
+          rarity: string
+          thought_emoji: string | null
+          thought_text: string
+          times_viewed: number | null
+          user_id: string
+        }
+        Insert: {
+          category?: string
+          collected_at?: string
+          id?: string
+          is_favorite?: boolean | null
+          rarity?: string
+          thought_emoji?: string | null
+          thought_text: string
+          times_viewed?: number | null
+          user_id: string
+        }
+        Update: {
+          category?: string
+          collected_at?: string
+          id?: string
+          is_favorite?: boolean | null
+          rarity?: string
+          thought_emoji?: string | null
+          thought_text?: string
+          times_viewed?: number | null
+          user_id?: string
+        }
+        Relationships: []
       }
       ui_suggestion_cache: {
         Row: {
