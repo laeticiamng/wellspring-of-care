@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Cookie, X } from 'lucide-react';
-import { Link } from 'react-router-dom';
 
 const CONSENT_KEY = 'emotionscare_cookie_consent';
 
@@ -42,13 +41,13 @@ export function CookieConsent() {
               Nous utilisons des cookies essentiels pour assurer le bon fonctionnement de notre plateforme 
               (authentification, sessions). Aucun cookie de tracking publicitaire n'est utilisé. 
               En continuant, vous acceptez notre{' '}
-              <Link to="/privacy" className="text-primary hover:underline">
+              <a href="/privacy" className="text-primary hover:underline">
                 politique de confidentialité
-              </Link>
+              </a>
               {' '}et nos{' '}
-              <Link to="/terms" className="text-primary hover:underline">
+              <a href="/terms" className="text-primary hover:underline">
                 conditions d'utilisation
-              </Link>.
+              </a>.
             </p>
             
             <div className="flex flex-wrap gap-2">
