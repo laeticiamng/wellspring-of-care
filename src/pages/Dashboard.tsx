@@ -27,6 +27,7 @@ import { CardGallery } from "@/components/CardGallery";
 import { useWHO5Calculator } from "@/hooks/useWHO5Calculator";
 import { useSmartNotifications } from "@/hooks/useSmartNotifications";
 import { NotificationSettings } from "@/components/NotificationSettings";
+import { GamificationPanel } from "@/components/GamificationPanel";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -286,6 +287,9 @@ const Dashboard = () => {
 
           {/* Right Column - 1/3 width */}
           <div className="space-y-6">
+            {/* Gamification Panel */}
+            <GamificationPanel />
+
             {/* Notifications Settings */}
             <NotificationSettings />
 
