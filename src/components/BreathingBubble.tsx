@@ -7,7 +7,7 @@ interface BreathingBubbleProps {
   onBreathCycle?: () => void;
 }
 
-const BreathingBubble = ({ breathLevel, isActive, onBreathCycle }: BreathingBubbleProps) => {
+export default function BreathingBubble({ breathLevel, isActive, onBreathCycle }: BreathingBubbleProps) {
   const [previousLevel, setPreviousLevel] = useState(0);
   const [particles, setParticles] = useState<Array<{id: number, x: number, y: number, delay: number}>>([]);
   
@@ -114,6 +114,4 @@ const BreathingBubble = ({ breathLevel, isActive, onBreathCycle }: BreathingBubb
       />
     </div>
   );
-};
-
-export default BreathingBubble;
+}
