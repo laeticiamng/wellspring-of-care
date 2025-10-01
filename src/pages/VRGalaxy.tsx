@@ -1,162 +1,370 @@
 import Header from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Glasses, Stars, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { Sparkles, Play, Pause, Eye, Gauge } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useImplicitTracking } from "@/hooks/useImplicitTracking";
 import { useCollections } from "@/hooks/useCollections";
+import GalaxyScene from "@/components/GalaxyScene";
+import ConstellationGallery from "@/components/ConstellationGallery";
+import { useToast } from "@/hooks/use-toast";
+import { motion, AnimatePresence } from "framer-motion";
+
+interface Constellation {
+  id: string;
+  rarity: 'common' | 'rare' | 'epic' | 'legendary';
+  timestamp: number;
+  starsCount: number;
+  tension: number;
+  name: string;
+}
 
 const VRGalaxy = () => {
-  const [navigationSpeed, setNavigationSpeed] = useState<string>("");
-  const [effectsReduced, setEffectsReduced] = useState(false);
   const [sessionActive, setSessionActive] = useState(false);
   const [sessionStartTime, setSessionStartTime] = useState<number>(0);
+  const [starsActivated, setStarsActivated] = useState(0);
+  const [constellations, setConstellations] = useState<Constellation[]>([]);
+  const [showBadge, setShowBadge] = useState(false);
+  const [badgeText, setBadgeText] = useState("");
+  const [tension, setTension] = useState(0.5);
+  const [comfortMode, setComfortMode] = useState(false);
+  
   const { track } = useImplicitTracking();
   const { collections, unlockItem } = useCollections();
+  const { toast } = useToast();
 
-  const handleStartSession = (speed: string) => {
-    setNavigationSpeed(speed);
-    setSessionActive(true);
-    setSessionStartTime(Date.now());
+  // Simuler tension POMS
+  useEffect(() => {
+    if (sessionActive) {
+      const interval = setInterval(() => {
+        setTension(prev => {
+          const change = (Math.random() - 0.5) * 0.1;
+          return Math.max(0, Math.min(1, prev + change));
+        });
+      }, 3000);
+      return () => clearInterval(interval);
+    }
+  }, [sessionActive]);
 
-    // Track navigation choice for POMS tension
-    track({
-      instrument: "POMS",
-      item_id: "tension",
-      proxy: "choice",
-      value: speed === "slow" ? "slow_nav" : "fast_nav",
-      context: { environment: "galaxy" }
-    });
+  const calculateRarity = (stars: number, duration: number, tensionFinal: number): 'common' | 'rare' | 'epic' | 'legendary' => {
+    const score = stars * 10 + (duration / 1000) * 2 + (1 - tensionFinal) * 50;
+    const rand = Math.random();
+    
+    if (score > 200 && rand > 0.95) return 'legendary';
+    if (score > 150 && rand > 0.85) return 'epic';
+    if (score > 100 && rand > 0.70) return 'rare';
+    return 'common';
   };
 
-  const handleReduceEffects = () => {
-    setEffectsReduced(true);
+  const constellationNames = [
+    "Orion le Calme", "Cassiopée Sereine", "Andromède Apaisée",
+    "Pégase Libéré", "Draco Zen", "Lyra Lumineuse",
+    "Cygne Cosmique", "Phoenix Renaissant", "Ursa Tranquille"
+  ];
+
+  const handleStartSession = () => {
+    setSessionActive(true);
+    setSessionStartTime(Date.now());
+    setStarsActivated(0);
+    
     track({
       instrument: "SSQ",
-      item_id: "nausea",
-      proxy: "choice",
-      value: "reduce_effects"
+      item_id: "vr_galaxy_start",
+      proxy: "start",
+      value: "initiated"
+    });
+
+    track({
+      instrument: "POMS",
+      item_id: "tension_baseline",
+      proxy: "start",
+      value: String(tension)
+    });
+    
+    toast({
+      title: "🌌 Galaxie activée",
+      description: "Crée ta constellation émotionnelle",
     });
   };
 
   const handleEndSession = () => {
     const duration = Date.now() - sessionStartTime;
+    const rarity = calculateRarity(starsActivated, duration, tension);
     
-    // Unlock constellations after successful journey
-    if (duration >= 60000 && collections.constellations?.items[0]) {
+    const newConstellation: Constellation = {
+      id: `constellation-${Date.now()}`,
+      rarity,
+      timestamp: Date.now(),
+      starsCount: starsActivated,
+      tension,
+      name: constellationNames[Math.floor(Math.random() * constellationNames.length)]
+    };
+    
+    setConstellations(prev => [newConstellation, ...prev]);
+
+    const badges = {
+      low: "🌠 Exploration énergique !",
+      medium: "🌌 Voyage équilibré",
+      high: "🌿 Tension relâchée",
+    };
+
+    const badgeType = tension > 0.7 ? 'high' : tension > 0.4 ? 'medium' : 'low';
+    setBadgeText(badges[badgeType]);
+    setShowBadge(true);
+
+    if (duration < 60000) {
+      track({
+        instrument: "SSQ",
+        item_id: "discomfort",
+        proxy: "skip",
+        value: "<1min",
+        context: { duration: String(duration), comfort_mode: String(comfortMode) }
+      });
+    } else {
+      track({
+        instrument: "SSQ",
+        item_id: "comfort",
+        proxy: "completion",
+        value: "success",
+        context: { 
+          duration: String(duration),
+          stars: String(starsActivated),
+          rarity,
+          comfort_mode: String(comfortMode)
+        }
+      });
+    }
+
+    track({
+      instrument: "POMS",
+      item_id: "tension_final",
+      proxy: "completion",
+      value: String(tension),
+      context: { change: String(tension - 0.5) }
+    });
+
+    if (collections.constellations?.items[0] && rarity !== 'common') {
       unlockItem('constellations', collections.constellations.items[0].id);
     }
-    
+
     setSessionActive(false);
+    setTimeout(() => setShowBadge(false), 5000);
+  };
+
+  const handleStarActivated = () => {
+    setStarsActivated(prev => prev + 1);
+    
+    if ('AudioContext' in window) {
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      
+      oscillator.frequency.value = 800 + Math.random() * 400;
+      oscillator.type = 'sine';
+      
+      gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+      
+      oscillator.start(audioCtx.currentTime);
+      oscillator.stop(audioCtx.currentTime + 0.3);
+    }
+  };
+
+  const handleComfortMode = () => {
+    setComfortMode(!comfortMode);
+    track({
+      instrument: "SSQ",
+      item_id: "comfort_adjustment",
+      proxy: "choice",
+      value: comfortMode ? "normal_mode" : "comfort_mode"
+    });
+    
+    toast({
+      title: comfortMode ? "Mode normal activé" : "🛡️ Mode confort activé",
+      description: comfortMode ? "Effets visuels normaux" : "Effets réduits pour ton confort",
+    });
   };
 
   return (
-    <div className="min-h-screen bg-gradient-calm">
+    <div className="min-h-screen bg-gradient-to-b from-black via-indigo-950 to-purple-950">
       <Header />
       
       <main className="container mx-auto px-4 py-8 space-y-8">
-        <div className="text-center space-y-4">
-          <div className="flex items-center justify-center space-x-3">
-            <Stars className="h-12 w-12 text-primary animate-glow" />
-            <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              La Constellation des Émotions
-            </h1>
-          </div>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Voyagez entre les étoiles. Chaque constellation porte une émotion que vous pouvez explorer.
-          </p>
-          <p className="text-sm text-primary animate-pulse-soft">
-            ✨ Débloquez des constellations rares ✨
-          </p>
-        </div>
-
-        <Card className="max-w-4xl mx-auto border-0 shadow-glow">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Glasses className="h-6 w-6 text-primary" />
-              <span>Voyage galactique</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="aspect-video bg-gradient-primary/20 rounded-lg flex items-center justify-center relative overflow-hidden">
-              <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48cGF0dGVybiBpZD0ic3RhcnMiIHg9IjAiIHk9IjAiIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBwYXR0ZXJuVW5pdHM9InVzZXJTcGFjZU9uVXNlIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSIxIiBmaWxsPSJ3aGl0ZSIgb3BhY2l0eT0iMC44Ii8+PGNpcmNsZSBjeD0iMTUwIiBjeT0iMTAwIiByPSIxLjUiIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIwLjYiLz48Y2lyY2xlIGN4PSIxMDAiIGN5PSIxNTAiIHI9IjEiIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIwLjciLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjc3RhcnMpIi8+PC9zdmc+')] opacity-50"></div>
-              <div className="text-center space-y-4 relative z-10">
-                <Stars className="h-20 w-20 text-primary mx-auto animate-float" />
-                <p className="text-xl font-semibold">
-                  {sessionActive ? "En voyage..." : "Prêt pour l'exploration"}
-                </p>
-                <p className="text-muted-foreground">
-                  {sessionActive 
-                    ? `Navigation ${navigationSpeed === "slow" ? "lente" : "standard"} activée` 
-                    : "Sélectionnez votre vitesse de navigation"}
-                </p>
+        {!sessionActive && (
+          <>
+            <motion.div 
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center space-y-4"
+            >
+              <div className="flex items-center justify-center space-x-3">
+                <Sparkles className="h-12 w-12 text-yellow-400 animate-pulse" />
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-yellow-400 via-purple-400 to-blue-400 bg-clip-text text-transparent">
+                  La Constellation Émotionnelle
+                </h1>
               </div>
-            </div>
+              <p className="text-gray-300 max-w-2xl mx-auto">
+                Explore l'univers infini et crée ta propre constellation. Chaque étoile représente une émotion.
+              </p>
+              <motion.p 
+                animate={{ opacity: [0.5, 1, 0.5] }}
+                transition={{ duration: 3, repeat: Infinity }}
+                className="text-sm text-yellow-400"
+              >
+                🌠 Ton voyage cosmique t'attend 🌠
+              </motion.p>
+            </motion.div>
 
-            <div className="flex justify-center space-x-4">
-              {!sessionActive ? (
-                <>
+            <Card className="max-w-4xl mx-auto border-0 shadow-glow-legendary bg-gradient-to-br from-indigo-950/50 to-purple-950/50 backdrop-blur">
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span className="flex items-center space-x-2">
+                    <Eye className="h-6 w-6 text-purple-400" />
+                    <span className="text-white">Exploration Stellaire</span>
+                  </span>
+                  {starsActivated > 0 && (
+                    <span className="text-sm font-normal text-yellow-400">
+                      {starsActivated} étoiles ✨
+                    </span>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex justify-center gap-4 flex-wrap">
                   <Button 
-                    className="bg-gradient-primary text-primary-foreground shadow-glow"
-                    onClick={() => handleStartSession("slow")}
+                    size="lg"
+                    className="bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-glow-intense hover:scale-105 transition-transform"
+                    onClick={handleStartSession}
                   >
-                    Navigation lente
+                    <Play className="mr-2 h-5 w-5" />
+                    Commencer l'exploration
                   </Button>
+                  
                   <Button 
-                    variant="outline"
-                    onClick={() => handleStartSession("standard")}
+                    variant="outline" 
+                    size="lg"
+                    onClick={handleComfortMode}
+                    className="border-purple-500/50 text-purple-300 hover:bg-purple-950/50"
                   >
-                    Navigation standard
+                    <Gauge className="mr-2 h-5 w-5" />
+                    {comfortMode ? "Mode Normal" : "Mode Confort"}
                   </Button>
-                </>
-              ) : (
-                <>
-                  <Button 
-                    className="bg-gradient-primary text-primary-foreground"
-                    onClick={handleEndSession}
-                  >
-                    Terminer le voyage
-                  </Button>
-                  <Button variant="outline" onClick={handleReduceEffects}>
-                    {effectsReduced ? "✓ Effets réduits" : "Réduire effets"}
-                  </Button>
-                </>
-              )}
-            </div>
-
-            <div className="grid md:grid-cols-3 gap-4">
-              {['Nébuleuse calme', 'Amas stellaire', 'Trou noir contemplatif'].map((zone, idx) => (
-                <Card key={zone} className="border-0 bg-muted/50 hover:bg-primary/10 transition-colors cursor-pointer">
-                  <CardContent className="pt-6 text-center space-y-2">
-                    <Sparkles className="h-8 w-8 text-primary mx-auto" />
-                    <p className="font-medium text-sm">{zone}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-
-            {/* Constellations Collection */}
-            {collections.constellations && collections.constellations.unlockedCount > 0 && (
-              <div className="mt-4 p-4 rounded-lg bg-gradient-healing/10 border border-accent/20">
-                <div className="text-center space-y-3">
-                  <p className="text-sm font-semibold text-accent">✨ Constellations découvertes</p>
-                  <div className="flex flex-wrap justify-center gap-3">
-                    {collections.constellations.items.filter(item => item.unlocked).map(item => (
-                      <div key={item.id} className="text-center">
-                        <span className="text-3xl">{item.emoji}</span>
-                        <p className="text-xs text-muted-foreground">{item.name}</p>
-                      </div>
-                    ))}
-                  </div>
-                  <p className="text-xs text-primary">
-                    {collections.constellations.unlockedCount}/{collections.constellations.totalItems} constellations débloquées
-                  </p>
                 </div>
+
+                <div className="grid md:grid-cols-3 gap-4">
+                  {[
+                    { name: 'Exploration Calme', emoji: '🌙', color: 'from-indigo-600 to-purple-600' },
+                    { name: 'Voyage Équilibré', emoji: '⚖️', color: 'from-purple-600 to-pink-600' },
+                    { name: 'Aventure Dynamique', emoji: '⚡', color: 'from-pink-600 to-red-600' }
+                  ].map((mode) => (
+                    <motion.div
+                      key={mode.name}
+                      whileHover={{ scale: 1.05, y: -5 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <Card className={`border-0 bg-gradient-to-br ${mode.color} cursor-pointer`}>
+                        <CardContent className="pt-6 text-center text-white">
+                          <span className="text-4xl mb-2 block">{mode.emoji}</span>
+                          <p className="font-medium">{mode.name}</p>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        )}
+
+        {sessionActive && (
+          <div className="relative">
+            <GalaxyScene 
+              isActive={sessionActive}
+              tension={tension}
+              onStarActivated={handleStarActivated}
+            />
+
+            <div className="absolute top-8 right-8 flex flex-col gap-3 z-20">
+              <Button
+                variant="outline"
+                className="bg-black/50 hover:bg-black/70 border-white/30 text-white backdrop-blur"
+                onClick={handleEndSession}
+              >
+                <Pause className="mr-2 h-4 w-4" />
+                Terminer
+              </Button>
+              
+              <div className="bg-black/50 backdrop-blur rounded-lg p-3 border border-white/30">
+                <div className="flex items-center gap-2 text-white text-sm">
+                  <Gauge className="h-4 w-4" />
+                  <div className="w-24 h-2 bg-white/20 rounded-full overflow-hidden">
+                    <motion.div
+                      className="h-full bg-gradient-to-r from-green-400 to-red-400"
+                      animate={{ width: `${tension * 100}%` }}
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-white/70 mt-1">
+                  {tension > 0.7 ? 'Tendu' : tension > 0.4 ? 'Équilibré' : 'Détendu'}
+                </p>
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </div>
+          </div>
+        )}
+
+        <AnimatePresence>
+          {showBadge && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.5, y: 50 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.5, y: -50 }}
+              className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50"
+            >
+              <Card className="border-0 shadow-glow-legendary bg-gradient-to-r from-yellow-500 via-purple-500 to-blue-500">
+                <CardContent className="p-6 text-center">
+                  <p className="text-2xl font-bold text-white">{badgeText}</p>
+                  <p className="text-sm text-white/80 mt-2">Constellation sauvegardée ✨</p>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {!sessionActive && constellations.length > 0 && (
+          <Card className="max-w-6xl mx-auto border-0 shadow-glow bg-gradient-to-br from-indigo-950/50 to-purple-950/50 backdrop-blur">
+            <CardContent className="pt-6">
+              <ConstellationGallery constellations={constellations} />
+            </CardContent>
+          </Card>
+        )}
+
+        {!sessionActive && collections.constellations && collections.constellations.unlockedCount > 0 && (
+          <Card className="max-w-4xl mx-auto border-0 shadow-glow bg-gradient-to-br from-purple-950/50 to-blue-950/50 backdrop-blur">
+            <CardContent className="pt-6">
+              <div className="text-center space-y-4">
+                <p className="text-sm font-semibold text-purple-300">🌌 Collection Cosmique</p>
+                <div className="flex justify-center gap-4 flex-wrap">
+                  {collections.constellations.items.filter(item => item.unlocked).map(item => (
+                    <motion.div
+                      key={item.id}
+                      whileHover={{ scale: 1.1, rotate: 5 }}
+                      className="text-center p-3 rounded-lg bg-gradient-to-br from-purple-900/50 to-blue-900/50 border border-purple-500/30"
+                    >
+                      <span className="text-3xl block">{item.emoji}</span>
+                      <p className="text-xs text-gray-300 mt-1">{item.name}</p>
+                    </motion.div>
+                  ))}
+                </div>
+                <p className="text-xs text-purple-300">
+                  {collections.constellations.unlockedCount}/{collections.constellations.totalItems} constellations
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </main>
     </div>
   );
