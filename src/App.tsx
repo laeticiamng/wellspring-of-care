@@ -5,9 +5,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { RoleGuard } from "./components/RoleGuard";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
+import B2BEnterprise from "./pages/B2BEnterprise";
 import Journal from "./pages/Journal";
 import JournalNew from "./pages/JournalNew";
 import Meditation from "./pages/Meditation";
@@ -53,6 +55,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+            <Route path="/b2b" element={<ProtectedRoute><B2BEnterprise /></ProtectedRoute>} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/journal" element={<ProtectedRoute><JournalNew /></ProtectedRoute>} />
@@ -81,7 +84,13 @@ const App = () => (
             <Route path="/activity" element={<ProtectedRoute><Activity /></ProtectedRoute>} />
             <Route path="/weekly-bars" element={<ProtectedRoute><WeeklyBars /></ProtectedRoute>} />
             <Route path="/ambition-arcade" element={<ProtectedRoute><AmbitionArcade /></ProtectedRoute>} />
-            <Route path="/app/rh" element={<ProtectedRoute><RHDashboard /></ProtectedRoute>} />
+          <Route path="/app/rh" element={
+            <ProtectedRoute>
+              <RoleGuard allowedRoles={['manager_b2b', 'admin']}>
+                <RHDashboard />
+              </RoleGuard>
+            </ProtectedRoute>
+          } />
             <Route path="/app/screen-silk" element={<ProtectedRoute><ScreenSilk /></ProtectedRoute>} />
             <Route path="/help" element={<Help />} />
             

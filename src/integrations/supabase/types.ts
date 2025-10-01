@@ -6902,6 +6902,36 @@ export type Database = {
         }
         Relationships: []
       }
+      orgs: {
+        Row: {
+          created_at: string | null
+          id: string
+          logo_url: string | null
+          name: string
+          settings: Json | null
+          subscription_plan: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          logo_url?: string | null
+          name: string
+          settings?: Json | null
+          subscription_plan?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          settings?: Json | null
+          subscription_plan?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       page_analytics: {
         Row: {
           id: string
@@ -7272,11 +7302,14 @@ export type Database = {
           job_title: string | null
           location: string | null
           name: string | null
+          org_id: string | null
           phone: string | null
           preferences: Json | null
           role: string | null
           subscription_plan: string | null
+          team_id: string | null
           updated_at: string | null
+          user_role: Database["public"]["Enums"]["app_user_role"] | null
           website: string | null
         }
         Insert: {
@@ -7292,11 +7325,14 @@ export type Database = {
           job_title?: string | null
           location?: string | null
           name?: string | null
+          org_id?: string | null
           phone?: string | null
           preferences?: Json | null
           role?: string | null
           subscription_plan?: string | null
+          team_id?: string | null
           updated_at?: string | null
+          user_role?: Database["public"]["Enums"]["app_user_role"] | null
           website?: string | null
         }
         Update: {
@@ -7312,14 +7348,32 @@ export type Database = {
           job_title?: string | null
           location?: string | null
           name?: string | null
+          org_id?: string | null
           phone?: string | null
           preferences?: Json | null
           role?: string | null
           subscription_plan?: string | null
+          team_id?: string | null
           updated_at?: string | null
+          user_role?: Database["public"]["Enums"]["app_user_role"] | null
           website?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       push_subscriptions: {
         Row: {
@@ -8362,6 +8416,35 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teams: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          org_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          org_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          org_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "teams_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "orgs"
             referencedColumns: ["id"]
           },
         ]
@@ -10658,6 +10741,10 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_user_app_role: {
+        Args: Record<PropertyKey, never>
+        Returns: Database["public"]["Enums"]["app_user_role"]
+      }
       get_user_ia_stats: {
         Args: { p_period_days?: number }
         Returns: Json
@@ -10740,6 +10827,10 @@ export type Database = {
       }
       is_admin: {
         Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_manager_of_org: {
+        Args: { p_org_id: string }
         Returns: boolean
       }
       log_admin_change: {
@@ -11222,6 +11313,7 @@ export type Database = {
       }
     }
     Enums: {
+      app_user_role: "user_b2c" | "user_b2b" | "manager_b2b" | "admin"
       invitation_status: "pending" | "accepted" | "expired"
     }
     CompositeTypes: {
@@ -11350,6 +11442,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_user_role: ["user_b2c", "user_b2b", "manager_b2b", "admin"],
       invitation_status: ["pending", "accepted", "expired"],
     },
   },
