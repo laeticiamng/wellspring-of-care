@@ -5593,6 +5593,41 @@ export type Database = {
         }
         Relationships: []
       }
+      music_fragments: {
+        Row: {
+          created_at: string | null
+          id: string
+          rarity: string
+          session_id: string | null
+          unlocked_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          rarity: string
+          session_id?: string | null
+          unlocked_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          rarity?: string
+          session_id?: string | null
+          unlocked_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "music_fragments_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "music_therapy_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       music_generation_logs: {
         Row: {
           created_at: string | null
@@ -5811,6 +5846,57 @@ export type Database = {
           skip_timestamp?: string | null
           track_id?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      music_therapy_sessions: {
+        Row: {
+          badge_verbal: string | null
+          completed_at: string | null
+          created_at: string | null
+          duration_seconds: number | null
+          fragment_rarity: string | null
+          fragment_unlocked: boolean | null
+          id: string
+          interactions_count: number | null
+          mood_state_post: Json | null
+          mood_state_pre: Json | null
+          music_metadata: Json | null
+          music_url: string | null
+          started_at: string | null
+          user_id: string
+        }
+        Insert: {
+          badge_verbal?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          duration_seconds?: number | null
+          fragment_rarity?: string | null
+          fragment_unlocked?: boolean | null
+          id?: string
+          interactions_count?: number | null
+          mood_state_post?: Json | null
+          mood_state_pre?: Json | null
+          music_metadata?: Json | null
+          music_url?: string | null
+          started_at?: string | null
+          user_id: string
+        }
+        Update: {
+          badge_verbal?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          duration_seconds?: number | null
+          fragment_rarity?: string | null
+          fragment_unlocked?: boolean | null
+          id?: string
+          interactions_count?: number | null
+          mood_state_post?: Json | null
+          mood_state_pre?: Json | null
+          music_metadata?: Json | null
+          music_url?: string | null
+          started_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }

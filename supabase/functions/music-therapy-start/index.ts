@@ -32,19 +32,25 @@ serve(async (req) => {
     // Déterminer le prompt Suno selon l'état implicite (POMS-SF)
     let prompt = "ambient, calming, forest sounds, gentle piano";
     let tags = ["relaxing", "nature"];
+    let visualTheme: 'calming' | 'energizing' | 'expansive' = 'expansive';
     
     if (moodState) {
-      const { tension, fatigue, energy } = moodState;
+      const tension = moodState.tension || 3;
+      const fatigue = moodState.fatigue || 3;
+      const energy = moodState.energy || 3;
       
       if (tension > 3) {
         prompt = "deep ambient, slow tempo, minimal instrumentation, calming waves, soft pads";
         tags = ["calming", "tension-release", "minimal"];
+        visualTheme = 'calming';
       } else if (fatigue > 3) {
         prompt = "uplifting, gentle energy, warm acoustic, soft drums, motivating melody";
         tags = ["energizing", "uplifting", "gentle"];
+        visualTheme = 'energizing';
       } else if (energy > 4) {
         prompt = "ethereal soundscape, expansive textures, warm harmonics, meditative";
         tags = ["expansive", "meditative", "warm"];
+        visualTheme = 'expansive';
       }
     }
 
@@ -98,7 +104,7 @@ serve(async (req) => {
       JSON.stringify({
         sessionId,
         musicUrl: sunoData.audio_url,
-        visualTheme: tension > 3 ? 'calming' : fatigue > 3 ? 'energizing' : 'expansive',
+        visualTheme,
         duration: 180,
       }),
       {
@@ -107,8 +113,9 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error('Error in music-therapy-start:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: errorMessage }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

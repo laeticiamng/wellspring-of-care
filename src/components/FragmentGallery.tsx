@@ -34,7 +34,10 @@ export function FragmentGallery() {
 
       if (error) throw error;
 
-      setFragments(data || []);
+      setFragments((data || []).map(f => ({
+        ...f,
+        rarity: f.rarity as 'common' | 'rare' | 'legendary'
+      })));
     } catch (error) {
       console.error('Erreur chargement fragments:', error);
     } finally {
