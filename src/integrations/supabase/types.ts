@@ -2534,6 +2534,60 @@ export type Database = {
         }
         Relationships: []
       }
+      emotion_cards: {
+        Row: {
+          animation_config: Json | null
+          code: string
+          color_primary: string
+          color_secondary: string
+          created_at: string | null
+          description: string | null
+          icon_name: string
+          id: string
+          mantra: string
+          mantra_emoji: string
+          rarity: string
+          sound_url: string | null
+          unlock_rewards: Json | null
+          who5_range_max: number
+          who5_range_min: number
+        }
+        Insert: {
+          animation_config?: Json | null
+          code: string
+          color_primary: string
+          color_secondary: string
+          created_at?: string | null
+          description?: string | null
+          icon_name: string
+          id?: string
+          mantra: string
+          mantra_emoji: string
+          rarity?: string
+          sound_url?: string | null
+          unlock_rewards?: Json | null
+          who5_range_max: number
+          who5_range_min: number
+        }
+        Update: {
+          animation_config?: Json | null
+          code?: string
+          color_primary?: string
+          color_secondary?: string
+          created_at?: string | null
+          description?: string | null
+          icon_name?: string
+          id?: string
+          mantra?: string
+          mantra_emoji?: string
+          rarity?: string
+          sound_url?: string | null
+          unlock_rewards?: Json | null
+          who5_range_max?: number
+          who5_range_min?: number
+        }
+        Relationships: []
+      }
       emotion_metrics: {
         Row: {
           confidence_score: number | null
@@ -8737,6 +8791,86 @@ export type Database = {
         }
         Relationships: []
       }
+      weekly_card_draws: {
+        Row: {
+          assessment_session_id: string | null
+          card_id: string
+          created_at: string | null
+          drawn_at: string | null
+          id: string
+          user_id: string
+          viewed: boolean | null
+          week_end: string
+          week_start: string
+          who5_score: number | null
+        }
+        Insert: {
+          assessment_session_id?: string | null
+          card_id: string
+          created_at?: string | null
+          drawn_at?: string | null
+          id?: string
+          user_id: string
+          viewed?: boolean | null
+          week_end: string
+          week_start: string
+          who5_score?: number | null
+        }
+        Update: {
+          assessment_session_id?: string | null
+          card_id?: string
+          created_at?: string | null
+          drawn_at?: string | null
+          id?: string
+          user_id?: string
+          viewed?: boolean | null
+          week_end?: string
+          week_start?: string
+          who5_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weekly_card_draws_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "emotion_cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      who5_assessments: {
+        Row: {
+          completed: boolean | null
+          completed_at: string | null
+          created_at: string | null
+          id: string
+          responses: Json | null
+          session_id: string
+          total_score: number | null
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          responses?: Json | null
+          session_id?: string
+          total_score?: number | null
+          user_id: string
+        }
+        Update: {
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          responses?: Json | null
+          session_id?: string
+          total_score?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -8805,6 +8939,10 @@ export type Database = {
       calculate_user_learning_path: {
         Args: { p_user_id: string }
         Returns: Json
+      }
+      calculate_who5_score: {
+        Args: { responses: Json }
+        Returns: number
       }
       check_music_generation_quota: {
         Args: { user_uuid: string }
@@ -9194,6 +9332,13 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_current_week_bounds: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          week_end: string
+          week_start: string
+        }[]
+      }
       get_edn_objectifs_rapport: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -9264,6 +9409,21 @@ export type Database = {
       get_oic_extraction_report: {
         Args: Record<PropertyKey, never>
         Returns: Json
+      }
+      get_or_create_weekly_draw: {
+        Args: { p_user_id: string }
+        Returns: {
+          card_code: string
+          color_primary: string
+          color_secondary: string
+          draw_id: string
+          icon_name: string
+          is_new_draw: boolean
+          mantra: string
+          mantra_emoji: string
+          rarity: string
+          unlock_rewards: Json
+        }[]
       }
       get_platform_completion_stats: {
         Args: Record<PropertyKey, never>
