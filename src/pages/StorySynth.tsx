@@ -3,13 +3,64 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Sparkles, Play } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useState, useRef } from "react";
+import { useImplicitTracking } from "@/hooks/useImplicitTracking";
+import { useCollections } from "@/hooks/useCollections";
 
 const StorySynth = () => {
+  const [selectedNarration, setSelectedNarration] = useState<string>("");
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [completedStories, setCompletedStories] = useState(0);
+  const { track } = useImplicitTracking();
+  const { collections, unlockItem } = useCollections();
+  const playStartTime = useRef<number>(0);
+
   const stories = [
-    { title: 'Le Voyage Intérieur', mood: 'Calme', duration: '15 min', status: 'Nouveau' },
-    { title: 'Force et Courage', mood: 'Motivant', duration: '12 min', status: 'Populaire' },
-    { title: 'La Lumière de Demain', mood: 'Espoir', duration: '18 min', status: '' }
+    { id: 'voyage', title: 'Le Voyage Intérieur', mood: 'Calme', duration: '15 min', status: 'Nouveau' },
+    { id: 'force', title: 'Force et Courage', mood: 'Motivant', duration: '12 min', status: 'Populaire' },
+    { id: 'lumiere', title: 'La Lumière de Demain', mood: 'Espoir', duration: '18 min', status: '' }
   ];
+
+  const handleNarrationChoice = (choice: string) => {
+    setSelectedNarration(choice);
+    track({
+      instrument: "POMS",
+      item_id: "tension",
+      proxy: "choice",
+      value: choice === "slow" ? "slow_narration+breath" : "voice_fast",
+      context: { narration: choice }
+    });
+  };
+
+  const handlePlay = (storyId: string) => {
+    setIsPlaying(true);
+    playStartTime.current = Date.now();
+  };
+
+  const handleStoryComplete = () => {
+    const duration = Date.now() - playStartTime.current;
+    
+    // Track completion
+    if (duration < 60000) {
+      track({
+        instrument: "POMS",
+        item_id: "tension",
+        proxy: "skip",
+        value: "voice_fast"
+      });
+    } else {
+      // Unlock contes fragments
+      setCompletedStories(prev => {
+        const newCount = prev + 1;
+        if (newCount >= 2 && collections.contes?.items[0]) {
+          unlockItem('contes', collections.contes.items[0].id);
+        }
+        return newCount;
+      });
+    }
+    
+    setIsPlaying(false);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-calm">
@@ -47,14 +98,50 @@ const StorySynth = () => {
               </div>
             </div>
 
-            <div className="text-center space-y-4">
-              <p className="text-muted-foreground">
+            <div className="space-y-4">
+              <p className="text-muted-foreground text-center">
                 Une histoire créée spécialement pour vous, basée sur votre état émotionnel actuel
               </p>
-              <Button className="bg-gradient-primary text-primary-foreground shadow-glow">
-                <Play className="mr-2 h-4 w-4" />
-                Écouter l'histoire
-              </Button>
+              
+              {/* Narration Choice */}
+              <div className="flex justify-center space-x-3">
+                <Button 
+                  size="sm"
+                  variant={selectedNarration === "slow" ? "default" : "outline"}
+                  className={selectedNarration === "slow" ? "bg-gradient-primary" : ""}
+                  onClick={() => handleNarrationChoice("slow")}
+                >
+                  🐌 Narration lente
+                </Button>
+                <Button 
+                  size="sm"
+                  variant={selectedNarration === "normal" ? "default" : "outline"}
+                  className={selectedNarration === "normal" ? "bg-gradient-primary" : ""}
+                  onClick={() => handleNarrationChoice("normal")}
+                >
+                  🎭 Narration standard
+                </Button>
+              </div>
+
+              <div className="text-center">
+                <Button 
+                  className="bg-gradient-primary text-primary-foreground shadow-glow"
+                  onClick={() => handlePlay('featured')}
+                  disabled={!selectedNarration || isPlaying}
+                >
+                  <Play className="mr-2 h-4 w-4" />
+                  {isPlaying ? "En cours..." : "Écouter l'histoire"}
+                </Button>
+                {isPlaying && (
+                  <Button 
+                    variant="outline" 
+                    className="ml-3"
+                    onClick={handleStoryComplete}
+                  >
+                    Terminer
+                  </Button>
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -84,7 +171,11 @@ const StorySynth = () => {
                     <span>{story.duration}</span>
                   </div>
                 </div>
-                <Button variant="outline" size="sm">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => handlePlay(story.id)}
+                >
                   <Play className="h-4 w-4 mr-2" />
                   Écouter
                 </Button>
@@ -92,6 +183,34 @@ const StorySynth = () => {
             ))}
           </CardContent>
         </Card>
+
+        {/* Contes Collection */}
+        {collections.contes && collections.contes.unlockedCount > 0 && (
+          <Card className="max-w-4xl mx-auto border-0 shadow-soft bg-gradient-healing/10 border border-accent/20">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <BookOpen className="h-6 w-6 text-accent" />
+                <span>Bibliothèque de contes</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid md:grid-cols-2 gap-4">
+                {collections.contes.items.filter(item => item.unlocked).map(item => (
+                  <Card key={item.id} className="border-0 bg-gradient-primary/5 hover:scale-105 transition-transform">
+                    <CardContent className="pt-6 text-center space-y-2">
+                      <div className="text-3xl">{item.emoji}</div>
+                      <p className="text-sm font-medium">{item.name}</p>
+                      <Badge variant="outline" className="text-xs">{item.rarity}</Badge>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+              <div className="text-center text-xs text-primary mt-4">
+                {collections.contes.unlockedCount}/{collections.contes.totalItems} contes débloqués
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </main>
     </div>
   );

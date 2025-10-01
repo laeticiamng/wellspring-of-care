@@ -32,6 +32,7 @@ import Leaderboard from "./pages/Leaderboard";
 import StorySynth from "./pages/StorySynth";
 import Activity from "./pages/Activity";
 import WeeklyBars from "./pages/WeeklyBars";
+import AmbitionArcade from "./pages/AmbitionArcade";
 
 const queryClient = new QueryClient();
 
@@ -71,6 +72,7 @@ const App = () => (
             <Route path="/story-synth" element={<ProtectedRoute><StorySynth /></ProtectedRoute>} />
             <Route path="/activity" element={<ProtectedRoute><Activity /></ProtectedRoute>} />
             <Route path="/weekly-bars" element={<ProtectedRoute><WeeklyBars /></ProtectedRoute>} />
+            <Route path="/ambition-arcade" element={<ProtectedRoute><AmbitionArcade /></ProtectedRoute>} />
             
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

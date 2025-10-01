@@ -21,6 +21,7 @@ import { useCommunity } from "@/hooks/useCommunity";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { useImplicitTracking } from "@/hooks/useImplicitTracking";
 
 const Community = () => {
   const { user } = useAuth();
@@ -28,6 +29,8 @@ const Community = () => {
   const [newPostContent, setNewPostContent] = useState("");
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [commentContent, setCommentContent] = useState<{ [key: string]: string }>({});
+  const [roomType, setRoomType] = useState<"public" | "private">("public");
+  const { track } = useImplicitTracking();
 
   const handleJoinGroup = async (groupId: string) => {
     const success = await joinGroup(groupId);
@@ -44,6 +47,15 @@ const Community = () => {
       return;
     }
     
+    // Track UCLA-3 loneliness proxy
+    track({
+      instrument: "UCLA3",
+      item_id: "loneliness",
+      proxy: "choice",
+      value: roomType === "private" ? "private_room" : "public_room",
+      context: { group: selectedGroup || "general" }
+    });
+    
     const success = await createPost("Message de la communauté", newPostContent, selectedGroup);
     if (success) {
       toast.success("Message publié !");
@@ -53,11 +65,21 @@ const Community = () => {
     }
   };
 
-  const handleAddComment = async (postId: string) => {
+  const handleAddComment = async (postId: string, isEmpathic: boolean = false) => {
     const content = commentContent[postId];
     if (!content?.trim()) {
       toast.error("Veuillez écrire un commentaire");
       return;
+    }
+    
+    // Track MSPSS support
+    if (isEmpathic) {
+      track({
+        instrument: "MSPSS",
+        item_id: "support",
+        proxy: "reaction",
+        value: "empathy_reply"
+      });
     }
     
     const success = await addComment(postId, content);
@@ -290,6 +312,24 @@ const Community = () => {
             {user && (
               <Card className="border-0 shadow-soft">
                 <CardContent className="pt-6 space-y-4">
+                  <div className="flex space-x-2 mb-3">
+                    <Button
+                      size="sm"
+                      variant={roomType === "public" ? "default" : "outline"}
+                      className={roomType === "public" ? "bg-gradient-primary" : ""}
+                      onClick={() => setRoomType("public")}
+                    >
+                      🌐 Public
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={roomType === "private" ? "default" : "outline"}
+                      className={roomType === "private" ? "bg-gradient-primary" : ""}
+                      onClick={() => setRoomType("private")}
+                    >
+                      🔒 Privé
+                    </Button>
+                  </div>
                   <Textarea
                     placeholder="Partagez votre expérience avec la communauté..."
                     value={newPostContent}
@@ -368,14 +408,23 @@ const Community = () => {
                         {user && (
                           <div className="pt-3 border-t space-y-2">
                             <Textarea
-                              placeholder="Ajouter un commentaire..."
+                              placeholder="Ajouter un commentaire bienveillant..."
                               value={commentContent[post.id] || ""}
                               onChange={(e) => setCommentContent({ ...commentContent, [post.id]: e.target.value })}
                               className="min-h-[60px] text-sm"
                             />
-                            <Button size="sm" onClick={() => handleAddComment(post.id)}>
-                              Commenter
-                            </Button>
+                            <div className="flex space-x-2">
+                              <Button size="sm" onClick={() => handleAddComment(post.id, false)}>
+                                Commenter
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => handleAddComment(post.id, true)}
+                              >
+                                💙 Réponse empathique
+                              </Button>
+                            </div>
                           </div>
                         )}
                       </div>

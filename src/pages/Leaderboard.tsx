@@ -1,16 +1,42 @@
 import Header from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Trophy, Medal, Star, TrendingUp } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useImplicitTracking } from "@/hooks/useImplicitTracking";
 
 const Leaderboard = () => {
+  const [viewMode, setViewMode] = useState<"performance" | "calm">("calm");
+  const [calmCardsUsed, setCalmCardsUsed] = useState(0);
+  const { track } = useImplicitTracking();
+
+  useEffect(() => {
+    // Track preference for "calm" vs "performance" cards
+    if (viewMode === "calm") {
+      setCalmCardsUsed(prev => {
+        const newCount = prev + 1;
+        if (newCount >= 3) {
+          track({
+            instrument: "WHO5",
+            item_id: "overall_calm",
+            proxy: "choice",
+            value: "calm_cards_bias",
+            context: { view_count: String(newCount) }
+          });
+        }
+        return newCount;
+      });
+    }
+  }, [viewMode]);
+
   const topUsers = [
-    { rank: 1, name: 'Sophie Martin', score: 2850, trend: '+12%', level: 42 },
-    { rank: 2, name: 'Thomas Dubois', score: 2720, trend: '+8%', level: 38 },
-    { rank: 3, name: 'Emma Wilson', score: 2640, trend: '+15%', level: 36 },
-    { rank: 4, name: 'Lucas Bernard', score: 2480, trend: '+5%', level: 34 },
-    { rank: 5, name: 'Clara Lopez', score: 2350, trend: '+10%', level: 32 }
+    { rank: 1, name: 'Sophie Martin', score: 2850, trend: '+12%', level: 42, aura: '✨' },
+    { rank: 2, name: 'Thomas Dubois', score: 2720, trend: '+8%', level: 38, aura: '🌟' },
+    { rank: 3, name: 'Emma Wilson', score: 2640, trend: '+15%', level: 36, aura: '💫' },
+    { rank: 4, name: 'Lucas Bernard', score: 2480, trend: '+5%', level: 34, aura: '⭐' },
+    { rank: 5, name: 'Clara Lopez', score: 2350, trend: '+10%', level: 32, aura: '🌠' }
   ];
 
   return (
@@ -28,6 +54,24 @@ const Leaderboard = () => {
           <p className="text-muted-foreground max-w-2xl mx-auto">
             Classement communautaire. Célébrez votre progression avec la communauté.
           </p>
+          <div className="flex justify-center space-x-3 mt-4">
+            <Button
+              size="sm"
+              variant={viewMode === "calm" ? "default" : "outline"}
+              className={viewMode === "calm" ? "bg-gradient-primary" : ""}
+              onClick={() => setViewMode("calm")}
+            >
+              🌊 Auras douces
+            </Button>
+            <Button
+              size="sm"
+              variant={viewMode === "performance" ? "default" : "outline"}
+              className={viewMode === "performance" ? "bg-gradient-secondary" : ""}
+              onClick={() => setViewMode("performance")}
+            >
+              🏆 Performance
+            </Button>
+          </div>
         </div>
 
         <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
@@ -43,19 +87,31 @@ const Leaderboard = () => {
                 {index === 1 && <Medal className="h-10 w-10 text-gray-400 mx-auto" />}
                 {index === 2 && <Medal className="h-10 w-10 text-orange-600 mx-auto" />}
                 
-                <Avatar className="h-20 w-20 mx-auto">
+                <Avatar className="h-20 w-20 mx-auto relative">
                   <AvatarFallback className="bg-gradient-primary text-primary-foreground text-2xl">
                     {user.name.split(' ').map(n => n[0]).join('')}
                   </AvatarFallback>
+                  <div className="absolute -top-2 -right-2 text-2xl animate-pulse-soft">
+                    {user.aura}
+                  </div>
                 </Avatar>
                 
                 <div>
                   <p className="font-bold text-lg">{user.name}</p>
-                  <p className="text-3xl font-bold text-primary my-2">{user.score}</p>
-                  <Badge className="bg-gradient-secondary text-secondary-foreground">
-                    <TrendingUp className="h-3 w-3 mr-1" />
-                    {user.trend}
-                  </Badge>
+                  {viewMode === "calm" ? (
+                    <>
+                      <p className="text-2xl font-bold text-primary my-2">{user.aura}</p>
+                      <p className="text-sm text-muted-foreground">Aura de bien-être</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-3xl font-bold text-primary my-2">{user.score}</p>
+                      <Badge className="bg-gradient-secondary text-secondary-foreground">
+                        <TrendingUp className="h-3 w-3 mr-1" />
+                        {user.trend}
+                      </Badge>
+                    </>
+                  )}
                 </div>
               </CardContent>
             </Card>

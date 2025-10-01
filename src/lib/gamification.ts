@@ -81,6 +81,75 @@ export const COLLECTIONS = {
       { id: 'cristal', name: 'Fragment Cristal', emoji: '💎', rarity: 'epic' as const },
       { id: 'celeste', name: 'Fragment Céleste', emoji: '✨', rarity: 'legendary' as const }
     ]
+  },
+  haikus: {
+    id: 'haikus',
+    name: 'Haïkus Éphémères',
+    items: [
+      { id: 'nuage', name: 'Haïku du Nuage', emoji: '☁️', rarity: 'common' as const },
+      { id: 'pluie', name: 'Haïku de la Pluie', emoji: '🌧️', rarity: 'rare' as const },
+      { id: 'lune', name: 'Haïku Lunaire', emoji: '🌙', rarity: 'epic' as const },
+      { id: 'aurore', name: 'Haïku de l\'Aurore', emoji: '🌅', rarity: 'legendary' as const }
+    ]
+  },
+  pages: {
+    id: 'pages',
+    name: 'Pages Brillantes',
+    items: [
+      { id: 'doree', name: 'Page Dorée', emoji: '📄', rarity: 'common' as const },
+      { id: 'argentee', name: 'Page Argentée', emoji: '📃', rarity: 'rare' as const },
+      { id: 'cristal', name: 'Page Cristal', emoji: '💎', rarity: 'epic' as const },
+      { id: 'arc_en_ciel', name: 'Page Arc-en-ciel', emoji: '🌈', rarity: 'legendary' as const }
+    ]
+  },
+  badges_resp: {
+    id: 'badges_resp',
+    name: 'Badges Respiratoires',
+    items: [
+      { id: 'expire', name: 'Maître de l\'Expire', emoji: '💨', rarity: 'rare' as const },
+      { id: 'vagues', name: 'Maître des Vagues', emoji: '🌊', rarity: 'epic' as const },
+      { id: 'sommeil', name: 'Gardien du Sommeil', emoji: '🌙', rarity: 'legendary' as const }
+    ]
+  },
+  stickers_ar: {
+    id: 'stickers_ar',
+    name: 'Stickers AR Évolués',
+    items: [
+      { id: 'etoile', name: 'Sticker Étoile', emoji: '⭐', rarity: 'common' as const },
+      { id: 'pluie', name: 'Sticker Pluie d\'Étoiles', emoji: '✨', rarity: 'rare' as const },
+      { id: 'aurore', name: 'Sticker Aurore', emoji: '🌌', rarity: 'epic' as const },
+      { id: 'cosmos', name: 'Sticker Cosmique', emoji: '🪐', rarity: 'legendary' as const }
+    ]
+  },
+  artefacts: {
+    id: 'artefacts',
+    name: 'Artefacts d\'Ambition',
+    items: [
+      { id: 'boussole', name: 'Boussole d\'Objectif', emoji: '🧭', rarity: 'rare' as const },
+      { id: 'hourglass', name: 'Sablier Motivant', emoji: '⏳', rarity: 'rare' as const },
+      { id: 'trophy', name: 'Trophée d\'Excellence', emoji: '🏆', rarity: 'epic' as const },
+      { id: 'crown', name: 'Couronne de Persévérance', emoji: '👑', rarity: 'legendary' as const }
+    ]
+  },
+  contes: {
+    id: 'contes',
+    name: 'Bibliothèque de Contes',
+    items: [
+      { id: 'foret', name: 'Conte de la Forêt', emoji: '🌲', rarity: 'common' as const },
+      { id: 'ocean', name: 'Conte de l\'Océan', emoji: '🌊', rarity: 'rare' as const },
+      { id: 'montagne', name: 'Conte de la Montagne', emoji: '⛰️', rarity: 'epic' as const },
+      { id: 'cosmos', name: 'Conte Cosmique', emoji: '🌌', rarity: 'legendary' as const }
+    ]
+  },
+  plantes: {
+    id: 'plantes',
+    name: 'Jardin Émotionnel',
+    items: [
+      { id: 'rose', name: 'Rose de Joie', emoji: '🌹', rarity: 'common' as const },
+      { id: 'lotus', name: 'Lotus de Paix', emoji: '🪷', rarity: 'rare' as const },
+      { id: 'orchidee', name: 'Orchidée d\'Équilibre', emoji: '🌺', rarity: 'epic' as const },
+      { id: 'arbre', name: 'Arbre de Sagesse', emoji: '🌳', rarity: 'legendary' as const }
+    ]
   }
 };
 

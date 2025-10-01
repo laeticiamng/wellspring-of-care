@@ -2,18 +2,45 @@ import Header from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, TrendingUp, Activity as ActivityIcon, Heart } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useState, useEffect } from "react";
+import { useImplicitTracking } from "@/hooks/useImplicitTracking";
+import { useCollections } from "@/hooks/useCollections";
 
 const Activity = () => {
+  const [softModulesUsed, setSoftModulesUsed] = useState(0);
+  const { track } = useImplicitTracking();
+  const { collections, unlockItem } = useCollections();
+
   const weekDays = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
   const activities = [
-    { day: 'Lun', sessions: 3, mood: 'Excellent', score: 85 },
-    { day: 'Mar', sessions: 2, mood: 'Bien', score: 75 },
-    { day: 'Mer', sessions: 4, mood: 'Excellent', score: 90 },
-    { day: 'Jeu', sessions: 2, mood: 'Moyen', score: 65 },
-    { day: 'Ven', sessions: 5, mood: 'Excellent', score: 95 },
-    { day: 'Sam', sessions: 3, mood: 'Bien', score: 80 },
-    { day: 'Dim', sessions: 2, mood: 'Bien', score: 70 }
+    { day: 'Lun', sessions: 3, mood: 'Excellent', score: 85, softModules: 2 },
+    { day: 'Mar', sessions: 2, mood: 'Bien', score: 75, softModules: 1 },
+    { day: 'Mer', sessions: 4, mood: 'Excellent', score: 90, softModules: 3 },
+    { day: 'Jeu', sessions: 2, mood: 'Moyen', score: 65, softModules: 0 },
+    { day: 'Ven', sessions: 5, mood: 'Excellent', score: 95, softModules: 4 },
+    { day: 'Sam', sessions: 3, mood: 'Bien', score: 80, softModules: 2 },
+    { day: 'Dim', sessions: 2, mood: 'Bien', score: 70, softModules: 1 }
   ];
+
+  useEffect(() => {
+    // Track engagement with soft modules
+    const totalSoft = activities.reduce((sum, act) => sum + act.softModules, 0);
+    if (totalSoft >= 10) {
+      track({
+        instrument: "WHO5",
+        item_id: "overall",
+        proxy: "repeat",
+        value: "soft_modules",
+        context: { count: String(totalSoft) }
+      });
+
+      // Unlock plantes
+      setSoftModulesUsed(totalSoft);
+      if (totalSoft >= 10 && collections.plantes?.items[0]) {
+        unlockItem('plantes', collections.plantes.items[0].id);
+      }
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-calm">
@@ -122,6 +149,34 @@ const Activity = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Plantes Collection */}
+        {collections.plantes && collections.plantes.unlockedCount > 0 && (
+          <Card className="max-w-6xl mx-auto border-0 shadow-soft bg-gradient-healing/10 border border-accent/20">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Heart className="h-6 w-6 text-accent" />
+                <span>Jardin émotionnel</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid md:grid-cols-4 gap-4">
+                {collections.plantes.items.filter(item => item.unlocked).map(item => (
+                  <Card key={item.id} className="border-0 bg-gradient-primary/5 hover:scale-105 transition-transform">
+                    <CardContent className="pt-6 text-center space-y-2">
+                      <div className="text-4xl animate-float">{item.emoji}</div>
+                      <p className="text-sm font-medium">{item.name}</p>
+                      <Badge variant="outline" className="text-xs">{item.rarity}</Badge>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+              <div className="text-center text-xs text-primary mt-4">
+                🌱 {collections.plantes.unlockedCount}/{collections.plantes.totalItems} plantes cultivées
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </main>
     </div>
   );

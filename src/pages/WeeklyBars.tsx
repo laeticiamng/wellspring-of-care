@@ -2,16 +2,41 @@ import Header from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart3, TrendingUp, Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useImplicitTracking } from "@/hooks/useImplicitTracking";
+import { useCollections } from "@/hooks/useCollections";
+import { useEffect } from "react";
 
 const WeeklyBars = () => {
+  const { track } = useImplicitTracking();
+  const { collections, unlockItem } = useCollections();
+
   const weeks = [
-    { week: 'Sem 1', score: 72, sessions: 12, trend: '+5%' },
-    { week: 'Sem 2', score: 78, sessions: 15, trend: '+8%' },
-    { week: 'Sem 3', score: 85, sessions: 18, trend: '+9%' },
-    { week: 'Sem 4', score: 82, sessions: 16, trend: '-4%' }
+    { week: 'Sem 1', score: 72, sessions: 12, trend: '+5%', softModules: 8 },
+    { week: 'Sem 2', score: 78, sessions: 15, trend: '+8%', softModules: 10 },
+    { week: 'Sem 3', score: 85, sessions: 18, trend: '+9%', softModules: 14 },
+    { week: 'Sem 4', score: 82, sessions: 16, trend: '-4%', softModules: 12 }
   ];
 
   const maxScore = Math.max(...weeks.map(w => w.score));
+  const avgSoftModules = weeks.reduce((sum, w) => sum + w.softModules, 0) / weeks.length;
+
+  useEffect(() => {
+    // Track preference for soft modules over weeks
+    if (avgSoftModules >= 10) {
+      track({
+        instrument: "WHO5",
+        item_id: "overall",
+        proxy: "repeat",
+        value: "soft_modules",
+        context: { avg: String(avgSoftModules.toFixed(1)) }
+      });
+
+      // Unlock additional plantes
+      if (collections.plantes && collections.plantes.items[1]) {
+        unlockItem('plantes', collections.plantes.items[1].id);
+      }
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-calm">
