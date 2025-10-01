@@ -51,6 +51,7 @@ import Home from "./pages/Home";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import Analytics from "./pages/Analytics";
+import SocialHub from "./pages/SocialHub";
 
 const queryClient = new QueryClient();
 
@@ -123,6 +124,7 @@ const App = () => (
             <Route path="/activity" element={<ProtectedRoute><Activity /></ProtectedRoute>} />
           <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
           <Route path="/community" element={<ProtectedRoute><Community /></ProtectedRoute>} />
+          <Route path="/social" element={<ProtectedRoute><SocialHub /></ProtectedRoute>} />
             <Route path="/weekly-bars" element={<ProtectedRoute><WeeklyBars /></ProtectedRoute>} />
             <Route path="/ambition-arcade" element={<ProtectedRoute><AmbitionArcade /></ProtectedRoute>} />
           <Route path="/app/rh" element={

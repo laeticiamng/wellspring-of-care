@@ -4,13 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useCommunity, CommunityPost } from '@/hooks/useCommunity';
+import { useSocialFeed, SocialPost } from '@/hooks/useSocialFeed';
 import { Heart, MessageCircle, Send, Users } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
 export function CommunityFeed() {
-  const { posts, loading, createPost, toggleReaction, fetchComments, addComment } = useCommunity();
+  const { posts, loading, createPost, toggleReaction, fetchComments, addComment } = useSocialFeed();
   const [newPostContent, setNewPostContent] = useState('');
   const [expandedPost, setExpandedPost] = useState<string | null>(null);
   const [comments, setComments] = useState<Record<string, any[]>>({});
@@ -18,7 +18,7 @@ export function CommunityFeed() {
 
   const handleCreatePost = async () => {
     if (!newPostContent.trim()) return;
-    await createPost(newPostContent, 'general', false);
+    await createPost(newPostContent, 'general', false, []);
     setNewPostContent('');
   };
 
@@ -79,7 +79,7 @@ export function CommunityFeed() {
 
       {/* Posts Feed */}
       <div className="space-y-4">
-        {posts.map((post: CommunityPost) => (
+        {posts.map((post: SocialPost) => (
           <Card key={post.id}>
             <CardHeader>
               <div className="flex items-start justify-between">

@@ -25,7 +25,7 @@ export function useSupportGroups() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('support_groups')
         .select('*')
         .order('created_at', { ascending: false });
@@ -34,22 +34,22 @@ export function useSupportGroups() {
 
       // Check membership for each group
       if (user) {
-        const { data: memberships } = await supabase
+        const { data: memberships } = await (supabase as any)
           .from('group_memberships')
           .select('group_id')
           .eq('user_id', user.id);
 
-        const memberGroupIds = new Set(memberships?.map(m => m.group_id) || []);
+        const memberGroupIds = new Set(memberships?.map((m: any) => m.group_id) || []);
         
-        const groupsWithMembership = (data || []).map(group => ({
+        const groupsWithMembership = (data || []).map((group: any) => ({
           ...group,
           is_member: memberGroupIds.has(group.id),
         }));
 
-        setGroups(groupsWithMembership);
-        setMyGroups(groupsWithMembership.filter(g => g.is_member));
+        setGroups(groupsWithMembership as SupportGroup[]);
+        setMyGroups(groupsWithMembership.filter((g: any) => g.is_member) as SupportGroup[]);
       } else {
-        setGroups(data || []);
+        setGroups((data || []) as SupportGroup[]);
       }
     } catch (error) {
       console.error('Error fetching groups:', error);
@@ -74,7 +74,7 @@ export function useSupportGroups() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('support_groups')
         .insert({
           name,
@@ -89,7 +89,7 @@ export function useSupportGroups() {
       if (error) throw error;
 
       // Auto-join the creator to the group
-      await supabase
+      await (supabase as any)
         .from('group_memberships')
         .insert({
           group_id: data.id,
@@ -120,7 +120,7 @@ export function useSupportGroups() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('group_memberships')
         .insert({
           group_id: groupId,
@@ -151,7 +151,7 @@ export function useSupportGroups() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('group_memberships')
         .delete()
         .eq('group_id', groupId)
