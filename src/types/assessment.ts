@@ -2,9 +2,11 @@
 export type InstrumentCode = 
   | 'WHO5' 
   | 'STAI6' 
+  | 'STAI_Trait'
   | 'SAM' 
   | 'POMS' 
   | 'POMS_TensionFatigue'
+  | 'POMS_Vigor'
   | 'AAQII' 
   | 'PANAS' 
   | 'PANAS_PA'
@@ -14,12 +16,16 @@ export type InstrumentCode =
   | 'PSS10' 
   | 'GritBRS' 
   | 'GAS'
+  | 'GEW'
   | 'UCLA3' 
   | 'MSPSS' 
+  | 'SCS'
   | 'SWEMWBS' 
   | 'WEMWBS' 
   | 'CBI' 
   | 'UWES' 
+  | 'ThreeGoodThings'
+  | 'WeeklyReflection'
   | 'CVSQ';
 
 export interface AssessStartInput {
