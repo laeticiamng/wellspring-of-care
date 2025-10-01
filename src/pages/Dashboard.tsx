@@ -25,12 +25,15 @@ import { WeeklyCardReveal } from "@/components/WeeklyCardReveal";
 import { FloatingCard } from "@/components/FloatingCard";
 import { CardGallery } from "@/components/CardGallery";
 import { useWHO5Calculator } from "@/hooks/useWHO5Calculator";
+import { useSmartNotifications } from "@/hooks/useSmartNotifications";
+import { NotificationSettings } from "@/components/NotificationSettings";
 
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { card, loading } = useWeeklyCard();
   const { calculateWHO5 } = useWHO5Calculator();
+  const { analyzeAndNudge, sendWeeklyCardReminder } = useSmartNotifications();
   const [isRevealing, setIsRevealing] = useState(false);
   const [revealComplete, setRevealComplete] = useState(false);
   const [interactionCount, setInteractionCount] = useState(0);
@@ -40,6 +43,9 @@ const Dashboard = () => {
   useEffect(() => {
     // Track implicit: temps passé sur le dashboard
     const startTime = Date.now();
+    
+    // Analyser patterns et envoyer nudges
+    analyzeAndNudge();
     
     return () => {
       const dwellMs = Date.now() - startTime;
@@ -62,7 +68,18 @@ const Dashboard = () => {
         });
       }
     };
-  }, [calculateWHO5, interactionCount, revealComplete]);
+  }, [calculateWHO5, interactionCount, revealComplete, analyzeAndNudge]);
+
+  // Rappels carte hebdomadaire
+  useEffect(() => {
+    if (card && !loading) {
+      const reminderInterval = setInterval(() => {
+        sendWeeklyCardReminder(card.mantra);
+      }, 1000 * 60 * 60 * 4); // Toutes les 4 heures
+
+      return () => clearInterval(reminderInterval);
+    }
+  }, [card, loading, sendWeeklyCardReminder]);
   
   const handleDrawCard = () => {
     setInteractionCount(prev => prev + 1);
@@ -269,6 +286,9 @@ const Dashboard = () => {
 
           {/* Right Column - 1/3 width */}
           <div className="space-y-6">
+            {/* Notifications Settings */}
+            <NotificationSettings />
+
             {/* Upcoming Sessions */}
             <Card className="border-0 shadow-soft">
               <CardHeader>
