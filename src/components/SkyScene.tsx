@@ -105,7 +105,7 @@ export function SkyScene({
           </h2>
           <Sparkles className="w-6 h-6 text-primary" />
         </div>
-        {mode === 'personal' && userAura?.who5_internal_level !== null && (
+        {mode === 'personal' && userAura && userAura.who5_internal_level != null && (
           <motion.p
             className="text-sm text-muted-foreground"
             initial={{ opacity: 0 }}
