@@ -1,8 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "npm:resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.58.0";
-
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,6 +8,31 @@ const corsHeaders = {
 
 interface InvitationEmailRequest {
   invitationId: string;
+}
+
+async function sendEmail(to: string, subject: string, html: string) {
+  const resendApiKey = Deno.env.get("RESEND_API_KEY");
+  
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${resendApiKey}`,
+    },
+    body: JSON.stringify({
+      from: "EmotionsCare <onboarding@resend.dev>",
+      to: [to],
+      subject,
+      html,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to send email: ${error}`);
+  }
+
+  return response.json();
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -53,11 +75,10 @@ const handler = async (req: Request): Promise<Response> => {
 
     const acceptUrl = `${Deno.env.get("SUPABASE_URL")}/accept-invitation?token=${invitation.token}`;
 
-    const emailResponse = await resend.emails.send({
-      from: "EmotionsCare <onboarding@resend.dev>",
-      to: [invitation.email],
-      subject: `Invitation à rejoindre ${invitation.organizations?.name}`,
-      html: `
+    const emailResponse = await sendEmail(
+      invitation.email,
+      `Invitation à rejoindre ${invitation.organizations?.name}`,
+      `
         <h1>Vous êtes invité à rejoindre ${invitation.organizations?.name}</h1>
         <p>Vous avez été invité en tant que <strong>${invitation.role}</strong> dans l'équipe <strong>${invitation.teams?.name}</strong>.</p>
         <p>Cliquez sur le bouton ci-dessous pour accepter l'invitation :</p>
@@ -67,13 +88,13 @@ const handler = async (req: Request): Promise<Response> => {
         <p>Ou copiez ce lien dans votre navigateur :</p>
         <p style="color: #6B7280; font-size: 14px;">${acceptUrl}</p>
         <p style="margin-top: 30px; color: #6B7280; font-size: 12px;">Cette invitation expire le ${new Date(invitation.expires_at).toLocaleDateString('fr-FR')}.</p>
-      `,
-    });
+      `
+    );
 
     console.log("Email sent successfully:", emailResponse);
 
     return new Response(
-      JSON.stringify({ success: true, messageId: emailResponse.data?.id }),
+      JSON.stringify({ success: true, messageId: emailResponse.id }),
       {
         status: 200,
         headers: {

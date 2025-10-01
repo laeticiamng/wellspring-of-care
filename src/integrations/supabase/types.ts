@@ -2944,6 +2944,33 @@ export type Database = {
         }
         Relationships: []
       }
+      emotional_scan_results: {
+        Row: {
+          confidence_score: number | null
+          created_at: string | null
+          emotions_detected: Json
+          id: string
+          scan_data: Json
+          user_id: string
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string | null
+          emotions_detected?: Json
+          id?: string
+          scan_data?: Json
+          user_id: string
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string | null
+          emotions_detected?: Json
+          id?: string
+          scan_data?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
       emotions: {
         Row: {
           ai_feedback: string | null
@@ -3954,6 +3981,30 @@ export type Database = {
           request_details?: Json | null
           response_status?: string
           service_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      implicit_tracking: {
+        Row: {
+          created_at: string | null
+          event_data: Json
+          event_type: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          event_data?: Json
+          event_type: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          event_data?: Json
+          event_type?: string
+          id?: string
           user_id?: string
         }
         Relationships: []
@@ -6437,6 +6488,33 @@ export type Database = {
           target_audience?: string | null
           title?: string
           type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      nyvee_sessions: {
+        Row: {
+          assessment_results: Json | null
+          completed_at: string | null
+          created_at: string | null
+          id: string
+          session_data: Json
+          user_id: string
+        }
+        Insert: {
+          assessment_results?: Json | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          session_data?: Json
+          user_id: string
+        }
+        Update: {
+          assessment_results?: Json | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          session_data?: Json
           user_id?: string
         }
         Relationships: []
