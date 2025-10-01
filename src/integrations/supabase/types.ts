@@ -7750,6 +7750,228 @@ export type Database = {
         }
         Relationships: []
       }
+      story_acts_catalog: {
+        Row: {
+          act_code: string
+          created_at: string | null
+          description: string | null
+          difficulty_level: string | null
+          duration_minutes: number | null
+          id: string
+          music_palette: Json | null
+          scenes: Json
+          theme: string
+          title: string
+          unlock_conditions: Json | null
+          visual_palette: Json | null
+        }
+        Insert: {
+          act_code: string
+          created_at?: string | null
+          description?: string | null
+          difficulty_level?: string | null
+          duration_minutes?: number | null
+          id?: string
+          music_palette?: Json | null
+          scenes: Json
+          theme: string
+          title: string
+          unlock_conditions?: Json | null
+          visual_palette?: Json | null
+        }
+        Update: {
+          act_code?: string
+          created_at?: string | null
+          description?: string | null
+          difficulty_level?: string | null
+          duration_minutes?: number | null
+          id?: string
+          music_palette?: Json | null
+          scenes?: Json
+          theme?: string
+          title?: string
+          unlock_conditions?: Json | null
+          visual_palette?: Json | null
+        }
+        Relationships: []
+      }
+      story_ambients: {
+        Row: {
+          ambient_code: string
+          created_at: string | null
+          description: string | null
+          id: string
+          music_texture: Json
+          name: string
+          unlocked_at: string | null
+          user_id: string
+          visual_effect: Json | null
+        }
+        Insert: {
+          ambient_code: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          music_texture: Json
+          name: string
+          unlocked_at?: string | null
+          user_id: string
+          visual_effect?: Json | null
+        }
+        Update: {
+          ambient_code?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          music_texture?: Json
+          name?: string
+          unlocked_at?: string | null
+          user_id?: string
+          visual_effect?: Json | null
+        }
+        Relationships: []
+      }
+      story_fragments: {
+        Row: {
+          act_code: string
+          ambient_unlock: string | null
+          created_at: string | null
+          description: string | null
+          fragment_code: string
+          id: string
+          is_favorite: boolean | null
+          rarity: string
+          times_viewed: number | null
+          title: string
+          unlocked_at: string | null
+          user_id: string
+          visual_asset: string | null
+        }
+        Insert: {
+          act_code: string
+          ambient_unlock?: string | null
+          created_at?: string | null
+          description?: string | null
+          fragment_code: string
+          id?: string
+          is_favorite?: boolean | null
+          rarity: string
+          times_viewed?: number | null
+          title: string
+          unlocked_at?: string | null
+          user_id: string
+          visual_asset?: string | null
+        }
+        Update: {
+          act_code?: string
+          ambient_unlock?: string | null
+          created_at?: string | null
+          description?: string | null
+          fragment_code?: string
+          id?: string
+          is_favorite?: boolean | null
+          rarity?: string
+          times_viewed?: number | null
+          title?: string
+          unlocked_at?: string | null
+          user_id?: string
+          visual_asset?: string | null
+        }
+        Relationships: []
+      }
+      story_fragments_catalog: {
+        Row: {
+          act_code: string
+          ambient_data: Json | null
+          created_at: string | null
+          description: string | null
+          fragment_code: string
+          id: string
+          rarity: string
+          title: string
+          unlock_hints: Json | null
+          visual_data: Json
+        }
+        Insert: {
+          act_code: string
+          ambient_data?: Json | null
+          created_at?: string | null
+          description?: string | null
+          fragment_code: string
+          id?: string
+          rarity: string
+          title: string
+          unlock_hints?: Json | null
+          visual_data: Json
+        }
+        Update: {
+          act_code?: string
+          ambient_data?: Json | null
+          created_at?: string | null
+          description?: string | null
+          fragment_code?: string
+          id?: string
+          rarity?: string
+          title?: string
+          unlock_hints?: Json | null
+          visual_data?: Json
+        }
+        Relationships: []
+      }
+      story_sessions: {
+        Row: {
+          act_code: string
+          badge_received: string | null
+          choices: Json | null
+          completed_at: string | null
+          created_at: string | null
+          duration_seconds: number | null
+          ending_reached: string | null
+          fragments_unlocked: Json | null
+          id: string
+          poms_post: Json | null
+          poms_pre: Json | null
+          scenes_completed: number | null
+          session_id: string | null
+          started_at: string | null
+          user_id: string
+        }
+        Insert: {
+          act_code: string
+          badge_received?: string | null
+          choices?: Json | null
+          completed_at?: string | null
+          created_at?: string | null
+          duration_seconds?: number | null
+          ending_reached?: string | null
+          fragments_unlocked?: Json | null
+          id?: string
+          poms_post?: Json | null
+          poms_pre?: Json | null
+          scenes_completed?: number | null
+          session_id?: string | null
+          started_at?: string | null
+          user_id: string
+        }
+        Update: {
+          act_code?: string
+          badge_received?: string | null
+          choices?: Json | null
+          completed_at?: string | null
+          created_at?: string | null
+          duration_seconds?: number | null
+          ending_reached?: string | null
+          fragments_unlocked?: Json | null
+          id?: string
+          poms_post?: Json | null
+          poms_pre?: Json | null
+          scenes_completed?: number | null
+          session_id?: string | null
+          started_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       streaming_access_logs: {
         Row: {
           action: string
@@ -9572,6 +9794,14 @@ export type Database = {
           updated_count: number
         }[]
       }
+      complete_story_session: {
+        Args: {
+          p_badge: string
+          p_fragments_to_unlock: string[]
+          p_session_id: string
+        }
+        Returns: Json
+      }
       count_all_invitations: {
         Args: Record<PropertyKey, never>
         Returns: number
@@ -10542,6 +10772,10 @@ export type Database = {
       }
       ultimate_security_validation: {
         Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      unlock_story_fragment: {
+        Args: { p_fragment_code: string; p_user_id: string }
         Returns: Json
       }
       update_all_edn_items_unique_content: {
