@@ -1,10 +1,71 @@
+import { useState, useEffect } from "react";
 import Header from "@/components/Header";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Music2, Sliders, Play } from "lucide-react";
+import { Card } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
+import { Button } from "@/components/ui/button";
+import { useImplicitTracking } from "@/hooks/useImplicitTracking";
+import { Music2, Volume2 } from "lucide-react";
 
 const MoodMixer = () => {
+  const { track } = useImplicitTracking();
+  const [valence, setValence] = useState(50);
+  const [arousal, setArousal] = useState(50);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [listenTime, setListenTime] = useState(0);
+  const [mixSaved, setMixSaved] = useState(false);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isPlaying) {
+      interval = setInterval(() => {
+        setListenTime(prev => prev + 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isPlaying]);
+
+  const handleValenceChange = (value: number[]) => {
+    setValence(value[0]);
+    track({
+      instrument: "SAM",
+      item_id: "valence",
+      proxy: "choice",
+      value: value[0] > 50 ? "up" : "down"
+    });
+  };
+
+  const handleArousalChange = (value: number[]) => {
+    setArousal(value[0]);
+    track({
+      instrument: "SAM",
+      item_id: "arousal",
+      proxy: "choice",
+      value: value[0] > 50 ? "up" : "down"
+    });
+  };
+
+  const handlePlay = () => {
+    setIsPlaying(true);
+    setListenTime(0);
+  };
+
+  const handleStop = () => {
+    setIsPlaying(false);
+    if (listenTime > 0) {
+      track({
+        instrument: "SAM",
+        item_id: "stability",
+        proxy: "duration",
+        value: listenTime * 1000
+      });
+    }
+  };
+
+  const handleSaveMix = () => {
+    setMixSaved(true);
+    setTimeout(() => setMixSaved(false), 3000);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-calm">
       <Header />
@@ -25,48 +86,89 @@ const MoodMixer = () => {
           </p>
         </div>
 
-        <Card className="max-w-4xl mx-auto border-0 shadow-glow">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Sliders className="h-6 w-6 text-primary" />
-              <span>Table de mixage</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-8">
-            <div className="aspect-video bg-gradient-primary/10 rounded-lg flex items-center justify-center">
-              <div className="text-center space-y-4">
-                <Music2 className="h-20 w-20 text-primary mx-auto animate-pulse-soft" />
-                <p className="text-lg font-medium">Créez votre mix émotionnel</p>
+        <Card className="max-w-4xl mx-auto border-0 shadow-glow p-8 animate-scale-in space-y-8">
+          <div className="text-center">
+            <Music2 className="w-16 h-16 mx-auto mb-4 text-primary animate-pulse-soft" />
+            <h2 className="text-2xl font-bold mb-2">Studio DJ des Émotions</h2>
+            <p className="text-muted-foreground">
+              Ajuste les sliders pour créer ton mix émotionnel parfait
+            </p>
+          </div>
+
+          <div 
+            className="p-8 rounded-xl transition-all duration-500"
+            style={{
+              background: `linear-gradient(135deg, 
+                hsl(${valence * 3.6}, 70%, ${50 + arousal * 0.3}%), 
+                hsl(${(valence + 60) * 3.6}, 70%, ${50 + arousal * 0.3}%)
+              )`,
+            }}
+          >
+            <div className="space-y-8">
+              <div className="space-y-4">
+                <div className="flex justify-between text-white font-semibold">
+                  <span>😔 Tristesse</span>
+                  <span>Valence</span>
+                  <span>Joie 😊</span>
+                </div>
+                <Slider
+                  value={[valence]}
+                  onValueChange={handleValenceChange}
+                  min={0}
+                  max={100}
+                  step={1}
+                  className="cursor-pointer"
+                />
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex justify-between text-white font-semibold">
+                  <span>😴 Calme</span>
+                  <span>Énergie</span>
+                  <span>Actif 🔥</span>
+                </div>
+                <Slider
+                  value={[arousal]}
+                  onValueChange={handleArousalChange}
+                  min={0}
+                  max={100}
+                  step={1}
+                  className="cursor-pointer"
+                />
               </div>
             </div>
 
-            <div className="space-y-6">
-              {[
-                { name: 'Joie', color: 'text-yellow-500', value: 50 },
-                { name: 'Calme', color: 'text-blue-500', value: 70 },
-                { name: 'Énergie', color: 'text-red-500', value: 30 },
-                { name: 'Concentration', color: 'text-purple-500', value: 60 }
-              ].map((emotion) => (
-                <div key={emotion.name} className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className={`font-medium ${emotion.color}`}>{emotion.name}</span>
-                    <span className="text-muted-foreground">{emotion.value}%</span>
-                  </div>
-                  <Slider defaultValue={[emotion.value]} max={100} step={1} />
-                </div>
-              ))}
+            <div className="flex justify-center gap-4 mt-8">
+              <Button
+                size="lg"
+                variant="secondary"
+                onClick={isPlaying ? handleStop : handlePlay}
+                className="gap-2"
+              >
+                <Volume2 className="w-5 h-5" />
+                {isPlaying ? 'Stop' : 'Écouter'}
+              </Button>
+              <Button
+                size="lg"
+                variant="secondary"
+                onClick={handleSaveMix}
+              >
+                💾 Sauvegarder
+              </Button>
             </div>
 
-            <div className="flex justify-center space-x-4">
-              <Button className="bg-gradient-primary text-primary-foreground shadow-glow">
-                <Play className="mr-2 h-4 w-4" />
-                Générer le mix
-              </Button>
-              <Button variant="outline">
-                Sauvegarder
-              </Button>
-            </div>
-          </CardContent>
+            {isPlaying && (
+              <p className="text-center text-white mt-4 animate-pulse-soft">
+                Écoute: {listenTime}s
+              </p>
+            )}
+
+            {mixSaved && (
+              <p className="text-center text-white mt-4 animate-fade-in font-semibold">
+                ✨ Mix sauvegardé !
+              </p>
+            )}
+          </div>
         </Card>
       </main>
     </div>

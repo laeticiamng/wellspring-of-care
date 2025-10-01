@@ -1,10 +1,50 @@
+import { useState } from "react";
 import Header from "@/components/Header";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Sword, Target, Trophy } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { useImplicitTracking } from "@/hooks/useImplicitTracking";
+import { Swords, Trophy, Sword } from "lucide-react";
 
 const BossGrit = () => {
+  const { track } = useImplicitTracking();
+  const [currentChallenge, setCurrentChallenge] = useState(0);
+  const [completionRatio, setCompletionRatio] = useState(0);
+  const [auraLevel, setAuraLevel] = useState(1);
+
+  const challenges = [
+    { id: 1, name: 'Défi du Courage', difficulty: 'Facile', emoji: '⚔️' },
+    { id: 2, name: 'Défi de la Patience', difficulty: 'Moyen', emoji: '🛡️' },
+    { id: 3, name: 'Défi de la Ténacité', difficulty: 'Difficile', emoji: '👑' },
+  ];
+
+  const handleChallengeComplete = (ratio: number) => {
+    setCompletionRatio(ratio);
+    track({
+      instrument: "GRITS",
+      item_id: "consistency",
+      proxy: "completion",
+      value: ratio
+    });
+
+    if (ratio >= 0.8) {
+      setAuraLevel(prev => Math.min(prev + 1, 10));
+      if (currentChallenge < challenges.length - 1) {
+        setCurrentChallenge(prev => prev + 1);
+      }
+    }
+  };
+
+  const handleRetry = () => {
+    track({
+      instrument: "BRS",
+      item_id: "bounce",
+      proxy: "repeat",
+      value: "retry_48h"
+    });
+    setCompletionRatio(0);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-calm">
       <Header />
@@ -25,77 +65,86 @@ const BossGrit = () => {
           </p>
         </div>
 
-        <Card className="max-w-4xl mx-auto border-0 shadow-glow bg-gradient-primary/5">
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span className="flex items-center space-x-2">
-                <Target className="h-6 w-6 text-primary" />
-                <span>Boss actuel</span>
-              </span>
-              <Badge className="bg-gradient-secondary text-secondary-foreground">
-                Niveau 1
-              </Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="aspect-video bg-gradient-primary/20 rounded-lg flex items-center justify-center">
-              <div className="text-center space-y-4">
-                <Sword className="h-20 w-20 text-primary mx-auto animate-float" />
-                <p className="text-xl font-semibold">Le Doute Persistent</p>
-                <p className="text-muted-foreground">Vaincre les pensées négatives</p>
+        <Card className="max-w-4xl mx-auto border-0 shadow-glow p-8 animate-scale-in space-y-6">
+          <div className="text-center">
+            <div className="flex justify-center items-center gap-4 mb-4">
+              <Swords className="w-12 h-12 text-primary animate-pulse-soft" />
+              <div className="relative">
+                <div 
+                  className="w-32 h-32 rounded-full bg-gradient-to-br from-primary to-primary/40 flex items-center justify-center animate-glow"
+                  style={{
+                    transform: `scale(${1 + (auraLevel / 20)})`,
+                    transition: 'transform 0.5s ease-out'
+                  }}
+                >
+                  <Trophy className="w-16 h-16 text-white" />
+                </div>
+                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-bold">
+                  Niveau {auraLevel}
+                </div>
+              </div>
+              <Swords className="w-12 h-12 text-primary animate-pulse-soft" />
+            </div>
+            <p className="text-2xl font-bold mb-2">Arène de la Persévérance</p>
+            <p className="text-muted-foreground">Ton aura héroïque grandit à chaque victoire</p>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-xl font-semibold">
+              Défi actuel : {challenges[currentChallenge].name}
+            </h3>
+            
+            <div className="p-6 bg-muted rounded-lg text-center space-y-4">
+              <div className="text-6xl">{challenges[currentChallenge].emoji}</div>
+              <div className="space-y-2">
+                <p className="font-semibold">Difficulté: {challenges[currentChallenge].difficulty}</p>
+                <Progress value={completionRatio * 100} className="h-3" />
+                <p className="text-sm text-muted-foreground">
+                  Progression: {Math.round(completionRatio * 100)}%
+                </p>
               </div>
             </div>
 
-            <div className="space-y-3">
-              <div className="flex justify-between text-sm">
-                <span>Points de vie Boss</span>
-                <span className="font-medium">100/100</span>
-              </div>
-              <div className="h-4 bg-muted rounded-full overflow-hidden">
-                <div className="h-full bg-gradient-primary" style={{ width: '100%' }}></div>
-              </div>
-            </div>
-
-            <div className="flex justify-center space-x-4">
-              <Button className="bg-gradient-primary text-primary-foreground shadow-glow">
-                <Sword className="mr-2 h-4 w-4" />
-                Commencer le combat
+            <div className="flex gap-4 justify-center">
+              <Button
+                size="lg"
+                onClick={() => handleChallengeComplete(0.3)}
+                variant="outline"
+              >
+                Tentative (+30%)
               </Button>
-              <Button variant="outline">
-                Stratégie
+              <Button
+                size="lg"
+                onClick={() => handleChallengeComplete(0.7)}
+                variant="outline"
+              >
+                Bon effort (+70%)
+              </Button>
+              <Button
+                size="lg"
+                onClick={() => handleChallengeComplete(1.0)}
+              >
+                Victoire! (+100%)
               </Button>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-4">
-              {[
-                { stat: 'Grit Score', value: '65/100' },
-                { stat: 'Résilience', value: '72/100' },
-                { stat: 'Boss vaincus', value: '0' }
-              ].map((item) => (
-                <Card key={item.stat} className="border-0 bg-muted/50 text-center">
-                  <CardContent className="pt-6 space-y-2">
-                    <p className="text-2xl font-bold text-primary">{item.value}</p>
-                    <p className="text-sm text-muted-foreground">{item.stat}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </CardContent>
+            {completionRatio > 0 && completionRatio < 1 && (
+              <div className="text-center">
+                <Button variant="ghost" onClick={handleRetry}>
+                  Réessayer
+                </Button>
+              </div>
+            )}
+          </div>
         </Card>
 
-        <Card className="max-w-4xl mx-auto border-0 shadow-soft">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Trophy className="h-5 w-5 text-primary" />
-              <span>Récompenses débloquées</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground text-center py-8">
-              Affrontez votre premier boss pour débloquer des récompenses
+        {auraLevel >= 3 && (
+          <Card className="max-w-4xl mx-auto border-0 shadow-soft p-6 animate-fade-in bg-gradient-to-br from-primary/5 to-primary/20">
+            <p className="text-center text-lg">
+              🌟 Ton aura héroïque rayonne ! Continue pour la faire grandir encore plus.
             </p>
-          </CardContent>
-        </Card>
+          </Card>
+        )}
       </main>
     </div>
   );
