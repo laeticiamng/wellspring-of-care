@@ -446,6 +446,51 @@ export type Database = {
         }
         Relationships: []
       }
+      assessment_sessions: {
+        Row: {
+          answers: Json | null
+          completed_at: string | null
+          context: Json | null
+          created_at: string
+          duration_seconds: number | null
+          id: string
+          instrument: string
+          locale: string
+          metadata: Json | null
+          started_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          answers?: Json | null
+          completed_at?: string | null
+          context?: Json | null
+          created_at?: string
+          duration_seconds?: number | null
+          id?: string
+          instrument: string
+          locale?: string
+          metadata?: Json | null
+          started_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          answers?: Json | null
+          completed_at?: string | null
+          context?: Json | null
+          created_at?: string
+          duration_seconds?: number | null
+          id?: string
+          instrument?: string
+          locale?: string
+          metadata?: Json | null
+          started_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       assessments: {
         Row: {
           created_at: string
