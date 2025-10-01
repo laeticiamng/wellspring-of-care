@@ -497,6 +497,7 @@ export type Database = {
           id: string
           instrument: string
           score_json: Json
+          submitted_at: string | null
           ts: string
           user_id: string
         }
@@ -505,6 +506,7 @@ export type Database = {
           id?: string
           instrument: string
           score_json: Json
+          submitted_at?: string | null
           ts?: string
           user_id: string
         }
@@ -513,6 +515,7 @@ export type Database = {
           id?: string
           instrument?: string
           score_json?: Json
+          submitted_at?: string | null
           ts?: string
           user_id?: string
         }
@@ -2971,6 +2974,54 @@ export type Database = {
         }
         Relationships: []
       }
+      emotional_scans: {
+        Row: {
+          audio_url: string | null
+          confidence: number | null
+          created_at: string | null
+          duration_seconds: number | null
+          emotions: Json
+          hume_job_id: string | null
+          id: string
+          scan_type: string
+          text_content: string | null
+          top_emotion: string | null
+          updated_at: string | null
+          user_id: string
+          video_url: string | null
+        }
+        Insert: {
+          audio_url?: string | null
+          confidence?: number | null
+          created_at?: string | null
+          duration_seconds?: number | null
+          emotions?: Json
+          hume_job_id?: string | null
+          id?: string
+          scan_type: string
+          text_content?: string | null
+          top_emotion?: string | null
+          updated_at?: string | null
+          user_id: string
+          video_url?: string | null
+        }
+        Update: {
+          audio_url?: string | null
+          confidence?: number | null
+          created_at?: string | null
+          duration_seconds?: number | null
+          emotions?: Json
+          hume_job_id?: string | null
+          id?: string
+          scan_type?: string
+          text_content?: string | null
+          top_emotion?: string | null
+          updated_at?: string | null
+          user_id?: string
+          video_url?: string | null
+        }
+        Relationships: []
+      }
       emotions: {
         Row: {
           ai_feedback: string | null
@@ -4504,6 +4555,7 @@ export type Database = {
           id: string
           is_precious: boolean | null
           tags: string[] | null
+          text_content: string | null
           updated_at: string | null
           user_id: string
         }
@@ -4518,6 +4570,7 @@ export type Database = {
           id?: string
           is_precious?: boolean | null
           tags?: string[] | null
+          text_content?: string | null
           updated_at?: string | null
           user_id: string
         }
@@ -4532,6 +4585,7 @@ export type Database = {
           id?: string
           is_precious?: boolean | null
           tags?: string[] | null
+          text_content?: string | null
           updated_at?: string | null
           user_id?: string
         }

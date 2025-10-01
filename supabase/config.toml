@@ -53,3 +53,6 @@ verify_jwt = true
 
 [functions.delete-user-data]
 verify_jwt = true
+
+[functions.hume-emotion-detect]
+verify_jwt = true

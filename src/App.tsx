@@ -27,6 +27,7 @@ import Pricing from "./pages/Pricing";
 import NotFound from "./pages/NotFound";
 import Nyvee from "./pages/Nyvee";
 import EmotionalScan from "./pages/EmotionalScan";
+import HumeEmotionalScan from "./pages/HumeEmotionalScan";
 import MusicTherapy from "./pages/MusicTherapy";
 import VRBreath from "./pages/VRBreath";
 import VRGalaxy from "./pages/VRGalaxy";
@@ -102,7 +103,8 @@ const App = () => (
             
             {/* Nouveaux modules EmotionsCare */}
             <Route path="/nyvee" element={<ProtectedRoute><Nyvee /></ProtectedRoute>} />
-            <Route path="/scan" element={<ProtectedRoute><EmotionalScan /></ProtectedRoute>} />
+            <Route path="/emotional-scan" element={<ProtectedRoute><EmotionalScan /></ProtectedRoute>} />
+            <Route path="/hume-scan" element={<ProtectedRoute><HumeEmotionalScan /></ProtectedRoute>} />
             <Route path="/music" element={<ProtectedRoute><MusicTherapy /></ProtectedRoute>} />
             <Route path="/vr-breath" element={<ProtectedRoute><VRBreath /></ProtectedRoute>} />
             <Route path="/vr-galaxy" element={<ProtectedRoute><VRGalaxy /></ProtectedRoute>} />
