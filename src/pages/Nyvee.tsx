@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { BreathingBubble } from '@/components/BreathingBubble';
+import BreathingBubble from '@/components/BreathingBubble';
 import { BadgeReveal } from '@/components/BadgeReveal';
 import { CocoonGallery } from '@/components/CocoonGallery';
 import { NyveeTutorial } from '@/components/NyveeTutorial';
@@ -76,8 +76,7 @@ const Nyvee = () => {
     return (
       <BreathingBubble
         isActive={true}
-        onCycleComplete={handleCycleComplete}
-        onPhaseChange={handlePhaseChange}
+        breathLevel={0.5}
       />
     );
   }

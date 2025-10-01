@@ -64,10 +64,13 @@ export default {
         'gradient-secondary': 'var(--gradient-secondary)',
         'gradient-healing': 'var(--gradient-healing)',
         'gradient-calm': 'var(--gradient-calm)',
+        'gradient-radial': 'radial-gradient(circle, var(--tw-gradient-stops))',
       },
       boxShadow: {
         'soft': 'var(--shadow-soft)',
         'glow': 'var(--shadow-glow)',
+        'glow-intense': 'var(--shadow-glow-intense)',
+        'glow-legendary': 'var(--shadow-glow-legendary)',
         'heal': 'var(--shadow-heal)',
       },
       transitionTimingFunction: {

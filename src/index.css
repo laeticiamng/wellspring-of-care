@@ -49,10 +49,13 @@
     --gradient-secondary: linear-gradient(135deg, hsl(158 64% 52%), hsl(172 66% 50%));
     --gradient-healing: linear-gradient(135deg, hsl(270 95% 75%), hsl(290 87% 69%));
     --gradient-calm: linear-gradient(180deg, hsl(210 40% 98%), hsl(220 60% 99%));
+    --gradient-radial: radial-gradient(circle, var(--tw-gradient-stops));
 
     /* Therapeutic shadows */
     --shadow-soft: 0 4px 20px hsl(214 84% 56% / 0.1);
     --shadow-glow: 0 0 40px hsl(214 100% 70% / 0.3);
+    --shadow-glow-intense: 0 0 60px hsl(214 100% 70% / 0.5), 0 0 80px hsl(270 95% 75% / 0.3);
+    --shadow-glow-legendary: 0 0 80px hsl(270 95% 75% / 0.8), 0 0 120px hsl(214 100% 70% / 0.5);
     --shadow-heal: 0 8px 32px hsl(270 95% 75% / 0.2);
 
     /* Smooth animations */
@@ -114,6 +117,7 @@
     --gradient-secondary: linear-gradient(135deg, hsl(158 50% 45%), hsl(172 55% 50%));
     --gradient-healing: linear-gradient(135deg, hsl(270 95% 80%), hsl(290 87% 75%));
     --gradient-calm: linear-gradient(180deg, hsl(220 26% 14%), hsl(220 23% 18%));
+    --gradient-radial: radial-gradient(circle, var(--tw-gradient-stops));
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;

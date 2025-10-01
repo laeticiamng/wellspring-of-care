@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ForestScene } from "@/components/ForestScene";
 import { MusicSync } from "@/components/MusicSync";
-import { FragmentGallery } from "@/components/FragmentGallery";
+import FragmentGallery from "@/components/FragmentGallery";
 import { useMusicTherapy } from "@/hooks/useMusicTherapy";
 import { useImplicitTracking } from "@/hooks/useImplicitTracking";
 
@@ -263,7 +263,7 @@ export default function MusicTherapy() {
               >
                 ← Retour
               </Button>
-              <FragmentGallery />
+              <FragmentGallery fragments={[]} />
             </div>
           </motion.div>
         )}
