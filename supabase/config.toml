@@ -57,5 +57,11 @@ verify_jwt = true
 [functions.hume-emotion-detect]
 verify_jwt = true
 
+[functions.stripe-checkout]
+verify_jwt = true
+
+[functions.stripe-webhook]
+verify_jwt = false
+
 [functions.suno-music-generate]
 verify_jwt = true

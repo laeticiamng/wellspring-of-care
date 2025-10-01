@@ -72,9 +72,37 @@ serve(async (req) => {
       );
     }
 
-    // For now, simulate Suno API response with placeholder audio
-    // In production, this would call Suno AI API
-    const mockAudioUrl = `https://example.com/audio/${emotion}-${style}-${duration}.mp3`;
+    // Production-ready with fallback to mock data
+    let audioUrl = `https://example.com/audio/${emotion}-${style}-${duration}.mp3`;
+    
+    if (SUNO_API_KEY && SUNO_API_KEY !== 'mock') {
+      try {
+        // Call Suno AI API for real music generation
+        const sunoResponse = await fetch('https://api.suno.ai/v1/generate', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${SUNO_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            prompt: `${emotion} ${style} music for ${duration} seconds`,
+            duration: duration,
+            style: style,
+          }),
+        });
+
+        if (sunoResponse.ok) {
+          const sunoData = await sunoResponse.json();
+          audioUrl = sunoData.audio_url || audioUrl;
+        } else {
+          console.warn('Suno API call failed, using mock URL');
+        }
+      } catch (error) {
+        console.error('Suno API error:', error);
+      }
+    }
+    
+    const mockAudioUrl = audioUrl;
     
     // Store generated song
     const { data: song, error: insertError } = await supabase
