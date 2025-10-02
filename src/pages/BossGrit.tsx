@@ -207,7 +207,7 @@ const BossGrit = () => {
   const xpToNextLevel = (userLevel * 500) - totalXP;
   const progressPercent = (totalXP % 500) / 5;
   const trophies = unlockedItems.filter(id => id.startsWith('trophy_')).map(id => ({
-    id,
+    id: parseInt(id.replace('trophy_', '')) || Date.now(),
     name: 'Trophée Légendaire',
     emoji: '🏆',
     rarity: 'legendary',
