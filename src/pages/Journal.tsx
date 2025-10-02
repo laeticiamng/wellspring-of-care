@@ -31,15 +31,39 @@ const Journal = () => {
   const { collections, unlockItem } = useCollections();
   const [audioRecording, setAudioRecording] = useState(false);
   const audioStartTime = useRef<number>(0);
+  const [userLevel, setUserLevel] = useState(1);
+  const [totalXP, setTotalXP] = useState(0);
+  const [totalEntries, setTotalEntries] = useState(0);
+  const [showLevelUp, setShowLevelUp] = useState(false);
+  const [unlockedChapters, setUnlockedChapters] = useState<string[]>([]);
   
-  const moodOptions = [
-    { emoji: "😊", name: "Joyeux", color: "bg-gradient-secondary", value: "happy" },
-    { emoji: "😌", name: "Calme", color: "bg-gradient-primary", value: "calm" },
-    { emoji: "😔", name: "Triste", color: "bg-muted", value: "sad" },
-    { emoji: "😰", name: "Anxieux", color: "bg-destructive/20", value: "anxious" },
-    { emoji: "😡", name: "Colère", color: "bg-destructive", value: "angry" },
-    { emoji: "😴", name: "Fatigué", color: "bg-muted-foreground/20", value: "tired" },
+  const chapters = [
+    { id: 'ch1', name: '📖 Chapitre 1: L\'Éveil', unlockLevel: 1, xp: 50 },
+    { id: 'ch2', name: '✨ Chapitre 2: La Clarté', unlockLevel: 3, xp: 100 },
+    { id: 'ch3', name: '🌈 Chapitre 3: Les Couleurs', unlockLevel: 5, xp: 150 },
+    { id: 'ch4', name: '💫 Chapitre 4: La Transformation', unlockLevel: 8, xp: 200 },
+    { id: 'ch5', name: '🌟 Chapitre 5: L\'Illumination', unlockLevel: 12, xp: 300 },
   ];
+
+  const moodOptions = [
+    { emoji: "😊", name: "Joyeux", color: "bg-gradient-secondary", value: "happy", xp: 50 },
+    { emoji: "😌", name: "Calme", color: "bg-gradient-primary", value: "calm", xp: 50 },
+    { emoji: "😔", name: "Triste", color: "bg-muted", value: "sad", xp: 60 },
+    { emoji: "😰", name: "Anxieux", color: "bg-destructive/20", value: "anxious", xp: 70 },
+    { emoji: "😡", name: "Colère", color: "bg-destructive", value: "angry", xp: 70 },
+    { emoji: "😴", name: "Fatigué", color: "bg-muted-foreground/20", value: "tired", xp: 50 },
+  ];
+
+  useEffect(() => {
+    const saved = localStorage.getItem('journal_progress');
+    if (saved) {
+      const { level, xp, entries: count, chapters: unlocked } = JSON.parse(saved);
+      setUserLevel(level || 1);
+      setTotalXP(xp || 0);
+      setTotalEntries(count || 0);
+      setUnlockedChapters(unlocked || []);
+    }
+  }, []);
 
   const handleSave = async () => {
     if (!selectedMood || !journalText) {
@@ -53,14 +77,59 @@ const Journal = () => {
 
     await saveEntry(journalText);
     
+    // Calculate XP gain
+    const selectedMoodOption = moodOptions.find(m => m.value === selectedMood);
+    const baseXP = selectedMoodOption?.xp || 50;
+    const lengthBonus = Math.floor(journalText.length / 100) * 10;
+    const tagsBonus = selectedTags.length * 5;
+    const totalXPGain = baseXP + lengthBonus + tagsBonus;
+    
+    const newXP = totalXP + totalXPGain;
+    const newLevel = Math.floor(newXP / 500) + 1;
+    const newEntryCount = totalEntries + 1;
+    const leveledUp = newLevel > userLevel;
+
+    // Check for chapter unlocks
+    const newUnlocks = chapters.filter(ch => 
+      ch.unlockLevel <= newLevel && !unlockedChapters.includes(ch.id)
+    ).map(ch => ch.id);
+
+    if (leveledUp) {
+      setUserLevel(newLevel);
+      setShowLevelUp(true);
+      setTimeout(() => setShowLevelUp(false), 3000);
+      
+      if (navigator.vibrate) {
+        navigator.vibrate([200, 100, 200]);
+      }
+    }
+
+    if (newUnlocks.length > 0) {
+      setUnlockedChapters([...unlockedChapters, ...newUnlocks]);
+      toast({
+        title: "📖 Nouveau chapitre débloqué!",
+        description: chapters.find(ch => ch.id === newUnlocks[0])?.name,
+      });
+    }
+
+    setTotalXP(newXP);
+    setTotalEntries(newEntryCount);
+
+    localStorage.setItem('journal_progress', JSON.stringify({
+      level: newLevel,
+      xp: newXP,
+      entries: newEntryCount,
+      chapters: [...unlockedChapters, ...newUnlocks]
+    }));
+    
     // Track journal completion with PANAS proxy
     const hasPositiveMood = ['happy', 'calm'].includes(selectedMood);
     track({
       instrument: "PANAS",
       item_id: hasPositiveMood ? "pa_calm" : "na_mark",
       proxy: "duration",
-      value: journalText.length * 10, // approx writing time
-      context: { mood: selectedMood, tags: selectedTags.join(',') }
+      value: journalText.length * 10,
+      context: { mood: selectedMood, tags: selectedTags.join(','), xp: String(totalXPGain) }
     });
     
     // Unlock pages collection
@@ -68,6 +137,11 @@ const Journal = () => {
     if (entriesCount >= 3 && collections.pages?.items[0]) {
       unlockItem('pages', collections.pages.items[0].id);
     }
+
+    toast({
+      title: "Page sauvegardée! 📝",
+      description: `+${totalXPGain} XP`,
+    });
     
     setSelectedMood("");
     setJournalText("");
@@ -144,18 +218,53 @@ const Journal = () => {
     }
   ];
 
+  const xpToNextLevel = (userLevel * 500) - totalXP;
+  const progressPercent = (totalXP % 500) / 5;
+
   return (
-    <div className="min-h-screen bg-gradient-calm">
+    <div className="min-h-screen bg-gradient-calm relative">
       <Header />
+      
+      {/* Level up animation */}
+      {showLevelUp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm pointer-events-none">
+          <Card className="max-w-md bg-gradient-primary border-primary/50 shadow-glow animate-scale-in">
+            <div className="p-8 text-center space-y-4">
+              <div className="text-6xl animate-bounce">📖</div>
+              <h2 className="text-4xl font-bold">Niveau {userLevel}!</h2>
+              <p className="text-muted-foreground">Nouveau chapitre à explorer</p>
+            </div>
+          </Card>
+        </div>
+      )}
       
       <main className="container mx-auto px-4 py-8 space-y-8">
         {/* Header Section */}
         <div className="text-center space-y-4">
           <div className="flex items-center justify-center space-x-3">
             <BookOpen className="h-12 w-12 text-primary animate-float" />
-            <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              La Bibliothèque des Émotions
-            </h1>
+            <div className="space-y-2">
+              <div className="flex items-center justify-center gap-2">
+                <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+                  La Bibliothèque des Émotions
+                </h1>
+                <div className="px-3 py-1 bg-primary/20 rounded-full">
+                  <span className="text-sm font-bold text-primary">Niv.{userLevel}</span>
+                </div>
+              </div>
+              <div className="max-w-md mx-auto space-y-1">
+                <div className="flex justify-between text-xs">
+                  <span className="text-muted-foreground">{totalEntries} entrées</span>
+                  <span className="text-primary">{totalXP} XP ({xpToNextLevel} vers niv.{userLevel + 1})</span>
+                </div>
+                <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-primary transition-all duration-500"
+                    style={{ width: `${progressPercent}%` }}
+                  />
+                </div>
+              </div>
+            </div>
           </div>
           <p className="text-muted-foreground max-w-2xl mx-auto">
             Des pages colorées volent autour de vous. Chaque mot devient une page brillante dans votre livre vivant.
@@ -167,10 +276,24 @@ const Journal = () => {
               </span>
             ))}
           </div>
-          <Button className="bg-gradient-primary text-primary-foreground border-0 shadow-glow mt-4">
-            <Plus className="mr-2 h-4 w-4" />
-            Nouvelle entrée
-          </Button>
+          
+          {/* Chapitres débloqués */}
+          <div className="flex justify-center gap-2 flex-wrap mt-4">
+            {chapters.map(chapter => (
+              <div
+                key={chapter.id}
+                className={`px-4 py-2 rounded-full text-sm ${
+                  unlockedChapters.includes(chapter.id)
+                    ? 'bg-primary/20 text-primary border border-primary/40'
+                    : userLevel >= chapter.unlockLevel
+                    ? 'bg-accent/20 text-accent border border-accent/40 animate-pulse'
+                    : 'bg-muted/50 text-muted-foreground opacity-50'
+                }`}
+              >
+                {chapter.name}
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6">

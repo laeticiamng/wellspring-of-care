@@ -28,6 +28,27 @@ const VRGalaxy = () => {
   const [badgeText, setBadgeText] = useState("");
   const [tension, setTension] = useState(0.5);
   const [comfortMode, setComfortMode] = useState(false);
+  const [userLevel, setUserLevel] = useState(1);
+  const [totalXP, setTotalXP] = useState(0);
+  const [showLevelUp, setShowLevelUp] = useState(false);
+  const [unlockedGalaxies, setUnlockedGalaxies] = useState<string[]>([]);
+
+  const galaxies = [
+    { id: 'gal1', name: '🌌 Voie Lactée', unlockLevel: 1, xp: 50 },
+    { id: 'gal2', name: '🌠 Andromède', unlockLevel: 3, xp: 100 },
+    { id: 'gal3', name: '💫 Nébuleuse', unlockLevel: 5, xp: 150 },
+    { id: 'gal4', name: '✨ Trou Noir', unlockLevel: 8, xp: 200 },
+  ];
+
+  useEffect(() => {
+    const saved = localStorage.getItem('vr_galaxy_progress');
+    if (saved) {
+      const { level, xp, galaxies: unlocked } = JSON.parse(saved);
+      setUserLevel(level || 1);
+      setTotalXP(xp || 0);
+      setUnlockedGalaxies(unlocked || []);
+    }
+  }, []);
   
   const { track } = useImplicitTracking();
   const { collections, unlockItem } = useCollections();
@@ -121,6 +142,44 @@ const VRGalaxy = () => {
     
     setConstellations(prev => [newConstellation, ...prev]);
 
+    // Calculate XP
+    const baseXP = starsActivated * 10;
+    const durationBonus = Math.floor(duration / 1000);
+    const rarityBonus = rarity === 'legendary' ? 200 : rarity === 'epic' ? 100 : rarity === 'rare' ? 50 : 0;
+    const tensionBonus = Math.floor((1 - tension) * 50);
+    const totalXPGain = baseXP + durationBonus + rarityBonus + tensionBonus;
+
+    const newXP = totalXP + totalXPGain;
+    const newLevel = Math.floor(newXP / 500) + 1;
+    const leveledUp = newLevel > userLevel;
+
+    // Check for galaxy unlocks
+    const newUnlocks = galaxies.filter(gal => 
+      gal.unlockLevel <= newLevel && !unlockedGalaxies.includes(gal.id)
+    ).map(gal => gal.id);
+
+    if (leveledUp) {
+      setUserLevel(newLevel);
+      setShowLevelUp(true);
+      setTimeout(() => setShowLevelUp(false), 3000);
+    }
+
+    if (newUnlocks.length > 0) {
+      setUnlockedGalaxies([...unlockedGalaxies, ...newUnlocks]);
+      toast({
+        title: "🌌 Nouvelle galaxie débloquée!",
+        description: galaxies.find(g => g.id === newUnlocks[0])?.name,
+      });
+    }
+
+    setTotalXP(newXP);
+
+    localStorage.setItem('vr_galaxy_progress', JSON.stringify({
+      level: newLevel,
+      xp: newXP,
+      galaxies: [...unlockedGalaxies, ...newUnlocks]
+    }));
+
     const badges = {
       low: "🌠 Exploration énergique !",
       medium: "🌌 Voyage équilibré",
@@ -207,9 +266,25 @@ const VRGalaxy = () => {
     });
   };
 
+  const xpToNextLevel = (userLevel * 500) - totalXP;
+  const progressPercent = (totalXP % 500) / 5;
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-indigo-950 to-purple-950">
       <Header />
+      
+      {/* Level up animation */}
+      {showLevelUp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm pointer-events-none">
+          <Card className="max-w-md bg-gradient-to-r from-purple-600 to-blue-600 border-purple-400/50 shadow-glow-legendary animate-scale-in">
+            <div className="p-8 text-center space-y-4 text-white">
+              <div className="text-6xl animate-bounce">🌌</div>
+              <h2 className="text-4xl font-bold">Niveau {userLevel}!</h2>
+              <p className="text-white/80">Nouvelle galaxie accessible</p>
+            </div>
+          </Card>
+        </div>
+      )}
       
       <main className="container mx-auto px-4 py-8 space-y-8">
         {!sessionActive && (
@@ -221,9 +296,28 @@ const VRGalaxy = () => {
             >
               <div className="flex items-center justify-center space-x-3">
                 <Sparkles className="h-12 w-12 text-yellow-400 animate-pulse" />
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-yellow-400 via-purple-400 to-blue-400 bg-clip-text text-transparent">
-                  La Constellation Émotionnelle
-                </h1>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-center gap-2">
+                    <h1 className="text-4xl font-bold bg-gradient-to-r from-yellow-400 via-purple-400 to-blue-400 bg-clip-text text-transparent">
+                      La Constellation Émotionnelle
+                    </h1>
+                    <div className="px-3 py-1 bg-purple-600/30 rounded-full border border-purple-400/50">
+                      <span className="text-sm font-bold text-purple-300">Niv.{userLevel}</span>
+                    </div>
+                  </div>
+                  <div className="max-w-md mx-auto space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-400">{constellations.length} constellations</span>
+                      <span className="text-purple-300">{totalXP} XP ({xpToNextLevel} vers niv.{userLevel + 1})</span>
+                    </div>
+                    <div className="w-full h-2 bg-purple-950/50 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-gradient-to-r from-purple-500 to-blue-500 transition-all duration-500"
+                        style={{ width: `${progressPercent}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
               <p className="text-gray-300 max-w-2xl mx-auto">
                 Explore l'univers infini et crée ta propre constellation. Chaque étoile représente une émotion.
@@ -235,6 +329,24 @@ const VRGalaxy = () => {
               >
                 🌠 Ton voyage cosmique t'attend 🌠
               </motion.p>
+              
+              {/* Galaxies débloquées */}
+              <div className="flex justify-center gap-2 flex-wrap">
+                {galaxies.map(galaxy => (
+                  <div
+                    key={galaxy.id}
+                    className={`px-3 py-1 rounded-full text-xs ${
+                      unlockedGalaxies.includes(galaxy.id)
+                        ? 'bg-purple-600/30 text-purple-300 border border-purple-400/50'
+                        : userLevel >= galaxy.unlockLevel
+                        ? 'bg-blue-600/30 text-blue-300 border border-blue-400/50 animate-pulse'
+                        : 'bg-gray-800/50 text-gray-500 opacity-50'
+                    }`}
+                  >
+                    {galaxy.name}
+                  </div>
+                ))}
+              </div>
             </motion.div>
 
             <Card className="max-w-4xl mx-auto border-0 shadow-glow-legendary bg-gradient-to-br from-indigo-950/50 to-purple-950/50 backdrop-blur">

@@ -6,6 +6,7 @@ import { MixVisualizer } from "@/components/MixVisualizer";
 import { MixGallery } from "@/components/MixGallery";
 import BadgeReveal from "@/components/BadgeReveal";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Howl } from "howler";
@@ -33,10 +34,30 @@ const MoodMixer = () => {
   const [showBadge, setShowBadge] = useState(false);
   const [currentBadge, setCurrentBadge] = useState<any>(null);
   const [isStabilized, setIsStabilized] = useState(false);
+  const [userLevel, setUserLevel] = useState(1);
+  const [totalXP, setTotalXP] = useState(0);
+  const [combo, setCombo] = useState(0);
+  const [showLevelUp, setShowLevelUp] = useState(false);
+  const [unlockedSets, setUnlockedSets] = useState<string[]>([]);
+
+  const djSets = [
+    { id: 'set1', name: '🎵 Set Débutant', unlockLevel: 1 },
+    { id: 'set2', name: '🎶 Set Pro', unlockLevel: 3 },
+    { id: 'set3', name: '🎧 Set Expert', unlockLevel: 5 },
+    { id: 'set4', name: '🔥 Set Légendaire', unlockLevel: 8 },
+  ];
 
   useEffect(() => {
     loadSavedMixes();
     startSession();
+    
+    const saved = localStorage.getItem('mood_mixer_progress');
+    if (saved) {
+      const { level, xp, sets } = JSON.parse(saved);
+      setUserLevel(level || 1);
+      setTotalXP(xp || 0);
+      setUnlockedSets(sets || []);
+    }
   }, []);
 
   useEffect(() => {
@@ -110,6 +131,7 @@ const MoodMixer = () => {
     setValence(value);
     if (Math.abs(value - valence) > 10) {
       scratchSound.play();
+      setCombo(prev => prev + 1);
     }
     if (navigator.vibrate && Math.abs(value - 50) > 45) {
       navigator.vibrate(50);
@@ -120,6 +142,7 @@ const MoodMixer = () => {
     setArousal(value);
     if (Math.abs(value - arousal) > 10) {
       scratchSound.play();
+      setCombo(prev => prev + 1);
     }
     if (navigator.vibrate && Math.abs(value - 50) > 45) {
       navigator.vibrate(50);
@@ -151,10 +174,46 @@ const MoodMixer = () => {
 
       if (error) throw error;
 
+      // Calculate XP
+      const baseXP = 50;
+      const comboBonus = Math.min(combo * 5, 100);
+      const rareBonus = isRareMix(valence, arousal) ? 150 : 0;
+      const totalXPGain = baseXP + comboBonus + rareBonus;
+      
+      const newXP = totalXP + totalXPGain;
+      const newLevel = Math.floor(newXP / 500) + 1;
+      const leveledUp = newLevel > userLevel;
+
+      // Check for set unlocks
+      const newUnlocks = djSets.filter(set => 
+        set.unlockLevel <= newLevel && !unlockedSets.includes(set.id)
+      ).map(set => set.id);
+
+      if (leveledUp) {
+        setUserLevel(newLevel);
+        setShowLevelUp(true);
+        setTimeout(() => setShowLevelUp(false), 3000);
+      }
+
+      if (newUnlocks.length > 0) {
+        setUnlockedSets([...unlockedSets, ...newUnlocks]);
+      }
+
+      setTotalXP(newXP);
+      setCombo(0);
+
+      localStorage.setItem('mood_mixer_progress', JSON.stringify({
+        level: newLevel,
+        xp: newXP,
+        sets: [...unlockedSets, ...newUnlocks]
+      }));
+
       const mixToSave = {
         ...currentMix,
         id: Date.now(),
         badge: data.badge,
+        xpGain: totalXPGain,
+        combo,
         savedAt: new Date().toISOString()
       };
 
@@ -171,7 +230,7 @@ const MoodMixer = () => {
 
       toast({
         title: "Mix sauvegardé! 🎶",
-        description: `"${currentMix.mood}" ajouté à ta playlist`,
+        description: `+${totalXPGain} XP | Combo x${combo}`,
       });
 
       // Start new session
@@ -226,20 +285,71 @@ const MoodMixer = () => {
     );
   };
 
+  const xpToNextLevel = (userLevel * 500) - totalXP;
+  const progressPercent = (totalXP % 500) / 5;
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-primary/10 to-background relative overflow-hidden">
       <Header />
+      
+      {/* Level up animation */}
+      {showLevelUp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm pointer-events-none">
+          <Card className="max-w-md bg-gradient-primary border-primary/50 shadow-glow animate-scale-in">
+            <div className="p-8 text-center space-y-4">
+              <div className="text-6xl animate-bounce">🎧</div>
+              <h2 className="text-4xl font-bold">DJ Niveau {userLevel}!</h2>
+              <p className="text-muted-foreground">Nouveau set débloqué</p>
+            </div>
+          </Card>
+        </div>
+      )}
       
       <DJStudio valence={valence} arousal={arousal} />
       
       <main className="container mx-auto px-4 py-8 space-y-8 relative z-10">
         <div className="text-center space-y-4 animate-fade-in">
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-glow">
-            Mix ton Mood 🎛️✨
-          </h1>
+          <div className="flex items-center justify-center gap-3">
+            <h1 className="text-5xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-glow">
+              Mix ton Mood 🎛️✨
+            </h1>
+            <div className="px-3 py-1 bg-primary/20 rounded-full">
+              <span className="text-sm font-bold text-primary">Niv.{userLevel}</span>
+            </div>
+          </div>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Deviens le DJ de tes émotions. Slide pour créer ton mix unique.
           </p>
+          <div className="max-w-md mx-auto space-y-1">
+            <div className="flex justify-between text-xs">
+              <span className="text-muted-foreground">Combo: x{combo}</span>
+              <span className="text-primary">{totalXP} XP ({xpToNextLevel} vers niv.{userLevel + 1})</span>
+            </div>
+            <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-primary transition-all duration-500"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+          </div>
+          
+          {/* Sets débloqués */}
+          <div className="flex justify-center gap-2 flex-wrap">
+            {djSets.map(set => (
+              <div
+                key={set.id}
+                className={`px-3 py-1 rounded-full text-xs ${
+                  unlockedSets.includes(set.id)
+                    ? 'bg-primary/20 text-primary border border-primary/40'
+                    : userLevel >= set.unlockLevel
+                    ? 'bg-accent/20 text-accent border border-accent/40 animate-pulse'
+                    : 'bg-muted/50 text-muted-foreground opacity-50'
+                }`}
+              >
+                {set.name}
+              </div>
+            ))}
+          </div>
         </div>
 
         <MixVisualizer 
