@@ -18,7 +18,7 @@ export function CommunityFeed() {
 
   const handleCreatePost = async () => {
     if (!newPostContent.trim()) return;
-    await createPost(newPostContent, 'general', false, []);
+    await createPost('Nouveau post', newPostContent);
     setNewPostContent('');
   };
 
@@ -87,12 +87,12 @@ export function CommunityFeed() {
                   <Avatar>
                     <AvatarImage src={post.profiles?.avatar_url} />
                     <AvatarFallback>
-                      {post.is_anonymous ? '?' : post.profiles?.full_name?.[0] || 'U'}
+                      {post.profiles?.full_name?.[0] || 'U'}
                     </AvatarFallback>
                   </Avatar>
                   <div>
                     <p className="font-semibold">
-                      {post.is_anonymous ? 'Anonyme' : post.profiles?.full_name || 'Utilisateur'}
+                      {post.profiles?.full_name || 'Utilisateur'}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       {formatDistanceToNow(new Date(post.created_at), { 
@@ -102,9 +102,11 @@ export function CommunityFeed() {
                     </p>
                   </div>
                 </div>
-                <Badge className={getPostTypeColor(post.post_type)}>
-                  {post.post_type}
-                </Badge>
+                {post.mood_halo && (
+                  <Badge variant="outline">
+                    {post.mood_halo}
+                  </Badge>
+                )}
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -140,12 +142,12 @@ export function CommunityFeed() {
                       <Avatar className="h-8 w-8">
                         <AvatarImage src={comment.profiles?.avatar_url} />
                         <AvatarFallback>
-                          {comment.is_anonymous ? '?' : comment.profiles?.full_name?.[0] || 'U'}
+                          {comment.profiles?.full_name?.[0] || 'U'}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
                         <p className="text-sm font-semibold">
-                          {comment.is_anonymous ? 'Anonyme' : comment.profiles?.full_name || 'Utilisateur'}
+                          {comment.profiles?.full_name || 'Utilisateur'}
                         </p>
                         <p className="text-sm text-muted-foreground">{comment.content}</p>
                       </div>

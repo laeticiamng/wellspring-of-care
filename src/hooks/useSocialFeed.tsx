@@ -4,14 +4,13 @@ import { useToast } from '@/hooks/use-toast';
 
 export interface SocialPost {
   id: string;
-  user_id: string;
+  author_id: string;
   content: string;
-  post_type: string;
-  media_urls: string[];
+  title?: string;
+  group_id?: string;
+  mood_halo?: string;
   likes_count: number;
   comments_count: number;
-  is_anonymous: boolean;
-  tags: string[];
   created_at: string;
   profiles?: {
     full_name?: string;
@@ -22,9 +21,9 @@ export interface SocialPost {
 export interface SocialComment {
   id: string;
   post_id: string;
-  user_id: string;
+  author_id: string;
   content: string;
-  is_anonymous: boolean;
+  is_empathy_template?: boolean;
   created_at: string;
   profiles?: {
     full_name?: string;
@@ -38,28 +37,22 @@ export function useSocialFeed() {
   const { toast } = useToast();
 
   // Fetch community posts
-  const fetchPosts = async (postType?: string) => {
+  const fetchPosts = async (groupId?: string) => {
     try {
-      let query = (supabase as any)
+      let query = supabase
         .from('community_posts')
-        .select(`
-          *,
-          profiles:user_id (
-            full_name,
-            avatar_url
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false })
         .limit(50);
 
-      if (postType) {
-        query = query.eq('post_type', postType);
+      if (groupId) {
+        query = query.eq('group_id', groupId);
       }
 
       const { data, error } = await query;
 
       if (error) throw error;
-      setPosts((data as any) || []);
+      setPosts(data || []);
     } catch (error) {
       console.error('Error fetching posts:', error);
       toast({
@@ -74,23 +67,21 @@ export function useSocialFeed() {
 
   // Create a new post
   const createPost = async (
+    title: string,
     content: string,
-    postType: string = 'general',
-    isAnonymous: boolean = false,
-    tags: string[] = []
+    groupId?: string
   ) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('community_posts')
         .insert({
-          user_id: user.id,
+          author_id: user.id,
+          title,
           content,
-          post_type: postType,
-          is_anonymous: isAnonymous,
-          tags,
+          group_id: groupId || null,
         })
         .select()
         .single();
@@ -114,38 +105,24 @@ export function useSocialFeed() {
     }
   };
 
-  // Toggle reaction on a post
-  const toggleReaction = async (postId: string, reactionType: string = 'like') => {
+  // Toggle like on a post (increment/decrement likes_count)
+  const toggleReaction = async (postId: string) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      // Check if reaction exists
-      const { data: existing } = await (supabase as any)
-        .from('post_reactions')
-        .select('id')
-        .eq('post_id', postId)
-        .eq('user_id', user.id)
-        .maybeSingle();
+      // For now, just increment the count
+      // TODO: Add proper reaction tracking table
+      const post = posts.find(p => p.id === postId);
+      if (post) {
+        const { error } = await supabase
+          .from('community_posts')
+          .update({ likes_count: post.likes_count + 1 })
+          .eq('id', postId);
 
-      if (existing) {
-        // Remove reaction
-        await (supabase as any)
-          .from('post_reactions')
-          .delete()
-          .eq('id', existing.id);
-      } else {
-        // Add reaction
-        await (supabase as any)
-          .from('post_reactions')
-          .insert({
-            post_id: postId,
-            user_id: user.id,
-            reaction_type: reactionType,
-          });
+        if (error) throw error;
+        await fetchPosts();
       }
-
-      await fetchPosts();
     } catch (error) {
       console.error('Error toggling reaction:', error);
     }
@@ -154,20 +131,14 @@ export function useSocialFeed() {
   // Fetch comments for a post
   const fetchComments = async (postId: string): Promise<SocialComment[]> => {
     try {
-      const { data, error } = await (supabase as any)
-        .from('post_comments')
-        .select(`
-          *,
-          profiles:user_id (
-            full_name,
-            avatar_url
-          )
-        `)
+      const { data, error } = await supabase
+        .from('community_comments')
+        .select('*')
         .eq('post_id', postId)
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      return (data as any) || [];
+      return data || [];
     } catch (error) {
       console.error('Error fetching comments:', error);
       return [];
@@ -178,22 +149,31 @@ export function useSocialFeed() {
   const addComment = async (
     postId: string,
     content: string,
-    isAnonymous: boolean = false
+    isEmpathy: boolean = false
   ) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      const { error } = await (supabase as any)
-        .from('post_comments')
+      const { error } = await supabase
+        .from('community_comments')
         .insert({
           post_id: postId,
-          user_id: user.id,
+          author_id: user.id,
           content,
-          is_anonymous: isAnonymous,
+          is_empathy_template: isEmpathy,
         });
 
       if (error) throw error;
+
+      // Update comment count
+      const post = posts.find(p => p.id === postId);
+      if (post) {
+        await supabase
+          .from('community_posts')
+          .update({ comments_count: post.comments_count + 1 })
+          .eq('id', postId);
+      }
 
       toast({
         title: 'Succès',
