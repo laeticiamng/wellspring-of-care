@@ -1,6 +1,6 @@
-# Guide de Déploiement EmotionsCare
+# Guide de Déploiement - Wellspring of Care
 
-## Prérequis Système
+## Prérequis
 
 ### Développement local
 - **Node.js** : v18.x ou supérieur
@@ -457,14 +457,134 @@ SELECT * FROM supabase_migrations.schema_migrations;
 
 ---
 
+## Rollback Procédure d'Urgence
+
+### En cas de problème critique
+
+**1. Rollback Git immédiat** :
+```bash
+git revert HEAD
+git push origin main
+```
+
+**2. Rollback hébergeur** :
+```bash
+# Vercel
+vercel rollback
+
+# Netlify  
+netlify rollback
+
+# Lovable: via le dashboard (historique des déploiements)
+```
+
+**3. Rollback Supabase migrations** :
+- Dashboard Supabase → Database → Migrations
+- Identifier la migration problématique
+- Exécuter le script de rollback SQL
+
+**4. Communication** :
+- Mettre à jour la status page
+- Notifier les utilisateurs si impact majeur
+- Documenter l'incident pour post-mortem
+
+## Performance Optimization
+
+### Bundle Size
+
+```bash
+# Analyser le bundle
+npm run build -- --analyze
+
+# Objectifs:
+# - Initial bundle: < 500KB gzipped
+# - Lazy-loaded chunks: < 200KB each
+```
+
+### Caching Strategy
+
+```nginx
+# Cache statique agressif
+location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2)$ {
+    expires 1y;
+    add_header Cache-Control "public, immutable";
+}
+
+# API calls: pas de cache
+location /api {
+    add_header Cache-Control "no-store, no-cache, must-revalidate";
+}
+```
+
+### CDN Configuration
+
+Si utilisation d'un CDN (Cloudflare, etc.) :
+- Activer la minification automatique (JS, CSS, HTML)
+- Configurer le cache selon le type de ressource
+- Activer HTTP/2 et HTTP/3
+- Utiliser Brotli compression
+
+## Security Hardening
+
+### Content Security Policy
+
+```html
+<meta http-equiv="Content-Security-Policy" 
+  content="
+    default-src 'self';
+    script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net;
+    style-src 'self' 'unsafe-inline';
+    img-src 'self' data: https:;
+    connect-src 'self' https://*.supabase.co;
+    font-src 'self' data:;
+  ">
+```
+
+### Security Headers
+
+À configurer sur le serveur/hébergeur :
+
+```
+Strict-Transport-Security: max-age=31536000; includeSubDomains
+X-Frame-Options: DENY
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 1; mode=block
+Referrer-Policy: strict-origin-when-cross-origin
+Permissions-Policy: geolocation=(), microphone=(), camera=()
+```
+
+## Disaster Recovery
+
+### Backup Strategy
+
+**Base de données** :
+- Backup automatique Supabase : Quotidien (7 jours)
+- Backup manuel mensuel : Export SQL complet
+- Stockage off-site : AWS S3 ou équivalent
+
+**Code** :
+- Git repository principal
+- Git mirror sur serveur backup
+- Tags pour chaque version de production
+
+**Procédure de restauration** :
+1. Identifier la dernière version stable
+2. Restaurer depuis backup DB
+3. Redéployer la version de code correspondante
+4. Vérifier l'intégrité des données
+5. Tester les fonctionnalités critiques
+
 ## Support
 
-- **Issues critiques** : support@emotionscare.com
-- **Bugs non-urgents** : GitHub Issues
-- **Documentation** : docs.emotionscare.com
-- **Status** : status.emotionscare.com
+- **Support technique** : support@wellspringofcare.com
+- **Issues critiques** : GitHub Issues (priority label)
+- **Documentation** : `/docs` ou site de documentation dédié
+- **Status page** : status.wellspringofcare.com (recommandé)
+- **Équipe DevOps** : Contact direct pour urgences
 
 ---
 
-**Version** : 1.0  
-**Dernière mise à jour** : Octobre 2025
+**Version** : 1.0.0  
+**Dernière mise à jour** : Octobre 2025  
+**Status** : Production Ready  
+**Prochaine revue** : Janvier 2026

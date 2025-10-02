@@ -1,6 +1,6 @@
-# Documentation Technique EmotionsCare
+# Documentation Technique - Wellspring of Care
 
-## Architecture
+## Architecture Globale
 
 ### Stack technologique
 - **Frontend** : React 18 + TypeScript + Vite
@@ -395,8 +395,78 @@ Outputs dans `/dist`
 - **Base de données** : Supabase backup automatique quotidien (7 jours de rétention)
 - **Storage** : Backup manuel recommandé mensuel
 
+## Composants Réutilisables
+
+### LoadingSpinner
+Composant de chargement avec différentes tailles.
+
+```tsx
+import { LoadingSpinner } from "@/components/LoadingSpinner";
+
+<LoadingSpinner size="lg" text="Chargement..." />
+```
+
+### EmptyState
+État vide générique pour les listes.
+
+```tsx
+import { EmptyState } from "@/components/EmptyState";
+import { FileX } from "lucide-react";
+
+<EmptyState
+  icon={FileX}
+  title="Aucun élément"
+  description="Commencez par ajouter un élément"
+  actionLabel="Créer"
+  onAction={handleCreate}
+/>
+```
+
+### QuestionnaireForm
+Formulaire de questionnaire générique.
+
+```tsx
+import { QuestionnaireForm } from "@/components/QuestionnaireForm";
+
+<QuestionnaireForm
+  questions={questions}
+  onSubmit={handleSubmit}
+  onProgress={handleProgress}
+/>
+```
+
+## Troubleshooting
+
+### Problèmes Courants
+
+**Auth not working**
+- Vérifier les RLS policies
+- Vérifier le token JWT
+- Consulter les logs Supabase
+
+**Edge function timeout**
+- Optimiser les requêtes API
+- Vérifier les secrets configurés
+- Consulter les logs de la fonction
+
+**Build errors**
+- Supprimer node_modules et réinstaller
+- Vérifier les versions des dépendances
+- Nettoyer le cache : `npm run clean`
+
+**RLS policies blocking queries**
+- Vérifier que l'utilisateur est authentifié
+- Tester les policies dans SQL Editor
+- Consulter la documentation RLS
+
 ## Support
 
-- **Issues** : GitHub Issues
-- **Documentation** : docs.emotionscare.com
-- **Contact** : dev@emotionscare.com
+- **Issues** : GitHub Issues  
+- **Documentation** : `/docs`  
+- **Email** : support@wellspringofcare.com
+
+---
+
+**Version** : 1.0.0  
+**Dernière mise à jour** : Octobre 2025  
+**Status** : Production Ready
