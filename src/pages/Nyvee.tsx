@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -7,20 +7,20 @@ import BadgeReveal from '@/components/BadgeReveal';
 import { CocoonGallery } from '@/components/CocoonGallery';
 import { NyveeTutorial } from '@/components/NyveeTutorial';
 import { useNyveeSession } from '@/hooks/useNyveeSession';
+import { useModuleProgress } from '@/hooks/useModuleProgress';
 import { Sparkles, ArrowLeft } from 'lucide-react';
 import Header from '@/components/Header';
 
 const Nyvee = () => {
   const navigate = useNavigate();
   const { session, badge, loading, startSession, submitSession, reset } = useNyveeSession();
+  const { userLevel, totalXP, unlockedItems, metadata, addXP, unlockItem, setMetadata, loading: progressLoading } = useModuleProgress('nyvee');
   const [phase, setPhase] = useState<'tutorial' | 'welcome' | 'breathing' | 'badge'>('tutorial');
   const [breathStartTime, setBreathStartTime] = useState<number>(0);
   const [currentPhase, setCurrentPhase] = useState<'inhale' | 'exhale'>('inhale');
-  const [userLevel, setUserLevel] = useState(1);
-  const [totalXP, setTotalXP] = useState(0);
-  const [totalSessions, setTotalSessions] = useState(0);
   const [showLevelUp, setShowLevelUp] = useState(false);
-  const [unlockedBubbles, setUnlockedBubbles] = useState<string[]>([]);
+
+  const totalSessions = metadata.totalSessions || 0;
 
   const bubbleTypes = [
     { id: 'bubble1', name: '🫧 Bulle Calme', unlockLevel: 1, xp: 50 },
@@ -29,16 +29,6 @@ const Nyvee = () => {
     { id: 'bubble4', name: '✨ Bulle Cosmique', unlockLevel: 8, xp: 200 },
   ];
 
-  useState(() => {
-    const saved = localStorage.getItem('nyvee_progress');
-    if (saved) {
-      const { level, xp, sessions, bubbles } = JSON.parse(saved);
-      setUserLevel(level || 1);
-      setTotalXP(xp || 0);
-      setTotalSessions(sessions || 0);
-      setUnlockedBubbles(bubbles || []);
-    }
-  });
 
   // Son cristallin (simulation - en prod on utiliserait Howler.js)
   const playBreathSound = (type: 'inhale' | 'exhale') => {
@@ -64,35 +54,26 @@ const Nyvee = () => {
     const qualityBonus = breathDuration >= 120 ? 30 : breathDuration >= 60 ? 15 : 0;
     const totalXPGain = baseXP + durationBonus + qualityBonus;
 
-    const newXP = totalXP + totalXPGain;
-    const newLevel = Math.floor(newXP / 500) + 1;
+    const prevLevel = userLevel;
+    await addXP(totalXPGain);
+    
+    const newLevel = Math.floor((totalXP + totalXPGain) / 500) + 1;
     const newSessionCount = totalSessions + 1;
-    const leveledUp = newLevel > userLevel;
+    await setMetadata('totalSessions', newSessionCount);
 
     // Check for bubble unlocks
     const newUnlocks = bubbleTypes.filter(bt => 
-      bt.unlockLevel <= newLevel && !unlockedBubbles.includes(bt.id)
-    ).map(bt => bt.id);
+      bt.unlockLevel <= newLevel && !unlockedItems.includes(bt.id)
+    );
 
-    if (leveledUp) {
-      setUserLevel(newLevel);
+    if (newLevel > prevLevel) {
       setShowLevelUp(true);
       setTimeout(() => setShowLevelUp(false), 3000);
     }
 
-    if (newUnlocks.length > 0) {
-      setUnlockedBubbles([...unlockedBubbles, ...newUnlocks]);
+    for (const bubble of newUnlocks) {
+      await unlockItem(bubble.id);
     }
-
-    setTotalXP(newXP);
-    setTotalSessions(newSessionCount);
-
-    localStorage.setItem('nyvee_progress', JSON.stringify({
-      level: newLevel,
-      xp: newXP,
-      sessions: newSessionCount,
-      bubbles: [...unlockedBubbles, ...newUnlocks]
-    }));
     
     if (badgeData) {
       setPhase('badge');
@@ -263,7 +244,7 @@ const Nyvee = () => {
                 <div
                   key={bubble.id}
                   className={`px-3 py-1 rounded-full text-xs ${
-                    unlockedBubbles.includes(bubble.id)
+                    unlockedItems.includes(bubble.id)
                       ? 'bg-purple-600/30 text-purple-200 border border-purple-400/50'
                       : userLevel >= bubble.unlockLevel
                       ? 'bg-blue-600/30 text-blue-200 border border-blue-400/50 animate-pulse'

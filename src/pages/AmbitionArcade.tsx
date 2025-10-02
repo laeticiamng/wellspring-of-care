@@ -6,14 +6,18 @@ import { Progress } from "@/components/ui/progress";
 import { Target, Zap, Trophy, Star, TrendingUp } from "lucide-react";
 import { useState } from "react";
 import { useImplicitTracking } from "@/hooks/useImplicitTracking";
+import { useModuleProgress } from "@/hooks/useModuleProgress";
 import { useCollections } from "@/hooks/useCollections";
 
 const AmbitionArcade = () => {
+  const { userLevel, totalXP, metadata, addXP, setMetadata, loading } = useModuleProgress('ambition_arcade');
   const [selectedObjective, setSelectedObjective] = useState<string>("");
   const [progress, setProgress] = useState(0);
-  const [completedMissions, setCompletedMissions] = useState(0);
+  const [showLevelUp, setShowLevelUp] = useState(false);
   const { track } = useImplicitTracking();
   const { collections, unlockItem } = useCollections();
+
+  const completedMissions = metadata.completedMissions || 0;
 
   const objectives = [
     { id: "simple", name: "Marcher 10 min", emoji: "🚶", difficulty: "Simple", points: 10 },
@@ -61,19 +65,45 @@ const AmbitionArcade = () => {
 
     // Unlock artifacts on full completion
     if (leverProgress === 100) {
-      setCompletedMissions(prev => {
-        const newCount = prev + 1;
-        if (newCount >= 3 && collections.artefacts?.items[0]) {
-          unlockItem('artefacts', collections.artefacts.items[0].id);
-        }
-        return newCount;
-      });
+      const obj = objectives.find(o => o.id === selectedObjective);
+      const xpGain = obj?.points || 50;
+      
+      const prevLevel = userLevel;
+      addXP(xpGain);
+      
+      const newMissionCount = completedMissions + 1;
+      setMetadata('completedMissions', newMissionCount);
+      
+      // Check level up
+      const newLevel = Math.floor((totalXP + xpGain) / 500) + 1;
+      if (newLevel > prevLevel) {
+        setShowLevelUp(true);
+        setTimeout(() => setShowLevelUp(false), 3000);
+      }
+      
+      if (newMissionCount >= 3 && collections.artefacts?.items[0]) {
+        unlockItem('artefacts', collections.artefacts.items[0].id);
+      }
     }
   };
+
+  const xpToNextLevel = (userLevel * 500) - totalXP;
+  const progressPercent = (totalXP % 500) / 5;
 
   return (
     <div className="min-h-screen bg-gradient-calm">
       <Header />
+      
+      {/* Level up animation */}
+      {showLevelUp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm pointer-events-none">
+          <div className="max-w-md bg-gradient-to-r from-primary to-accent border-primary/50 shadow-glow-legendary animate-scale-in rounded-lg p-8 text-center space-y-4 text-white">
+            <div className="text-6xl animate-bounce">🎯</div>
+            <h2 className="text-4xl font-bold">Niveau {userLevel}!</h2>
+            <p className="text-white/80">Ton ambition grandit</p>
+          </div>
+        </div>
+      )}
       
       <main className="container mx-auto px-4 py-8 space-y-8">
         <div className="text-center space-y-4">
@@ -86,6 +116,18 @@ const AmbitionArcade = () => {
           <p className="text-muted-foreground max-w-2xl mx-auto">
             Chaque objectif est une mission courte. Complétez des micro-leviers pour débloquer des artefacts rares.
           </p>
+          <div className="max-w-md mx-auto space-y-1">
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>Niveau {userLevel}</span>
+              <span>{totalXP} XP ({xpToNextLevel} vers niv.{userLevel + 1})</span>
+            </div>
+            <div className="w-full h-2 bg-primary/20 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-primary to-accent transition-all duration-500"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+          </div>
           <div className="flex justify-center space-x-2">
             {['🎯', '⚡', '🏆', '🌟'].map((emoji, i) => (
               <span key={i} className="text-2xl animate-bounce-soft" style={{ animationDelay: `${i * 0.2}s` }}>

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useScreenSilk } from '@/hooks/useScreenSilk';
+import { useModuleProgress } from '@/hooks/useModuleProgress';
 import { PauseSequence } from '@/components/PauseSequence';
 import { TextureGallery } from '@/components/TextureGallery';
 import { Button } from '@/components/ui/button';
@@ -11,14 +12,13 @@ import { useNavigate } from 'react-router-dom';
 
 export default function ScreenSilk() {
   const navigate = useNavigate();
+  const { userLevel, totalXP, unlockedItems, metadata, addXP, unlockItem, setMetadata, loading: progressLoading } = useModuleProgress('screen_silk');
   const [isInSession, setIsInSession] = useState(false);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const { sessions, textures, loading, startSession, completeSession, refreshData } = useScreenSilk();
-  const [userLevel, setUserLevel] = useState(1);
-  const [totalXP, setTotalXP] = useState(0);
-  const [totalPauses, setTotalPauses] = useState(0);
   const [showLevelUp, setShowLevelUp] = useState(false);
-  const [unlockedSilks, setUnlockedSilks] = useState<string[]>([]);
+
+  const totalPauses = metadata.totalPauses || 0;
 
   const silkTypes = [
     { id: 'silk1', name: '🌊 Soie Océan', unlockLevel: 1, xp: 30 },
@@ -27,16 +27,6 @@ export default function ScreenSilk() {
     { id: 'silk4', name: '✨ Soie Diamant', unlockLevel: 8, xp: 150 },
   ];
 
-  useState(() => {
-    const saved = localStorage.getItem('screensilk_progress');
-    if (saved) {
-      const { level, xp, pauses, silks } = JSON.parse(saved);
-      setUserLevel(level || 1);
-      setTotalXP(xp || 0);
-      setTotalPauses(pauses || 0);
-      setUnlockedSilks(silks || []);
-    }
-  });
 
   const handleStartPause = async () => {
     const sessionId = await startSession();
@@ -55,35 +45,26 @@ export default function ScreenSilk() {
       const durationBonus = Math.floor(durationSeconds / 10) * 5;
       const totalXPGain = baseXP + durationBonus;
 
-      const newXP = totalXP + totalXPGain;
-      const newLevel = Math.floor(newXP / 500) + 1;
+      const prevLevel = userLevel;
+      await addXP(totalXPGain);
+      
+      const newLevel = Math.floor((totalXP + totalXPGain) / 500) + 1;
       const newPauseCount = totalPauses + 1;
-      const leveledUp = newLevel > userLevel;
+      await setMetadata('totalPauses', newPauseCount);
 
       // Check for silk unlocks
       const newUnlocks = silkTypes.filter(st => 
-        st.unlockLevel <= newLevel && !unlockedSilks.includes(st.id)
-      ).map(st => st.id);
+        st.unlockLevel <= newLevel && !unlockedItems.includes(st.id)
+      );
 
-      if (leveledUp) {
-        setUserLevel(newLevel);
+      if (newLevel > prevLevel) {
         setShowLevelUp(true);
         setTimeout(() => setShowLevelUp(false), 3000);
       }
 
-      if (newUnlocks.length > 0) {
-        setUnlockedSilks([...unlockedSilks, ...newUnlocks]);
+      for (const silk of newUnlocks) {
+        await unlockItem(silk.id);
       }
-
-      setTotalXP(newXP);
-      setTotalPauses(newPauseCount);
-
-      localStorage.setItem('screensilk_progress', JSON.stringify({
-        level: newLevel,
-        xp: newXP,
-        pauses: newPauseCount,
-        silks: [...unlockedSilks, ...newUnlocks]
-      }));
       
       setIsInSession(false);
       setCurrentSessionId(null);
@@ -167,7 +148,7 @@ export default function ScreenSilk() {
               <div
                 key={silk.id}
                 className={`px-3 py-1 rounded-full text-xs ${
-                  unlockedSilks.includes(silk.id)
+                  unlockedItems.includes(silk.id)
                     ? 'bg-primary/20 text-primary border border-primary/40'
                     : userLevel >= silk.unlockLevel
                     ? 'bg-accent/20 text-accent border border-accent/40 animate-pulse'

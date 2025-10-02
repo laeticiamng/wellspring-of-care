@@ -7,6 +7,7 @@ import { TrophyGallery } from "@/components/TrophyGallery";
 import BadgeReveal from "@/components/BadgeReveal";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useModuleProgress } from "@/hooks/useModuleProgress";
 import { Howl } from "howler";
 
 const epicSound = new Howl({
@@ -23,13 +24,13 @@ const victorySound = new Howl({
 
 const BossGrit = () => {
   const { toast } = useToast();
+  const { userLevel, totalXP, unlockedItems, addXP, unlockItem, setMetadata, loading: progressLoading } = useModuleProgress('boss_grit');
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [auraLevel, setAuraLevel] = useState(1);
-  const [trophies, setTrophies] = useState<any[]>([]);
   const [showBadge, setShowBadge] = useState(false);
   const [currentBadge, setCurrentBadge] = useState<any>(null);
   const [currentChallenge, setCurrentChallenge] = useState(0);
+  const [showLevelUp, setShowLevelUp] = useState(false);
 
   const challenges = [
     { 
@@ -89,25 +90,8 @@ const BossGrit = () => {
   ];
 
   useEffect(() => {
-    loadUserData();
     epicSound.play();
   }, []);
-
-  const loadUserData = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    // Load trophies from localStorage for now
-    const savedTrophies = localStorage.getItem(`trophies_${user.id}`);
-    if (savedTrophies) {
-      setTrophies(JSON.parse(savedTrophies));
-    }
-
-    const savedAura = localStorage.getItem(`aura_${user.id}`);
-    if (savedAura) {
-      setAuraLevel(parseInt(savedAura));
-    }
-  };
 
   const startChallenge = async () => {
     setIsLoading(true);
@@ -170,22 +154,27 @@ const BossGrit = () => {
 
       if (success) {
         victorySound.play();
-        const newAura = Math.min(auraLevel + 1, 10);
-        setAuraLevel(newAura);
-        localStorage.setItem(`aura_${user.id}`, newAura.toString());
+
+        // Calculate XP based on challenge difficulty
+        const challenge = challenges[currentChallenge];
+        const baseXP = challenge.difficulty === 'Facile' ? 50 : challenge.difficulty === 'Moyen' ? 75 : challenge.difficulty === 'Difficile' ? 100 : challenge.difficulty === 'Expert' ? 150 : 200;
+        const completionBonus = Math.floor(completion * 50);
+        const totalXPGain = baseXP + completionBonus;
+
+        const prevLevel = userLevel;
+        await addXP(totalXPGain);
+        
+        // Check for level up
+        const newLevel = Math.floor((totalXP + totalXPGain) / 500) + 1;
+        if (newLevel > prevLevel) {
+          setShowLevelUp(true);
+          setTimeout(() => setShowLevelUp(false), 3000);
+        }
 
         // Rare trophy drop (20% chance)
         if (Math.random() < 0.2) {
-          const rareTrophy = {
-            id: Date.now(),
-            name: data.badge || 'Force Intérieure',
-            emoji: '🏆',
-            rarity: 'legendary',
-            earnedAt: new Date().toISOString()
-          };
-          const newTrophies = [...trophies, rareTrophy];
-          setTrophies(newTrophies);
-          localStorage.setItem(`trophies_${user.id}`, JSON.stringify(newTrophies));
+          const trophyId = `trophy_${Date.now()}`;
+          await unlockItem(trophyId);
         }
 
         setCurrentBadge({
@@ -215,11 +204,32 @@ const BossGrit = () => {
     }
   };
 
+  const xpToNextLevel = (userLevel * 500) - totalXP;
+  const progressPercent = (totalXP % 500) / 5;
+  const trophies = unlockedItems.filter(id => id.startsWith('trophy_')).map(id => ({
+    id,
+    name: 'Trophée Légendaire',
+    emoji: '🏆',
+    rarity: 'legendary',
+    earnedAt: new Date().toISOString()
+  }));
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-primary/5 to-background relative overflow-hidden">
       <Header />
       
-      <ArenaScene auraLevel={auraLevel} />
+      {/* Level up animation */}
+      {showLevelUp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm pointer-events-none">
+          <div className="max-w-md bg-gradient-to-r from-primary to-accent border-primary/50 shadow-glow-legendary animate-scale-in rounded-lg p-8 text-center space-y-4 text-white">
+            <div className="text-6xl animate-bounce">⚔️</div>
+            <h2 className="text-4xl font-bold">Niveau {userLevel}!</h2>
+            <p className="text-white/80">Ton aura se renforce</p>
+          </div>
+        </div>
+      )}
+      
+      <ArenaScene auraLevel={userLevel} />
       
       <main className="container mx-auto px-4 py-8 space-y-8 relative z-10">
         <div className="text-center space-y-4 animate-fade-in">
@@ -231,7 +241,21 @@ const BossGrit = () => {
           </p>
         </div>
 
-        <AuraEvolution level={auraLevel} />
+        {/* Progress bar */}
+        <div className="max-w-md mx-auto space-y-2 mb-6">
+          <div className="flex justify-between text-sm text-muted-foreground">
+            <span>Niveau {userLevel}</span>
+            <span>{totalXP} XP ({xpToNextLevel} vers niv.{userLevel + 1})</span>
+          </div>
+          <div className="w-full h-2 bg-primary/20 rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-gradient-to-r from-primary to-accent transition-all duration-500"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
+        </div>
+
+        <AuraEvolution level={userLevel} />
 
         <BossChallenge
           challenge={challenges[currentChallenge]}
@@ -245,7 +269,7 @@ const BossGrit = () => {
           <TrophyGallery trophies={trophies} />
         )}
 
-        {currentChallenge < challenges.length - 1 && auraLevel >= 3 && (
+        {currentChallenge < challenges.length - 1 && userLevel >= 3 && (
           <div className="text-center animate-pulse-soft">
             <p className="text-primary font-semibold">
               🔥 Continue ton ascension héroïque
