@@ -9,6 +9,7 @@ import { MusicSync } from "@/components/MusicSync";
 import FragmentGallery from "@/components/FragmentGallery";
 import { useMusicTherapy } from "@/hooks/useMusicTherapy";
 import { useImplicitTracking } from "@/hooks/useImplicitTracking";
+import { useModuleProgress } from "@/hooks/useModuleProgress";
 
 type Phase = 'welcome' | 'select' | 'journey' | 'result' | 'gallery';
 
@@ -34,31 +35,22 @@ const forests: ForestType[] = [
   { id: 'crystal', name: 'Vallée de Cristal', emoji: '💎', description: 'Résonance pure', unlockLevel: 20, xpReward: 500, mood: 'harmonic', rarity: 'legendary' },
 ];
 
+const XP_PER_LEVEL = 500;
+
 export default function MusicTherapy() {
   const [phase, setPhase] = useState<Phase>('welcome');
   const [audioLevel, setAudioLevel] = useState(0);
   const [interactions, setInteractions] = useState(0);
   const [sessionStartTime, setSessionStartTime] = useState(0);
-  const [userLevel, setUserLevel] = useState(1);
-  const [totalXP, setTotalXP] = useState(0);
-  const [completedSessions, setCompletedSessions] = useState<string[]>([]);
   const [selectedForest, setSelectedForest] = useState<ForestType | null>(null);
   const [showLevelUp, setShowLevelUp] = useState(false);
+  
   const { session, result, loading, startSession, submitSession, reset } = useMusicTherapy();
   const { track } = useImplicitTracking();
-
-  useEffect(() => {
-    const saved = localStorage.getItem('music_therapy_progress');
-    if (saved) {
-      const { level, xp, completed } = JSON.parse(saved);
-      setUserLevel(level || 1);
-      setTotalXP(xp || 0);
-      setCompletedSessions(completed || []);
-    }
-  }, []);
+  const progress = useModuleProgress('music_therapy');
 
   const handleForestSelect = (forest: ForestType) => {
-    if (forest.unlockLevel > userLevel) return;
+    if (forest.unlockLevel > progress.userLevel) return;
     setSelectedForest(forest);
   };
 
@@ -111,29 +103,23 @@ export default function MusicTherapy() {
 
     const resultData = await submitSession(session.sessionId, moodStatePost, duration, interactions);
     if (resultData) {
-      // Add XP and check level up
-      const newXP = totalXP + selectedForest.xpReward;
-      const newLevel = Math.floor(newXP / 500) + 1;
-      const leveledUp = newLevel > userLevel;
-
-      setTotalXP(newXP);
-      if (leveledUp) {
-        setUserLevel(newLevel);
+      // Calculate XP
+      const baseXP = selectedForest.xpReward;
+      const durationBonus = Math.floor(duration / 60) * 5;
+      const totalEarnedXP = baseXP + durationBonus;
+      
+      // Add XP and unlock forest
+      await progress.addXP(totalEarnedXP, selectedForest.id);
+      
+      const newLevel = Math.floor((progress.totalXP + totalEarnedXP) / XP_PER_LEVEL) + 1;
+      if (newLevel > progress.userLevel) {
         setShowLevelUp(true);
         setTimeout(() => setShowLevelUp(false), 3000);
       }
-
-      // Mark forest as completed
-      if (!completedSessions.includes(selectedForest.id)) {
-        setCompletedSessions([...completedSessions, selectedForest.id]);
-      }
-
-      // Save progress
-      localStorage.setItem('music_therapy_progress', JSON.stringify({
-        level: newLevel,
-        xp: newXP,
-        completed: [...completedSessions, selectedForest.id]
-      }));
+      
+      // Update session count
+      const currentSessions = progress.metadata.completedSessions || 0;
+      await progress.setMetadata('completedSessions', currentSessions + 1);
 
       setPhase('result');
     }
@@ -150,8 +136,17 @@ export default function MusicTherapy() {
     setSelectedForest(null);
   };
 
-  const xpToNextLevel = (userLevel * 500) - totalXP;
-  const progressPercent = (totalXP % 500) / 5;
+  const currentLevelXP = progress.totalXP % XP_PER_LEVEL;
+  const progressPercent = (currentLevelXP / XP_PER_LEVEL) * 100;
+  const xpToNextLevel = XP_PER_LEVEL - currentLevelXP;
+
+  if (progress.loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-pulse-soft text-primary text-xl">Chargement...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
@@ -167,7 +162,7 @@ export default function MusicTherapy() {
             <Card className="max-w-md bg-gradient-primary border-primary/50 shadow-glow">
               <CardContent className="pt-6 text-center space-y-4">
                 <Trophy className="w-20 h-20 mx-auto text-primary animate-bounce" />
-                <h2 className="text-4xl font-bold">Niveau {userLevel}!</h2>
+                <h2 className="text-4xl font-bold">Niveau {progress.userLevel}!</h2>
                 <p className="text-muted-foreground">Nouvelles forêts débloquées</p>
               </CardContent>
             </Card>
@@ -200,7 +195,7 @@ export default function MusicTherapy() {
                   <div className="flex items-center justify-center gap-2 mb-2">
                     <h1 className="text-3xl font-bold">Les Forêts Sonores</h1>
                     <div className="px-3 py-1 bg-primary/20 rounded-full">
-                      <span className="text-sm font-bold text-primary">Niv.{userLevel}</span>
+                      <span className="text-sm font-bold text-primary">Niv.{progress.userLevel}</span>
                     </div>
                   </div>
                   <p className="text-muted-foreground">
@@ -210,7 +205,7 @@ export default function MusicTherapy() {
                 <div className="space-y-2">
                   <div className="flex justify-between text-xs">
                     <span className="text-muted-foreground">Progression</span>
-                    <span className="text-primary">{totalXP} XP ({xpToNextLevel} vers niv.{userLevel + 1})</span>
+                    <span className="text-primary">{progress.totalXP} XP ({xpToNextLevel} vers niv.{progress.userLevel + 1})</span>
                   </div>
                   <Progress value={progressPercent} className="h-2" />
                 </div>
@@ -251,8 +246,8 @@ export default function MusicTherapy() {
               <h2 className="text-3xl font-bold text-center">Choisis ta forêt</h2>
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {forests.map((forest) => {
-                  const isLocked = forest.unlockLevel > userLevel;
-                  const isCompleted = completedSessions.includes(forest.id);
+                  const isLocked = forest.unlockLevel > progress.userLevel;
+                  const isCompleted = progress.unlockedItems.includes(forest.id);
                   return (
                     <motion.div
                       key={forest.id}

@@ -6024,6 +6024,42 @@ export type Database = {
         }
         Relationships: []
       }
+      module_progress: {
+        Row: {
+          created_at: string
+          id: string
+          metadata: Json
+          module_name: string
+          total_xp: number
+          unlocked_items: Json
+          updated_at: string
+          user_id: string
+          user_level: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          metadata?: Json
+          module_name: string
+          total_xp?: number
+          unlocked_items?: Json
+          updated_at?: string
+          user_id: string
+          user_level?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          metadata?: Json
+          module_name?: string
+          total_xp?: number
+          unlocked_items?: Json
+          updated_at?: string
+          user_id?: string
+          user_level?: number
+        }
+        Relationships: []
+      }
       monitoring_incidents: {
         Row: {
           created_at: string
