@@ -69,7 +69,16 @@ const VRGalaxy = () => {
     "Le Gardien Céleste", "Le Sanctuaire Astral", "La Porte des Dimensions",
     // Poétiques
     "Souffle d'Étoile", "Rêve Galactique", "Harmonie Céleste",
-    "Murmure Cosmique", "Danse des Planètes", "Symphonie Stellaire"
+    "Murmure Cosmique", "Danse des Planètes", "Symphonie Stellaire",
+    // Nouveaux - Émotionnels
+    "Cœur de Nova", "Larme d'Étoile Filante", "Sourire Lunaire",
+    "Courage Stellaire", "Espoir Cosmique", "Sagesse Galactique",
+    // Nouveaux - Éléments
+    "Tempête d'Astéroïdes", "Océan de Nébuleuse", "Forêt de Quasars",
+    "Montagne d'Éther", "Rivière de Lumière", "Flamme Céleste",
+    // Nouveaux - Mystères
+    "Secret des Pulsars", "Énigme du Trou Noir", "Oracle Cosmique",
+    "Prophétie Stellaire", "Légende Galactique", "Mythe Interstellaire"
   ];
 
   const handleStartSession = () => {
@@ -266,9 +275,12 @@ const VRGalaxy = () => {
 
                 <div className="grid md:grid-cols-3 gap-4">
                   {[
-                    { name: 'Exploration Calme', emoji: '🌙', color: 'from-indigo-600 to-purple-600' },
-                    { name: 'Voyage Équilibré', emoji: '⚖️', color: 'from-purple-600 to-pink-600' },
-                    { name: 'Aventure Dynamique', emoji: '⚡', color: 'from-pink-600 to-red-600' }
+                    { name: 'Exploration Calme', emoji: '🌙', color: 'from-indigo-600 to-purple-600', desc: 'Mode détendu et contemplatif' },
+                    { name: 'Voyage Équilibré', emoji: '⚖️', color: 'from-purple-600 to-pink-600', desc: 'Équilibre parfait' },
+                    { name: 'Aventure Dynamique', emoji: '⚡', color: 'from-pink-600 to-red-600', desc: 'Énergie et mouvement' },
+                    { name: 'Méditation Profonde', emoji: '🧘', color: 'from-blue-600 to-cyan-600', desc: 'Plongée intérieure' },
+                    { name: 'Exploration Créative', emoji: '🎨', color: 'from-green-600 to-teal-600', desc: 'Créativité cosmique' },
+                    { name: 'Voyage Thérapeutique', emoji: '💚', color: 'from-teal-600 to-emerald-600', desc: 'Guérison et apaisement' }
                   ].map((mode) => (
                     <motion.div
                       key={mode.name}
@@ -279,6 +291,7 @@ const VRGalaxy = () => {
                         <CardContent className="pt-6 text-center text-white">
                           <span className="text-4xl mb-2 block">{mode.emoji}</span>
                           <p className="font-medium">{mode.name}</p>
+                          <p className="text-xs text-white/70 mt-1">{mode.desc}</p>
                         </CardContent>
                       </Card>
                     </motion.div>

@@ -155,11 +155,17 @@ const FlashGlow = () => {
               )}
             </div>
 
-            {/* Intensity Control */}
+            {/* Intensity Control - ENRICHED */}
             <div className="space-y-3">
-              <h3 className="font-medium text-center">Intensité</h3>
-              <div className="flex justify-center space-x-3">
-                {['low', 'medium', 'high'].map((level) => (
+              <h3 className="font-medium text-center">Intensité Lumineuse</h3>
+              <div className="flex justify-center space-x-3 flex-wrap gap-2">
+                {[
+                  { level: 'gentle', label: 'Douce', emoji: '🌙' },
+                  { level: 'low', label: 'Basse', emoji: '💫' },
+                  { level: 'medium', label: 'Moyenne', emoji: '✨' },
+                  { level: 'high', label: 'Haute', emoji: '⚡' },
+                  { level: 'ultra', label: 'Ultra', emoji: '🔥' }
+                ].map(({ level, label, emoji }) => (
                   <Button
                     key={level}
                     size="sm"
@@ -168,17 +174,24 @@ const FlashGlow = () => {
                     onClick={() => setIntensity(level)}
                     disabled={isActive}
                   >
-                    {level === 'low' ? 'Basse' : level === 'medium' ? 'Moyenne' : 'Haute'}
+                    {emoji} {label}
                   </Button>
                 ))}
               </div>
             </div>
 
-            {/* Duration Control */}
+            {/* Duration Control - ENRICHED */}
             <div className="space-y-3">
-              <h3 className="font-medium text-center">Durée</h3>
-              <div className="flex justify-center space-x-3">
-                {[30, 60, 120].map((sec) => (
+              <h3 className="font-medium text-center">Durée de Session</h3>
+              <div className="flex justify-center space-x-3 flex-wrap gap-2">
+                {[
+                  { sec: 15, label: 'Flash' },
+                  { sec: 30, label: 'Rapide' },
+                  { sec: 60, label: 'Standard' },
+                  { sec: 120, label: 'Profond' },
+                  { sec: 180, label: 'Immersif' },
+                  { sec: 300, label: 'Transformatif' }
+                ].map(({ sec, label }) => (
                   <Button
                     key={sec}
                     size="sm"
@@ -187,7 +200,7 @@ const FlashGlow = () => {
                     onClick={() => setDuration(sec)}
                     disabled={isActive}
                   >
-                    {sec}s
+                    {sec}s • {label}
                   </Button>
                 ))}
               </div>

@@ -36,10 +36,14 @@ const Breathwork = () => {
   const { track } = useImplicitTracking();
   const { toast } = useToast();
 
-  // Guided breathing patterns
+  // Guided breathing patterns - ENRICHED
   const breathPatterns = {
-    quick: { inhale: 4, hold: 4, exhale: 6 }, // STAI-6 calming
-    sleep: { inhale: 4, hold: 7, exhale: 8 }  // 4-7-8 for ISI
+    quick: { inhale: 4, hold: 4, exhale: 6, name: "Calme Rapide" }, 
+    sleep: { inhale: 4, hold: 7, exhale: 8, name: "4-7-8 Sommeil" },
+    box: { inhale: 4, hold: 4, exhale: 4, name: "Box Breathing" },
+    wim: { inhale: 2, hold: 0, exhale: 2, name: "Wim Hof" },
+    resonant: { inhale: 5, hold: 0, exhale: 5, name: "Cohérence" },
+    power: { inhale: 3, hold: 3, exhale: 6, name: "Power Breath" }
   };
 
   // Simulate anxiety decrease during session
@@ -234,53 +238,33 @@ const Breathwork = () => {
               🌊 Laisse les vagues t'apaiser 🌊
             </motion.p>
 
-            {/* Session Type Selection */}
-            <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto mt-8">
-              <motion.div whileHover={{ scale: 1.02, y: -5 }} whileTap={{ scale: 0.98 }}>
-                <Card 
-                  className="border-2 border-cyan-500/50 bg-gradient-to-br from-cyan-950/50 to-blue-950/50 hover:shadow-glow-intense cursor-pointer"
-                  onClick={() => handleStartSession('quick')}
-                >
-                  <CardContent className="pt-8 pb-8 text-center space-y-4">
-                    <Sun className="h-16 w-16 text-cyan-400 mx-auto" />
-                    <h3 className="text-2xl font-bold text-white">Session Rapide</h3>
-                    <p className="text-gray-300 text-sm">
-                      2-3 minutes de calme instantané
-                    </p>
-                    <div className="flex items-center justify-center gap-2 text-cyan-400 text-sm">
-                      <Sparkles className="h-4 w-4" />
-                      <span>Réduit l'anxiété immédiate</span>
-                    </div>
-                    <Button size="lg" className="bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-glow">
-                      <Play className="mr-2 h-5 w-5" />
-                      Commencer
-                    </Button>
-                  </CardContent>
-                </Card>
-              </motion.div>
-
-              <motion.div whileHover={{ scale: 1.02, y: -5 }} whileTap={{ scale: 0.98 }}>
-                <Card 
-                  className="border-2 border-indigo-500/50 bg-gradient-to-br from-indigo-950/50 to-purple-950/50 hover:shadow-glow-intense cursor-pointer"
-                  onClick={() => handleStartSession('sleep')}
-                >
-                  <CardContent className="pt-8 pb-8 text-center space-y-4">
-                    <Moon className="h-16 w-16 text-indigo-400 mx-auto" />
-                    <h3 className="text-2xl font-bold text-white">Session Sommeil</h3>
-                    <p className="text-gray-300 text-sm">
-                      10 minutes vers le sommeil profond
-                    </p>
-                    <div className="flex items-center justify-center gap-2 text-indigo-400 text-sm">
-                      <Sparkles className="h-4 w-4" />
-                      <span>Prépare au repos nocturne</span>
-                    </div>
-                    <Button size="lg" className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-glow">
-                      <Moon className="mr-2 h-5 w-5" />
-                      Plonger
-                    </Button>
-                  </CardContent>
-                </Card>
-              </motion.div>
+            {/* Session Type Selection - ENRICHED */}
+            <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto mt-8">
+              {Object.entries(breathPatterns).map(([key, pattern]) => (
+                <motion.div key={key} whileHover={{ scale: 1.02, y: -5 }} whileTap={{ scale: 0.98 }}>
+                  <Card 
+                    className="border-2 border-cyan-500/50 bg-gradient-to-br from-cyan-950/50 to-blue-950/50 hover:shadow-glow-intense cursor-pointer"
+                    onClick={() => handleStartSession(key as SessionType)}
+                  >
+                    <CardContent className="pt-8 pb-8 text-center space-y-4">
+                      {key === 'quick' && <Sun className="h-16 w-16 text-cyan-400 mx-auto" />}
+                      {key === 'sleep' && <Moon className="h-16 w-16 text-indigo-400 mx-auto" />}
+                      {key === 'box' && <div className="text-5xl">📦</div>}
+                      {key === 'wim' && <div className="text-5xl">❄️</div>}
+                      {key === 'resonant' && <div className="text-5xl">💓</div>}
+                      {key === 'power' && <div className="text-5xl">⚡</div>}
+                      <h3 className="text-2xl font-bold text-white">{pattern.name}</h3>
+                      <p className="text-gray-300 text-sm">
+                        {pattern.inhale}s - {pattern.hold}s - {pattern.exhale}s
+                      </p>
+                      <Button size="lg" className="bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-glow">
+                        <Play className="mr-2 h-5 w-5" />
+                        Commencer
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
             </div>
           </motion.div>
         )}

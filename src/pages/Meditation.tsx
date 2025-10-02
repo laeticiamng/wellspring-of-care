@@ -90,6 +90,42 @@ const Meditation = () => {
       category: "Énergie",
       image: "☀️",
       description: "Commencez votre journée avec sérénité et énergie positive"
+    },
+    {
+      id: 4,
+      title: "Voyage intérieur",
+      instructor: "Luc Martin",
+      duration: "30 min",
+      difficulty: "Avancé",
+      rating: 4.9,
+      plays: "6.3k",
+      category: "Introspection",
+      image: "🌌",
+      description: "Explorez les profondeurs de votre conscience"
+    },
+    {
+      id: 5,
+      title: "Méditation guidée sommeil",
+      instructor: "Sophie Laurent",
+      duration: "25 min",
+      difficulty: "Débutant",
+      rating: 4.8,
+      plays: "11.2k",
+      category: "Sommeil",
+      image: "🌙",
+      description: "Préparez-vous à une nuit de repos profond"
+    },
+    {
+      id: 6,
+      title: "Concentration créative",
+      instructor: "Alex Chen",
+      duration: "15 min",
+      difficulty: "Intermédiaire",
+      rating: 4.7,
+      plays: "9.1k",
+      category: "Focus",
+      image: "🎨",
+      description: "Stimulez votre créativité et votre focus"
     }
   ];
 

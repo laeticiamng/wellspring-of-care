@@ -59,6 +59,33 @@ const BossGrit = () => {
       duration: 5,
       type: 'streak'
     },
+    { 
+      id: 4, 
+      name: 'Défi de la Force', 
+      difficulty: 'Difficile', 
+      emoji: '💪',
+      description: 'Complète 10 minutes de méditation',
+      duration: 10,
+      type: 'meditation'
+    },
+    { 
+      id: 5, 
+      name: 'Défi de la Sagesse', 
+      difficulty: 'Expert', 
+      emoji: '🧙',
+      description: 'Journal émotionnel pendant 7 jours',
+      duration: 7,
+      type: 'journal'
+    },
+    { 
+      id: 6, 
+      name: 'Défi Légendaire', 
+      difficulty: 'Légendaire', 
+      emoji: '⭐',
+      description: '30 jours de pratique quotidienne',
+      duration: 30,
+      type: 'legendary'
+    },
   ];
 
   useEffect(() => {

@@ -19,6 +19,12 @@ const AmbitionArcade = () => {
     { id: "simple", name: "Marcher 10 min", emoji: "🚶", difficulty: "Simple", points: 10 },
     { id: "medium", name: "Méditer 15 min", emoji: "🧘", difficulty: "Moyen", points: 25 },
     { id: "ambitious", name: "Écrire 30 min", emoji: "✍️", difficulty: "Ambitieux", points: 50 },
+    { id: "reading", name: "Lire 20 min", emoji: "📚", difficulty: "Simple", points: 15 },
+    { id: "exercise", name: "Sport 30 min", emoji: "🏃", difficulty: "Moyen", points: 30 },
+    { id: "creative", name: "Créer 45 min", emoji: "🎨", difficulty: "Ambitieux", points: 60 },
+    { id: "learning", name: "Apprendre 1h", emoji: "🎓", difficulty: "Difficile", points: 75 },
+    { id: "social", name: "Contact social 30 min", emoji: "💬", difficulty: "Moyen", points: 35 },
+    { id: "nature", name: "Nature 40 min", emoji: "🌳", difficulty: "Moyen", points: 40 },
   ];
 
   const microLevers = [
