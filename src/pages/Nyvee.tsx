@@ -16,6 +16,29 @@ const Nyvee = () => {
   const [phase, setPhase] = useState<'tutorial' | 'welcome' | 'breathing' | 'badge'>('tutorial');
   const [breathStartTime, setBreathStartTime] = useState<number>(0);
   const [currentPhase, setCurrentPhase] = useState<'inhale' | 'exhale'>('inhale');
+  const [userLevel, setUserLevel] = useState(1);
+  const [totalXP, setTotalXP] = useState(0);
+  const [totalSessions, setTotalSessions] = useState(0);
+  const [showLevelUp, setShowLevelUp] = useState(false);
+  const [unlockedBubbles, setUnlockedBubbles] = useState<string[]>([]);
+
+  const bubbleTypes = [
+    { id: 'bubble1', name: '🫧 Bulle Calme', unlockLevel: 1, xp: 50 },
+    { id: 'bubble2', name: '💫 Bulle Étoilée', unlockLevel: 3, xp: 100 },
+    { id: 'bubble3', name: '🌊 Bulle Océan', unlockLevel: 5, xp: 150 },
+    { id: 'bubble4', name: '✨ Bulle Cosmique', unlockLevel: 8, xp: 200 },
+  ];
+
+  useState(() => {
+    const saved = localStorage.getItem('nyvee_progress');
+    if (saved) {
+      const { level, xp, sessions, bubbles } = JSON.parse(saved);
+      setUserLevel(level || 1);
+      setTotalXP(xp || 0);
+      setTotalSessions(sessions || 0);
+      setUnlockedBubbles(bubbles || []);
+    }
+  });
 
   // Son cristallin (simulation - en prod on utiliserait Howler.js)
   const playBreathSound = (type: 'inhale' | 'exhale') => {
@@ -34,6 +57,42 @@ const Nyvee = () => {
   const handleCycleComplete = async () => {
     const breathDuration = Math.floor((Date.now() - breathStartTime) / 1000);
     const badgeData = await submitSession(breathDuration);
+    
+    // Calculate XP
+    const baseXP = 40;
+    const durationBonus = Math.floor(breathDuration / 30) * 10;
+    const qualityBonus = breathDuration >= 120 ? 30 : breathDuration >= 60 ? 15 : 0;
+    const totalXPGain = baseXP + durationBonus + qualityBonus;
+
+    const newXP = totalXP + totalXPGain;
+    const newLevel = Math.floor(newXP / 500) + 1;
+    const newSessionCount = totalSessions + 1;
+    const leveledUp = newLevel > userLevel;
+
+    // Check for bubble unlocks
+    const newUnlocks = bubbleTypes.filter(bt => 
+      bt.unlockLevel <= newLevel && !unlockedBubbles.includes(bt.id)
+    ).map(bt => bt.id);
+
+    if (leveledUp) {
+      setUserLevel(newLevel);
+      setShowLevelUp(true);
+      setTimeout(() => setShowLevelUp(false), 3000);
+    }
+
+    if (newUnlocks.length > 0) {
+      setUnlockedBubbles([...unlockedBubbles, ...newUnlocks]);
+    }
+
+    setTotalXP(newXP);
+    setTotalSessions(newSessionCount);
+
+    localStorage.setItem('nyvee_progress', JSON.stringify({
+      level: newLevel,
+      xp: newXP,
+      sessions: newSessionCount,
+      bubbles: [...unlockedBubbles, ...newUnlocks]
+    }));
     
     if (badgeData) {
       setPhase('badge');
@@ -68,6 +127,9 @@ const Nyvee = () => {
     setPhase('welcome');
   };
 
+  const xpToNextLevel = (userLevel * 500) - totalXP;
+  const progressPercent = (totalXP % 500) / 5;
+
   if (phase === 'tutorial') {
     return <NyveeTutorial onComplete={handleTutorialComplete} />;
   }
@@ -96,8 +158,19 @@ const Nyvee = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-900 to-blue-950">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-900 to-blue-950 relative">
       <Header />
+      
+      {/* Level up animation */}
+      {showLevelUp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm pointer-events-none">
+          <div className="max-w-md bg-gradient-to-r from-purple-600 to-blue-600 border-purple-400/50 shadow-glow-legendary animate-scale-in rounded-lg p-8 text-center space-y-4 text-white">
+            <div className="text-6xl animate-bounce">🫧</div>
+            <h2 className="text-4xl font-bold">Niveau {userLevel}!</h2>
+            <p className="text-white/80">Nouvelles bulles débloquées</p>
+          </div>
+        </div>
+      )}
       
       <main className="container mx-auto px-4 py-16 min-h-screen flex flex-col items-center justify-center">
         {/* Retour */}
@@ -140,9 +213,27 @@ const Nyvee = () => {
             <Sparkles className="w-20 h-20 text-white/80 animate-pulse" />
           </motion.div>
 
-          <h1 className="text-6xl font-bold text-white mb-6">
-            Nyvée
-          </h1>
+          <div className="flex items-center justify-center gap-3 mb-6">
+            <h1 className="text-6xl font-bold text-white">
+              Nyvée
+            </h1>
+            <div className="px-3 py-1 bg-purple-600/30 rounded-full border border-purple-400/50">
+              <span className="text-sm font-bold text-purple-200">Niv.{userLevel}</span>
+            </div>
+          </div>
+          
+          <div className="max-w-md mx-auto space-y-1 mb-4">
+            <div className="flex justify-between text-xs text-white/60">
+              <span>{totalSessions} sessions</span>
+              <span>{totalXP} XP ({xpToNextLevel} vers niv.{userLevel + 1})</span>
+            </div>
+            <div className="w-full h-2 bg-purple-950/50 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-purple-500 to-blue-500 transition-all duration-500"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+          </div>
 
           <p className="text-xl text-white/80 mb-4">
             Ton refuge émotionnel
@@ -165,6 +256,24 @@ const Nyvee = () => {
             </Button>
 
             <CocoonGallery />
+            
+            {/* Bulles débloquées */}
+            <div className="flex justify-center gap-2 flex-wrap mt-6">
+              {bubbleTypes.map(bubble => (
+                <div
+                  key={bubble.id}
+                  className={`px-3 py-1 rounded-full text-xs ${
+                    unlockedBubbles.includes(bubble.id)
+                      ? 'bg-purple-600/30 text-purple-200 border border-purple-400/50'
+                      : userLevel >= bubble.unlockLevel
+                      ? 'bg-blue-600/30 text-blue-200 border border-blue-400/50 animate-pulse'
+                      : 'bg-gray-800/50 text-gray-500 opacity-50'
+                  }`}
+                >
+                  {bubble.name}
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Particules d'ambiance */}

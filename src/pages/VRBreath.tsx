@@ -35,6 +35,28 @@ const VRBreath = () => {
   const { collections, unlockItem } = useCollections();
   const { isListening, breathLevel, startListening, stopListening } = useMicrophone();
   const { toast } = useToast();
+  const [userLevel, setUserLevel] = useState(1);
+  const [totalXP, setTotalXP] = useState(0);
+  const [totalFrescos, setTotalFrescos] = useState(0);
+  const [showLevelUp, setShowLevelUp] = useState(false);
+  const [unlockedEnvironments, setUnlockedEnvironments] = useState<string[]>(['temple']);
+
+  const environments = [
+    { id: 'temple', name: '🏛️ Temple Zen', unlockLevel: 1 },
+    { id: 'forest', name: '🌲 Forêt Mystique', unlockLevel: 3 },
+    { id: 'cosmos', name: '🌌 Cosmos Infini', unlockLevel: 5 },
+  ];
+
+  useState(() => {
+    const saved = localStorage.getItem('vr_breath_progress');
+    if (saved) {
+      const { level, xp, frescos, envs } = JSON.parse(saved);
+      setUserLevel(level || 1);
+      setTotalXP(xp || 0);
+      setTotalFrescos(frescos || 0);
+      setUnlockedEnvironments(envs || ['temple']);
+    }
+  });
 
   // Calculer rareté basée sur les cycles et chance
   const calculateRarity = (cycles: number): 'common' | 'rare' | 'epic' | 'legendary' => {
@@ -66,6 +88,47 @@ const VRBreath = () => {
     // Calculer rareté
     const rarity = calculateRarity(breathCycles);
     setCurrentRarity(rarity);
+    
+    // Calculate XP
+    const baseXP = 50;
+    const cycleBonus = breathCycles * 5;
+    const rarityBonus = rarity === 'legendary' ? 150 : rarity === 'epic' ? 100 : rarity === 'rare' ? 50 : 0;
+    const envBonus = environment === 'cosmos' ? 30 : environment === 'forest' ? 20 : 10;
+    const totalXPGain = baseXP + cycleBonus + rarityBonus + envBonus;
+
+    const newXP = totalXP + totalXPGain;
+    const newLevel = Math.floor(newXP / 500) + 1;
+    const newFrescoCount = totalFrescos + 1;
+    const leveledUp = newLevel > userLevel;
+
+    // Check for environment unlocks
+    const newUnlocks = environments.filter(env => 
+      env.unlockLevel <= newLevel && !unlockedEnvironments.includes(env.id)
+    ).map(env => env.id);
+
+    if (leveledUp) {
+      setUserLevel(newLevel);
+      setShowLevelUp(true);
+      setTimeout(() => setShowLevelUp(false), 3000);
+    }
+
+    if (newUnlocks.length > 0) {
+      setUnlockedEnvironments([...unlockedEnvironments, ...newUnlocks]);
+      toast({
+        title: "🌌 Nouvel environnement débloqué!",
+        description: environments.find(e => e.id === newUnlocks[0])?.name,
+      });
+    }
+
+    setTotalXP(newXP);
+    setTotalFrescos(newFrescoCount);
+
+    localStorage.setItem('vr_breath_progress', JSON.stringify({
+      level: newLevel,
+      xp: newXP,
+      frescos: newFrescoCount,
+      envs: [...unlockedEnvironments, ...newUnlocks]
+    }));
     
     // Créer fragment
     const newFragment: Fragment = {
@@ -136,9 +199,25 @@ const VRBreath = () => {
       value: "reduce_particles"
     });
   };
+  const xpToNextLevel = (userLevel * 500) - totalXP;
+  const progressPercent = (totalXP % 500) / 5;
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-primary/5 to-accent/10">
+    <div className="min-h-screen bg-gradient-to-b from-background via-primary/5 to-accent/10 relative">
       <Header />
+      
+      {/* Level up animation */}
+      {showLevelUp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm pointer-events-none">
+          <Card className="max-w-md bg-gradient-primary border-primary/50 shadow-glow animate-scale-in">
+            <div className="p-8 text-center space-y-4">
+              <div className="text-6xl animate-bounce">🌬️</div>
+              <h2 className="text-4xl font-bold">Niveau {userLevel}!</h2>
+              <p className="text-muted-foreground">Nouvel environnement accessible</p>
+            </div>
+          </Card>
+        </div>
+      )}
       
       <main className="container mx-auto px-4 py-8 space-y-8">
         <div className="text-center space-y-4">
@@ -148,9 +227,28 @@ const VRBreath = () => {
             className="flex items-center justify-center space-x-3"
           >
             <Glasses className="h-12 w-12 text-primary animate-glow" />
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-gradient">
-              Le Temple de l'Air
-            </h1>
+            <div className="space-y-2">
+              <div className="flex items-center justify-center gap-2">
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-gradient">
+                  Le Temple de l'Air
+                </h1>
+                <div className="px-3 py-1 bg-primary/20 rounded-full">
+                  <span className="text-sm font-bold text-primary">Niv.{userLevel}</span>
+                </div>
+              </div>
+              <div className="max-w-md mx-auto space-y-1">
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>{totalFrescos} fresques</span>
+                  <span className="text-primary">{totalXP} XP ({xpToNextLevel} vers niv.{userLevel + 1})</span>
+                </div>
+                <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-primary transition-all duration-500"
+                    style={{ width: `${progressPercent}%` }}
+                  />
+                </div>
+              </div>
+            </div>
           </motion.div>
           <p className="text-muted-foreground max-w-2xl mx-auto">
             Respirez et créez des fresques cosmiques uniques. Chaque souffle sculpte la lumière.
@@ -289,27 +387,29 @@ const VRBreath = () => {
               <div className="space-y-3">
                 <p className="text-center text-sm text-muted-foreground">Choisissez votre environnement</p>
                 <div className="grid md:grid-cols-3 gap-4">
-                  {[
-                    { id: 'temple' as const, name: 'Temple Zen', emoji: '🏛️', desc: 'Calme et sérénité' },
-                    { id: 'forest' as const, name: 'Forêt Mystique', emoji: '🌲', desc: 'Nature vivante' },
-                    { id: 'cosmos' as const, name: 'Cosmos Infini', emoji: '🌌', desc: 'Espace étoilé' }
-                  ].map((env) => (
+                  {environments.map((env) => (
                     <motion.div
                       key={env.id}
                       whileHover={{ scale: 1.05, y: -5 }}
                       whileTap={{ scale: 0.95 }}
-                      onClick={() => setEnvironment(env.id)}
+                      onClick={() => unlockedEnvironments.includes(env.id) && setEnvironment(env.id as any)}
                     >
-                      <Card className={`border-2 transition-all cursor-pointer ${
-                        environment === env.id 
-                          ? 'border-primary bg-gradient-to-br from-primary/20 to-accent/20 shadow-glow' 
-                          : 'border-muted bg-gradient-to-br from-muted/50 to-muted/30 hover:border-primary/50'
+                      <Card className={`border-2 transition-all ${
+                        !unlockedEnvironments.includes(env.id)
+                          ? 'border-muted bg-muted/20 opacity-50 cursor-not-allowed'
+                          : environment === env.id 
+                            ? 'border-primary bg-gradient-to-br from-primary/20 to-accent/20 shadow-glow cursor-pointer' 
+                            : 'border-muted bg-gradient-to-br from-muted/50 to-muted/30 hover:border-primary/50 cursor-pointer'
                       }`}>
                         <CardContent className="pt-6 text-center space-y-2">
-                          <span className="text-5xl block">{env.emoji}</span>
-                          <p className="font-semibold">{env.name}</p>
-                          <p className="text-xs text-muted-foreground">{env.desc}</p>
-                          {environment === env.id && (
+                          <span className="text-5xl block">
+                            {unlockedEnvironments.includes(env.id) ? env.name.split(' ')[0] : '🔒'}
+                          </span>
+                          <p className="font-semibold">{env.name.split(' ').slice(1).join(' ')}</p>
+                          {!unlockedEnvironments.includes(env.id) && (
+                            <p className="text-xs text-muted-foreground">Niv.{env.unlockLevel} requis</p>
+                          )}
+                          {environment === env.id && unlockedEnvironments.includes(env.id) && (
                             <motion.div
                               initial={{ scale: 0 }}
                               animate={{ scale: 1 }}

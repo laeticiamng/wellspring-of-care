@@ -34,6 +34,20 @@ const ARFilters = () => {
   const [showGallery, setShowGallery] = useState(false);
   const { track } = useImplicitTracking();
   const { collections, unlockItem } = useCollections();
+  const [userLevel, setUserLevel] = useState(1);
+  const [totalXP, setTotalXP] = useState(0);
+  const [totalSessions, setTotalSessions] = useState(0);
+  const [showLevelUp, setShowLevelUp] = useState(false);
+
+  useState(() => {
+    const saved = localStorage.getItem('ar_filters_progress');
+    if (saved) {
+      const { level, xp, sessions } = JSON.parse(saved);
+      setUserLevel(level || 1);
+      setTotalXP(xp || 0);
+      setTotalSessions(sessions || 0);
+    }
+  });
 
   const [filters, setFilters] = useState<Filter[]>([
     { id: 'f1', emoji: '✨', name: 'Étoile Dorée', rarity: 'common', color: 'rgba(251, 191, 36, 0.6)', uses: 0, maxUses: 5, unlocked: true, description: 'Un classique lumineux' },
@@ -109,6 +123,33 @@ const ARFilters = () => {
   // Complete filter session
   const completeFilterSession = () => {
     if (!activeFilter) return;
+
+    // Calculate XP
+    const baseXP = 40;
+    const interactionBonus = interactions * 5;
+    const affectBonus = Math.floor(affectLevel / 10) * 5;
+    const rarityBonus = activeFilter.rarity === 'legendary' ? 100 : activeFilter.rarity === 'epic' ? 60 : activeFilter.rarity === 'rare' ? 30 : 0;
+    const totalXPGain = baseXP + interactionBonus + affectBonus + rarityBonus;
+
+    const newXP = totalXP + totalXPGain;
+    const newLevel = Math.floor(newXP / 500) + 1;
+    const newSessionCount = totalSessions + 1;
+    const leveledUp = newLevel > userLevel;
+
+    if (leveledUp) {
+      setUserLevel(newLevel);
+      setShowLevelUp(true);
+      setTimeout(() => setShowLevelUp(false), 3000);
+    }
+
+    setTotalXP(newXP);
+    setTotalSessions(newSessionCount);
+
+    localStorage.setItem('ar_filters_progress', JSON.stringify({
+      level: newLevel,
+      xp: newXP,
+      sessions: newSessionCount
+    }));
 
     // Update filter uses
     setFilters(prev => prev.map(f => 
@@ -195,9 +236,25 @@ const ARFilters = () => {
     setSessionActive(false);
     setActiveFilter(null);
   };
+  const xpToNextLevel = (userLevel * 500) - totalXP;
+  const progressPercent = (totalXP % 500) / 5;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-black">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-black relative">
       <Header />
+      
+      {/* Level up animation */}
+      {showLevelUp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm pointer-events-none">
+          <Card className="max-w-md bg-gradient-to-r from-pink-600 to-purple-600 border-pink-400/50 shadow-glow-legendary animate-scale-in">
+            <div className="p-8 text-center space-y-4 text-white">
+              <div className="text-6xl animate-bounce">🪞</div>
+              <h2 className="text-4xl font-bold">Niveau {userLevel}!</h2>
+              <p className="text-white/80">Nouveaux filtres magiques</p>
+            </div>
+          </Card>
+        </div>
+      )}
       
       <main className="container mx-auto px-4 py-8 space-y-8">
         {/* Hero Section */}
@@ -208,9 +265,28 @@ const ARFilters = () => {
             animate={{ opacity: 1, y: 0 }}
           >
             <Camera className="h-12 w-12 text-yellow-400 animate-pulse" />
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400 bg-clip-text text-transparent">
-              La Chambre des Reflets
-            </h1>
+            <div className="space-y-2">
+              <div className="flex items-center justify-center gap-2">
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400 bg-clip-text text-transparent">
+                  La Chambre des Reflets
+                </h1>
+                <div className="px-3 py-1 bg-purple-600/30 rounded-full border border-purple-400/50">
+                  <span className="text-sm font-bold text-purple-200">Niv.{userLevel}</span>
+                </div>
+              </div>
+              <div className="max-w-md mx-auto space-y-1">
+                <div className="flex justify-between text-xs text-white/60">
+                  <span>{totalSessions} sessions</span>
+                  <span className="text-purple-300">{totalXP} XP ({xpToNextLevel} vers niv.{userLevel + 1})</span>
+                </div>
+                <div className="w-full h-2 bg-purple-950/50 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-yellow-500 via-pink-500 to-purple-500 transition-all duration-500"
+                    style={{ width: `${progressPercent}%` }}
+                  />
+                </div>
+              </div>
+            </div>
           </motion.div>
           <p className="text-white/70 max-w-2xl mx-auto">
             Salle de miroirs magiques. Un clin d'œil déclenche une pluie d'étoiles, un sourire fait briller ton reflet ✨

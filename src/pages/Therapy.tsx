@@ -24,6 +24,29 @@ import { toast } from "sonner";
 const Therapy = () => {
   const { therapists, sessions, loading, bookSession, cancelSession } = useTherapy();
   const [bookingTherapist, setBookingTherapist] = useState<string | null>(null);
+  const [userLevel, setUserLevel] = useState(1);
+  const [totalXP, setTotalXP] = useState(0);
+  const [completedSessions, setCompletedSessions] = useState(0);
+  const [showLevelUp, setShowLevelUp] = useState(false);
+  const [unlockedModalities, setUnlockedModalities] = useState<string[]>([]);
+
+  const modalities = [
+    { id: 'mod1', name: '🧠 TCC', unlockLevel: 1, xp: 100 },
+    { id: 'mod2', name: '💚 EMDR', unlockLevel: 3, xp: 150 },
+    { id: 'mod3', name: '🌸 ACT', unlockLevel: 5, xp: 200 },
+    { id: 'mod4', name: '✨ Psychanalyse', unlockLevel: 8, xp: 250 },
+  ];
+
+  useState(() => {
+    const saved = localStorage.getItem('therapy_progress');
+    if (saved) {
+      const { level, xp, sessions: count, modalities: unlocked } = JSON.parse(saved);
+      setUserLevel(level || 1);
+      setTotalXP(xp || 0);
+      setCompletedSessions(count || 0);
+      setUnlockedModalities(unlocked || []);
+    }
+  });
 
   const handleBookSession = async (therapistId: string) => {
     setBookingTherapist(therapistId);
@@ -128,21 +151,74 @@ const Therapy = () => {
     }
   ];
 
+  const xpToNextLevel = (userLevel * 500) - totalXP;
+  const progressPercent = (totalXP % 500) / 5;
+
   return (
-    <div className="min-h-screen bg-gradient-calm">
+    <div className="min-h-screen bg-gradient-calm relative">
       <Header />
+      
+      {/* Level up animation */}
+      {showLevelUp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm pointer-events-none">
+          <Card className="max-w-md bg-gradient-healing border-accent/50 shadow-glow animate-scale-in">
+            <div className="p-8 text-center space-y-4">
+              <div className="text-6xl animate-bounce">💚</div>
+              <h2 className="text-4xl font-bold">Niveau {userLevel}!</h2>
+              <p className="text-muted-foreground">Nouvelle modalité accessible</p>
+            </div>
+          </Card>
+        </div>
+      )}
       
       <main className="container mx-auto px-4 py-8 space-y-8">
         {/* Header */}
         <div className="text-center space-y-4">
-          <h1 className="text-4xl font-bold flex items-center justify-center space-x-3">
+          <div className="flex items-center justify-center gap-3">
             <Video className="h-10 w-10 text-primary" />
-            <span>Thérapie Professionnelle</span>
-          </h1>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <h1 className="text-4xl font-bold">Thérapie Professionnelle</h1>
+                <div className="px-3 py-1 bg-primary/20 rounded-full">
+                  <span className="text-sm font-bold text-primary">Niv.{userLevel}</span>
+                </div>
+              </div>
+              <div className="max-w-md mx-auto space-y-1">
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>{completedSessions} sessions complétées</span>
+                  <span className="text-primary">{totalXP} XP ({xpToNextLevel} vers niv.{userLevel + 1})</span>
+                </div>
+                <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-primary transition-all duration-500"
+                    style={{ width: `${progressPercent}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Consultez des thérapeutes certifiés depuis chez vous ou en cabinet. 
             Première consultation gratuite pour tous les nouveaux membres.
           </p>
+          
+          {/* Modalités débloquées */}
+          <div className="flex justify-center gap-2 flex-wrap">
+            {modalities.map(mod => (
+              <div
+                key={mod.id}
+                className={`px-3 py-1 rounded-full text-xs ${
+                  unlockedModalities.includes(mod.id)
+                    ? 'bg-primary/20 text-primary border border-primary/40'
+                    : userLevel >= mod.unlockLevel
+                    ? 'bg-accent/20 text-accent border border-accent/40 animate-pulse'
+                    : 'bg-muted/50 text-muted-foreground opacity-50'
+                }`}
+              >
+                {mod.name}
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Promo Banner */}

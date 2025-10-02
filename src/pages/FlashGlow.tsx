@@ -16,6 +16,30 @@ const FlashGlow = () => {
   const startTime = useRef<number>(0);
   const focusTime = useRef<number>(0);
   const [timeLeft, setTimeLeft] = useState(0);
+  const [userLevel, setUserLevel] = useState(1);
+  const [totalXP, setTotalXP] = useState(0);
+  const [totalFlashes, setTotalFlashes] = useState(0);
+  const [showLevelUp, setShowLevelUp] = useState(false);
+  const [unlockedIntensities, setUnlockedIntensities] = useState<string[]>(['gentle', 'low', 'medium']);
+
+  const intensityTiers = [
+    { id: 'gentle', name: '🌙 Douce', unlockLevel: 1 },
+    { id: 'low', name: '💫 Basse', unlockLevel: 1 },
+    { id: 'medium', name: '✨ Moyenne', unlockLevel: 1 },
+    { id: 'high', name: '⚡ Haute', unlockLevel: 3 },
+    { id: 'ultra', name: '🔥 Ultra', unlockLevel: 6 },
+  ];
+
+  useState(() => {
+    const saved = localStorage.getItem('flashglow_progress');
+    if (saved) {
+      const { level, xp, flashes, intensities } = JSON.parse(saved);
+      setUserLevel(level || 1);
+      setTotalXP(xp || 0);
+      setTotalFlashes(flashes || 0);
+      setUnlockedIntensities(intensities || ['gentle', 'low', 'medium']);
+    }
+  });
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -73,6 +97,42 @@ const FlashGlow = () => {
       value: focusTime.current
     });
 
+    // Calculate XP
+    const baseXP = 35;
+    const durationBonus = Math.floor(duration / 20) * 5;
+    const intensityBonus = intensity === 'ultra' ? 30 : intensity === 'high' ? 20 : intensity === 'medium' ? 10 : 5;
+    const totalXPGain = baseXP + durationBonus + intensityBonus;
+
+    const newXP = totalXP + totalXPGain;
+    const newLevel = Math.floor(newXP / 500) + 1;
+    const newFlashCount = totalFlashes + 1;
+    const leveledUp = newLevel > userLevel;
+
+    // Check for intensity unlocks
+    const newUnlocks = intensityTiers.filter(it => 
+      it.unlockLevel <= newLevel && !unlockedIntensities.includes(it.id)
+    ).map(it => it.id);
+
+    if (leveledUp) {
+      setUserLevel(newLevel);
+      setShowLevelUp(true);
+      setTimeout(() => setShowLevelUp(false), 3000);
+    }
+
+    if (newUnlocks.length > 0) {
+      setUnlockedIntensities([...unlockedIntensities, ...newUnlocks]);
+    }
+
+    setTotalXP(newXP);
+    setTotalFlashes(newFlashCount);
+
+    localStorage.setItem('flashglow_progress', JSON.stringify({
+      level: newLevel,
+      xp: newXP,
+      flashes: newFlashCount,
+      intensities: [...unlockedIntensities, ...newUnlocks]
+    }));
+
     // Unlock mantras after successful sessions
     setMantrasCollected(prev => {
       const newCount = prev + 1;
@@ -85,17 +145,52 @@ const FlashGlow = () => {
     setIsActive(false);
   };
 
+  const xpToNextLevel = (userLevel * 500) - totalXP;
+  const progressPercent = (totalXP % 500) / 5;
+
   return (
-    <div className="min-h-screen bg-gradient-calm">
+    <div className="min-h-screen bg-gradient-calm relative">
       <Header />
+      
+      {/* Level up animation */}
+      {showLevelUp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm pointer-events-none">
+          <Card className="max-w-md bg-gradient-primary border-primary/50 shadow-glow animate-scale-in">
+            <div className="p-8 text-center space-y-4">
+              <div className="text-6xl animate-bounce">⚡</div>
+              <h2 className="text-4xl font-bold">Niveau {userLevel}!</h2>
+              <p className="text-muted-foreground">Nouvelle intensité débloquée</p>
+            </div>
+          </Card>
+        </div>
+      )}
       
       <main className="container mx-auto px-4 py-8 space-y-8">
         <div className="text-center space-y-4">
           <div className="flex items-center justify-center space-x-3">
             <Sparkles className="h-12 w-12 text-primary animate-glow" />
-            <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              La Chambre des Lumières
-            </h1>
+            <div className="space-y-2">
+              <div className="flex items-center justify-center gap-2">
+                <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+                  La Chambre des Lumières
+                </h1>
+                <div className="px-3 py-1 bg-primary/20 rounded-full">
+                  <span className="text-sm font-bold text-primary">Niv.{userLevel}</span>
+                </div>
+              </div>
+              <div className="max-w-md mx-auto space-y-1">
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>{totalFlashes} sessions</span>
+                  <span className="text-primary">{totalXP} XP ({xpToNextLevel} vers niv.{userLevel + 1})</span>
+                </div>
+                <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-primary transition-all duration-500"
+                    style={{ width: `${progressPercent}%` }}
+                  />
+                </div>
+              </div>
+            </div>
           </div>
           <p className="text-muted-foreground max-w-2xl mx-auto">
             Respirez au rythme des flashs lumineux. Chaque cycle dévoile un mot-clé caché.
@@ -159,22 +254,16 @@ const FlashGlow = () => {
             <div className="space-y-3">
               <h3 className="font-medium text-center">Intensité Lumineuse</h3>
               <div className="flex justify-center space-x-3 flex-wrap gap-2">
-                {[
-                  { level: 'gentle', label: 'Douce', emoji: '🌙' },
-                  { level: 'low', label: 'Basse', emoji: '💫' },
-                  { level: 'medium', label: 'Moyenne', emoji: '✨' },
-                  { level: 'high', label: 'Haute', emoji: '⚡' },
-                  { level: 'ultra', label: 'Ultra', emoji: '🔥' }
-                ].map(({ level, label, emoji }) => (
+                {intensityTiers.map(({ id, name }) => (
                   <Button
-                    key={level}
+                    key={id}
                     size="sm"
-                    variant={intensity === level ? "default" : "outline"}
-                    className={intensity === level ? "bg-gradient-primary" : ""}
-                    onClick={() => setIntensity(level)}
-                    disabled={isActive}
+                    variant={intensity === id ? "default" : "outline"}
+                    className={intensity === id ? "bg-gradient-primary" : ""}
+                    onClick={() => setIntensity(id)}
+                    disabled={isActive || !unlockedIntensities.includes(id)}
                   >
-                    {emoji} {label}
+                    {unlockedIntensities.includes(id) ? name : '🔒 ' + name.split(' ')[1]}
                   </Button>
                 ))}
               </div>

@@ -14,10 +14,31 @@ export default function Coach() {
   const [showThoughts, setShowThoughts] = useState(false);
   const { result, loading, startSession, submitSession, reset } = useCoachAssess();
   const { toast } = useToast();
+  const [userLevel, setUserLevel] = useState(1);
+  const [totalXP, setTotalXP] = useState(0);
+  const [thoughtsCollected, setThoughtsCollected] = useState(0);
+  const [showLevelUp, setShowLevelUp] = useState(false);
+
+  const gardens = [
+    { id: 'gard1', name: '🌸 Jardin de Sérénité', unlockLevel: 1 },
+    { id: 'gard2', name: '🌿 Jardin de Sagesse', unlockLevel: 3 },
+    { id: 'gard3', name: '🌺 Jardin Mystique', unlockLevel: 5 },
+    { id: 'gard4', name: '🌟 Jardin Céleste', unlockLevel: 8 },
+  ];
+  const [unlockedGardens, setUnlockedGardens] = useState<string[]>([]);
 
   useEffect(() => {
     // Lancer automatiquement une session au montage
     initSession();
+    
+    const saved = localStorage.getItem('coach_progress');
+    if (saved) {
+      const { level, xp, thoughts, gardens: unlocked } = JSON.parse(saved);
+      setUserLevel(level || 1);
+      setTotalXP(xp || 0);
+      setThoughtsCollected(thoughts || 0);
+      setUnlockedGardens(unlocked || []);
+    }
   }, []);
 
   const initSession = async () => {
@@ -54,6 +75,40 @@ export default function Coach() {
 
       if (error) throw error;
 
+      // Calculate XP
+      const rarityXP = thought.rarity === 'legendary' ? 100 : thought.rarity === 'rare' ? 50 : 30;
+      const totalXPGain = rarityXP;
+
+      const newXP = totalXP + totalXPGain;
+      const newLevel = Math.floor(newXP / 500) + 1;
+      const newThoughtCount = thoughtsCollected + 1;
+      const leveledUp = newLevel > userLevel;
+
+      // Check for garden unlocks
+      const newUnlocks = gardens.filter(g => 
+        g.unlockLevel <= newLevel && !unlockedGardens.includes(g.id)
+      ).map(g => g.id);
+
+      if (leveledUp) {
+        setUserLevel(newLevel);
+        setShowLevelUp(true);
+        setTimeout(() => setShowLevelUp(false), 3000);
+      }
+
+      if (newUnlocks.length > 0) {
+        setUnlockedGardens([...unlockedGardens, ...newUnlocks]);
+      }
+
+      setTotalXP(newXP);
+      setThoughtsCollected(newThoughtCount);
+
+      localStorage.setItem('coach_progress', JSON.stringify({
+        level: newLevel,
+        xp: newXP,
+        thoughts: newThoughtCount,
+        gardens: [...unlockedGardens, ...newUnlocks]
+      }));
+
       // Son cristallin
       const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZUQ0MWKzn77BkHgo/ldjzxnMnBSh+zPLaizsIGGS76+mdTgwPT6Lh8bllHgo5jdTzym8qBSl9y/HajD4HGGe97+OYUg0MWq3n77BkHgo5k9Tyx3IoBSl9y/HajD4HF2e97+OYUg0MWKzn77BkHgo5jdTzym8qBSl9y/HajD4HF2e97+OYUg0MWKzn77BkHgo5jdTzym8qBSl9y/HajD4HF2e97+OYUg0MWKzn77BkHgo5jdTzym8qBSl9y/HajD4HF2e97+OYUg0MWKzn77BkHgo5jdTzym8qBSl9y/HajD4HF2e97+OYUg0MWKzn77BkHgo5jdTzym8qBSl9y/HajD4HF2e97+OYUg0');
       audio.volume = 0.3;
@@ -61,7 +116,7 @@ export default function Coach() {
 
       toast({
         title: "✨ Pensée collectée",
-        description: `${thought.text} ajouté au grimoire`,
+        description: `${thought.text} (+${rarityXP} XP)`,
         duration: 3000,
       });
 
@@ -74,8 +129,22 @@ export default function Coach() {
     }
   };
 
+  const xpToNextLevel = (userLevel * 500) - totalXP;
+  const progressPercent = (totalXP % 500) / 5;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 relative">
+      
+      {/* Level up animation */}
+      {showLevelUp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm pointer-events-none">
+          <div className="max-w-md bg-gradient-primary border-primary/50 shadow-glow animate-scale-in rounded-lg p-8 text-center space-y-4">
+            <div className="text-6xl animate-bounce">🌸</div>
+            <h2 className="text-4xl font-bold">Niveau {userLevel}!</h2>
+            <p className="text-muted-foreground">Nouveau jardin accessible</p>
+          </div>
+        </div>
+      )}
       
       <div className="container mx-auto px-4 py-8">
         {/* Navigation */}
@@ -108,23 +177,58 @@ export default function Coach() {
             >
               <motion.h1
                 className="text-5xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-primary via-purple-500 to-primary"
-                animate={{
-                  backgroundPosition: ['0%', '100%', '0%'],
-                }}
-                transition={{
-                  duration: 8,
-                  repeat: Infinity,
-                  ease: "linear"
-                }}
-                style={{
-                  backgroundSize: '200% 100%'
-                }}
-              >
-                Le Jardin des Pensées
-              </motion.h1>
-              <p className="text-lg text-muted-foreground">
-                Un espace de sagesse éphémère
-              </p>
+              animate={{
+                backgroundPosition: ['0%', '100%', '0%'],
+              }}
+              transition={{
+                duration: 8,
+                repeat: Infinity,
+                ease: "linear"
+              }}
+              style={{
+                backgroundSize: '200% 100%'
+              }}
+            >
+              <div className="flex items-center justify-center gap-3">
+                <span>Le Jardin des Pensées</span>
+                <div className="px-3 py-1 bg-primary/20 rounded-full">
+                  <span className="text-sm font-bold text-primary">Niv.{userLevel}</span>
+                </div>
+              </div>
+            </motion.h1>
+            <p className="text-lg text-muted-foreground">
+              Un espace de sagesse éphémère
+            </p>
+            <div className="max-w-md mx-auto space-y-1 mt-2">
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>{thoughtsCollected} pensées collectées</span>
+                <span className="text-primary">{totalXP} XP ({xpToNextLevel} vers niv.{userLevel + 1})</span>
+              </div>
+              <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-primary transition-all duration-500"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+            </div>
+            
+            {/* Jardins débloqués */}
+            <div className="flex justify-center gap-2 flex-wrap mt-4">
+              {gardens.map(garden => (
+                <div
+                  key={garden.id}
+                  className={`px-3 py-1 rounded-full text-xs ${
+                    unlockedGardens.includes(garden.id)
+                      ? 'bg-primary/20 text-primary border border-primary/40'
+                      : userLevel >= garden.unlockLevel
+                      ? 'bg-accent/20 text-accent border border-accent/40 animate-pulse'
+                      : 'bg-muted/50 text-muted-foreground opacity-50'
+                  }`}
+                >
+                  {garden.name}
+                </div>
+              ))}
+            </div>
             </motion.div>
 
             {/* Scène principale */}

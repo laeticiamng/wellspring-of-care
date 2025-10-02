@@ -4,11 +4,34 @@ import { BarChart3, TrendingUp, Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useImplicitTracking } from "@/hooks/useImplicitTracking";
 import { useCollections } from "@/hooks/useCollections";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 const WeeklyBars = () => {
   const { track } = useImplicitTracking();
   const { collections, unlockItem } = useCollections();
+  const [userLevel, setUserLevel] = useState(1);
+  const [totalXP, setTotalXP] = useState(0);
+  const [totalWeeks, setTotalWeeks] = useState(4);
+  const [showLevelUp, setShowLevelUp] = useState(false);
+  const [unlockedMilestones, setUnlockedMilestones] = useState<string[]>([]);
+
+  const milestones = [
+    { id: 'mile1', name: '🌱 Semaine 1', unlockLevel: 1, xp: 100 },
+    { id: 'mile2', name: '🌿 Mois 1', unlockLevel: 3, xp: 200 },
+    { id: 'mile3', name: '🌳 3 Mois', unlockLevel: 5, xp: 300 },
+    { id: 'mile4', name: '🌲 6 Mois', unlockLevel: 8, xp: 500 },
+  ];
+
+  useEffect(() => {
+    const saved = localStorage.getItem('weekly_bars_progress');
+    if (saved) {
+      const { level, xp, weeks, milestones: unlocked } = JSON.parse(saved);
+      setUserLevel(level || 1);
+      setTotalXP(xp || 0);
+      setTotalWeeks(weeks || 4);
+      setUnlockedMilestones(unlocked || []);
+    }
+  }, []);
 
   const weeks = [
     { week: 'Sem 1', score: 72, sessions: 12, trend: '+5%', softModules: 8 },
@@ -38,17 +61,52 @@ const WeeklyBars = () => {
     }
   }, []);
 
+  const xpToNextLevel = (userLevel * 500) - totalXP;
+  const progressPercent = (totalXP % 500) / 5;
+
   return (
-    <div className="min-h-screen bg-gradient-calm">
+    <div className="min-h-screen bg-gradient-calm relative">
       <Header />
+      
+      {/* Level up animation */}
+      {showLevelUp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm pointer-events-none">
+          <Card className="max-w-md bg-gradient-primary border-primary/50 shadow-glow animate-scale-in">
+            <div className="p-8 text-center space-y-4">
+              <div className="text-6xl animate-bounce">📊</div>
+              <h2 className="text-4xl font-bold">Niveau {userLevel}!</h2>
+              <p className="text-muted-foreground">Nouveau palier atteint</p>
+            </div>
+          </Card>
+        </div>
+      )}
       
       <main className="container mx-auto px-4 py-8 space-y-8">
         <div className="text-center space-y-4">
           <div className="flex items-center justify-center space-x-3">
             <BarChart3 className="h-12 w-12 text-primary animate-pulse-soft" />
-            <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              Barres Hebdomadaires
-            </h1>
+            <div className="space-y-2">
+              <div className="flex items-center justify-center gap-2">
+                <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+                  Barres Hebdomadaires
+                </h1>
+                <div className="px-3 py-1 bg-primary/20 rounded-full">
+                  <span className="text-sm font-bold text-primary">Niv.{userLevel}</span>
+                </div>
+              </div>
+              <div className="max-w-md mx-auto space-y-1">
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>{totalWeeks} semaines</span>
+                  <span className="text-primary">{totalXP} XP ({xpToNextLevel} vers niv.{userLevel + 1})</span>
+                </div>
+                <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-primary transition-all duration-500"
+                    style={{ width: `${progressPercent}%` }}
+                  />
+                </div>
+              </div>
+            </div>
           </div>
           <p className="text-muted-foreground max-w-2xl mx-auto">
             Votre jardin intérieur s'étend. Chaque semaine ajoute une plante de couleur unique à votre galerie émotionnelle.
@@ -56,6 +114,24 @@ const WeeklyBars = () => {
           <p className="text-sm text-primary animate-pulse-soft">
             🌈 Petit à petit, votre jardin devient une galerie vivante 🌈
           </p>
+          
+          {/* Milestones débloqués */}
+          <div className="flex justify-center gap-2 flex-wrap">
+            {milestones.map(milestone => (
+              <div
+                key={milestone.id}
+                className={`px-3 py-1 rounded-full text-xs ${
+                  unlockedMilestones.includes(milestone.id)
+                    ? 'bg-primary/20 text-primary border border-primary/40'
+                    : userLevel >= milestone.unlockLevel
+                    ? 'bg-accent/20 text-accent border border-accent/40 animate-pulse'
+                    : 'bg-muted/50 text-muted-foreground opacity-50'
+                }`}
+              >
+                {milestone.name}
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
