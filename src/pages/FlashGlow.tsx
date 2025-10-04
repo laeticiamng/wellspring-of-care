@@ -5,22 +5,31 @@ import { Sparkles, Zap } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useImplicitTracking } from "@/hooks/useImplicitTracking";
 import { useCollections } from "@/hooks/useCollections";
+import { useModuleProgress } from "@/hooks/useModuleProgress";
 
 const FlashGlow = () => {
   const [isActive, setIsActive] = useState(false);
   const [intensity, setIntensity] = useState("medium");
   const [duration, setDuration] = useState(60);
   const [mantrasCollected, setMantrasCollected] = useState(0);
+  const [showLevelUp, setShowLevelUp] = useState(false);
+  
   const { track } = useImplicitTracking();
-  const { collections, unlockItem } = useCollections();
+  const { collections, unlockItem: unlockCollectionItem } = useCollections();
   const startTime = useRef<number>(0);
   const focusTime = useRef<number>(0);
   const [timeLeft, setTimeLeft] = useState(0);
-  const [userLevel, setUserLevel] = useState(1);
-  const [totalXP, setTotalXP] = useState(0);
-  const [totalFlashes, setTotalFlashes] = useState(0);
-  const [showLevelUp, setShowLevelUp] = useState(false);
-  const [unlockedIntensities, setUnlockedIntensities] = useState<string[]>(['gentle', 'low', 'medium']);
+  
+  const {
+    userLevel,
+    totalXP,
+    unlockedItems: unlockedIntensities,
+    addXP,
+    unlockItem,
+    metadata,
+    setMetadata,
+    loading: progressLoading
+  } = useModuleProgress("flashglow");
 
   const intensityTiers = [
     { id: 'gentle', name: '🌙 Douce', unlockLevel: 1 },
@@ -29,17 +38,6 @@ const FlashGlow = () => {
     { id: 'high', name: '⚡ Haute', unlockLevel: 3 },
     { id: 'ultra', name: '🔥 Ultra', unlockLevel: 6 },
   ];
-
-  useState(() => {
-    const saved = localStorage.getItem('flashglow_progress');
-    if (saved) {
-      const { level, xp, flashes, intensities } = JSON.parse(saved);
-      setUserLevel(level || 1);
-      setTotalXP(xp || 0);
-      setTotalFlashes(flashes || 0);
-      setUnlockedIntensities(intensities || ['gentle', 'low', 'medium']);
-    }
-  });
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -89,7 +87,7 @@ const FlashGlow = () => {
     handleStart();
   };
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
     track({
       instrument: "SUDS",
       item_id: "focus",
@@ -103,41 +101,25 @@ const FlashGlow = () => {
     const intensityBonus = intensity === 'ultra' ? 30 : intensity === 'high' ? 20 : intensity === 'medium' ? 10 : 5;
     const totalXPGain = baseXP + durationBonus + intensityBonus;
 
-    const newXP = totalXP + totalXPGain;
-    const newLevel = Math.floor(newXP / 500) + 1;
-    const newFlashCount = totalFlashes + 1;
-    const leveledUp = newLevel > userLevel;
+    // Add XP
+    await addXP(totalXPGain);
+    
+    // Update flash count in metadata
+    const currentFlashes = (metadata.totalFlashes || 0) + 1;
+    await setMetadata('totalFlashes', currentFlashes);
 
     // Check for intensity unlocks
-    const newUnlocks = intensityTiers.filter(it => 
-      it.unlockLevel <= newLevel && !unlockedIntensities.includes(it.id)
-    ).map(it => it.id);
-
-    if (leveledUp) {
-      setUserLevel(newLevel);
-      setShowLevelUp(true);
-      setTimeout(() => setShowLevelUp(false), 3000);
+    for (const tier of intensityTiers) {
+      if (tier.unlockLevel <= userLevel && !unlockedIntensities.includes(tier.id)) {
+        await unlockItem(tier.id);
+      }
     }
-
-    if (newUnlocks.length > 0) {
-      setUnlockedIntensities([...unlockedIntensities, ...newUnlocks]);
-    }
-
-    setTotalXP(newXP);
-    setTotalFlashes(newFlashCount);
-
-    localStorage.setItem('flashglow_progress', JSON.stringify({
-      level: newLevel,
-      xp: newXP,
-      flashes: newFlashCount,
-      intensities: [...unlockedIntensities, ...newUnlocks]
-    }));
 
     // Unlock mantras after successful sessions
     setMantrasCollected(prev => {
       const newCount = prev + 1;
       if (newCount >= 3 && collections.mantras?.items[0]) {
-        unlockItem('mantras', collections.mantras.items[0].id);
+        unlockCollectionItem('mantras', collections.mantras.items[0].id);
       }
       return newCount;
     });
@@ -145,8 +127,9 @@ const FlashGlow = () => {
     setIsActive(false);
   };
 
+  const totalFlashes = metadata.totalFlashes || 0;
   const xpToNextLevel = (userLevel * 500) - totalXP;
-  const progressPercent = (totalXP % 500) / 5;
+  const progressPercent = ((totalXP % 500) / 500) * 100;
 
   return (
     <div className="min-h-screen bg-gradient-calm relative">

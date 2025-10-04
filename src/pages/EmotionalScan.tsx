@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useEmotionalScan } from "@/hooks/useEmotionalScan";
+import { useModuleProgress } from "@/hooks/useModuleProgress";
 import { Lock, Trophy, Sparkles as SparklesIcon, Scan } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { MaskGallery } from "@/components/MaskGallery";
@@ -27,21 +28,16 @@ const EmotionalScan = () => {
   const [selectedGesture, setSelectedGesture] = useState<string>('');
   const [gestureStartTime, setGestureStartTime] = useState<number>(0);
   const [collectedMasks, setCollectedMasks] = useState<any[]>([]);
-  const [userLevel, setUserLevel] = useState(1);
-  const [totalXP, setTotalXP] = useState(0);
   const [showLevelUp, setShowLevelUp] = useState(false);
-  const [fusionCount, setFusionCount] = useState(0);
-
-  useEffect(() => {
-    const saved = localStorage.getItem('emotional_scan_progress');
-    if (saved) {
-      const { level, xp, masks, fusions } = JSON.parse(saved);
-      setUserLevel(level || 1);
-      setTotalXP(xp || 0);
-      setCollectedMasks(masks || []);
-      setFusionCount(fusions || 0);
-    }
-  }, []);
+  
+  const {
+    userLevel,
+    totalXP,
+    addXP,
+    metadata,
+    setMetadata,
+    loading: progressLoading
+  } = useModuleProgress("emotional-scan");
 
   const handleStart = () => {
     startScan();
@@ -79,37 +75,26 @@ const EmotionalScan = () => {
     setPhase('badge');
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (result) {
       const maskRarity = result.maskGenerated.rarity || 'common';
       const tier = maskTiers.find(t => t.rarity === maskRarity);
       const xpGain = tier?.xpReward || 50;
       
-      const newXP = totalXP + xpGain;
-      const newLevel = Math.floor(newXP / 500) + 1;
-      const leveledUp = newLevel > userLevel;
-
-      setTotalXP(newXP);
-      if (leveledUp) {
-        setUserLevel(newLevel);
-        setShowLevelUp(true);
-        setTimeout(() => setShowLevelUp(false), 3000);
-      }
+      // Add XP
+      await addXP(xpGain, result.maskGenerated.id || Date.now().toString());
 
       const newMasks = [...collectedMasks, { ...result.maskGenerated, timestamp: Date.now() }];
       setCollectedMasks(newMasks);
+      
+      // Update masks and fusions in metadata
+      await setMetadata('collectedMasks', newMasks);
 
       // Check for fusion opportunity (every 3 masks)
       if (newMasks.length % 3 === 0) {
-        setFusionCount(fusionCount + 1);
+        const currentFusions = (metadata.fusionCount || 0) + 1;
+        await setMetadata('fusionCount', currentFusions);
       }
-
-      localStorage.setItem('emotional_scan_progress', JSON.stringify({
-        level: newLevel,
-        xp: newXP,
-        masks: newMasks,
-        fusions: fusionCount
-      }));
     }
     setPhase('collection');
   };
@@ -119,8 +104,9 @@ const EmotionalScan = () => {
     setPhase('welcome');
   };
 
+  const fusionCount = metadata.fusionCount || 0;
   const xpToNextLevel = (userLevel * 500) - totalXP;
-  const progressPercent = (totalXP % 500) / 5;
+  const progressPercent = ((totalXP % 500) / 500) * 100;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background/95 to-background/90">

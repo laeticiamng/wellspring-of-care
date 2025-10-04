@@ -2,9 +2,10 @@ import Header from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Camera, Smile, Sparkles, Award } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useImplicitTracking } from "@/hooks/useImplicitTracking";
 import { useCollections } from "@/hooks/useCollections";
+import { useModuleProgress } from "@/hooks/useModuleProgress";
 import { MirrorRoom } from "@/components/MirrorRoom";
 import { EmotionFilter } from "@/components/EmotionFilter";
 import { FilterGallery } from "@/components/FilterGallery";
@@ -32,22 +33,21 @@ const ARFilters = () => {
   const [showBadge, setShowBadge] = useState(false);
   const [sessionBadge, setSessionBadge] = useState<any>(null);
   const [showGallery, setShowGallery] = useState(false);
-  const { track } = useImplicitTracking();
-  const { collections, unlockItem } = useCollections();
-  const [userLevel, setUserLevel] = useState(1);
-  const [totalXP, setTotalXP] = useState(0);
-  const [totalSessions, setTotalSessions] = useState(0);
   const [showLevelUp, setShowLevelUp] = useState(false);
-
-  useState(() => {
-    const saved = localStorage.getItem('ar_filters_progress');
-    if (saved) {
-      const { level, xp, sessions } = JSON.parse(saved);
-      setUserLevel(level || 1);
-      setTotalXP(xp || 0);
-      setTotalSessions(sessions || 0);
-    }
-  });
+  
+  const { track } = useImplicitTracking();
+  const { collections, unlockItem: unlockCollectionItem } = useCollections();
+  
+  const {
+    userLevel,
+    totalXP,
+    unlockedItems,
+    addXP,
+    unlockItem,
+    metadata,
+    setMetadata,
+    loading: progressLoading
+  } = useModuleProgress("ar-filters");
 
   const [filters, setFilters] = useState<Filter[]>([
     { id: 'f1', emoji: '✨', name: 'Étoile Dorée', rarity: 'common', color: 'rgba(251, 191, 36, 0.6)', uses: 0, maxUses: 5, unlocked: true, description: 'Un classique lumineux' },
@@ -121,7 +121,7 @@ const ARFilters = () => {
   };
 
   // Complete filter session
-  const completeFilterSession = () => {
+  const completeFilterSession = async () => {
     if (!activeFilter) return;
 
     // Calculate XP
@@ -131,25 +131,12 @@ const ARFilters = () => {
     const rarityBonus = activeFilter.rarity === 'legendary' ? 100 : activeFilter.rarity === 'epic' ? 60 : activeFilter.rarity === 'rare' ? 30 : 0;
     const totalXPGain = baseXP + interactionBonus + affectBonus + rarityBonus;
 
-    const newXP = totalXP + totalXPGain;
-    const newLevel = Math.floor(newXP / 500) + 1;
-    const newSessionCount = totalSessions + 1;
-    const leveledUp = newLevel > userLevel;
-
-    if (leveledUp) {
-      setUserLevel(newLevel);
-      setShowLevelUp(true);
-      setTimeout(() => setShowLevelUp(false), 3000);
-    }
-
-    setTotalXP(newXP);
-    setTotalSessions(newSessionCount);
-
-    localStorage.setItem('ar_filters_progress', JSON.stringify({
-      level: newLevel,
-      xp: newXP,
-      sessions: newSessionCount
-    }));
+    // Add XP and unlock filter
+    await addXP(totalXPGain, activeFilter.id);
+    
+    // Update sessions in metadata
+    const currentSessions = (metadata.totalSessions || 0) + 1;
+    await setMetadata('totalSessions', currentSessions);
 
     // Update filter uses
     setFilters(prev => prev.map(f => 
@@ -236,8 +223,9 @@ const ARFilters = () => {
     setSessionActive(false);
     setActiveFilter(null);
   };
+  const totalSessions = metadata.totalSessions || 0;
   const xpToNextLevel = (userLevel * 500) - totalXP;
-  const progressPercent = (totalXP % 500) / 5;
+  const progressPercent = ((totalXP % 500) / 500) * 100;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-950 to-black relative">

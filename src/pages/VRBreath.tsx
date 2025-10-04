@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { useImplicitTracking } from "@/hooks/useImplicitTracking";
 import { useCollections } from "@/hooks/useCollections";
 import { useMicrophone } from "@/hooks/useMicrophone";
+import { useModuleProgress } from "@/hooks/useModuleProgress";
 import BreathingBubble from "@/components/BreathingBubble";
 import FragmentGallery from "@/components/FragmentGallery";
 import ForestScene from "@/components/ForestScene";
@@ -30,33 +31,29 @@ const VRBreath = () => {
   const [badgeText, setBadgeText] = useState("");
   const [currentRarity, setCurrentRarity] = useState<'common' | 'rare' | 'epic' | 'legendary'>('common');
   const [environment, setEnvironment] = useState<'temple' | 'forest' | 'cosmos'>('temple');
+  const [showLevelUp, setShowLevelUp] = useState(false);
   
   const { track } = useImplicitTracking();
-  const { collections, unlockItem } = useCollections();
+  const { collections, unlockItem: unlockCollectionItem } = useCollections();
   const { isListening, breathLevel, startListening, stopListening } = useMicrophone();
   const { toast } = useToast();
-  const [userLevel, setUserLevel] = useState(1);
-  const [totalXP, setTotalXP] = useState(0);
-  const [totalFrescos, setTotalFrescos] = useState(0);
-  const [showLevelUp, setShowLevelUp] = useState(false);
-  const [unlockedEnvironments, setUnlockedEnvironments] = useState<string[]>(['temple']);
+  
+  const {
+    userLevel,
+    totalXP,
+    unlockedItems: unlockedEnvironments,
+    addXP,
+    unlockItem,
+    metadata,
+    setMetadata,
+    loading: progressLoading
+  } = useModuleProgress("vr-breath");
 
   const environments = [
     { id: 'temple', name: '🏛️ Temple Zen', unlockLevel: 1 },
     { id: 'forest', name: '🌲 Forêt Mystique', unlockLevel: 3 },
     { id: 'cosmos', name: '🌌 Cosmos Infini', unlockLevel: 5 },
   ];
-
-  useState(() => {
-    const saved = localStorage.getItem('vr_breath_progress');
-    if (saved) {
-      const { level, xp, frescos, envs } = JSON.parse(saved);
-      setUserLevel(level || 1);
-      setTotalXP(xp || 0);
-      setTotalFrescos(frescos || 0);
-      setUnlockedEnvironments(envs || ['temple']);
-    }
-  });
 
   // Calculer rareté basée sur les cycles et chance
   const calculateRarity = (cycles: number): 'common' | 'rare' | 'epic' | 'legendary' => {
@@ -96,39 +93,23 @@ const VRBreath = () => {
     const envBonus = environment === 'cosmos' ? 30 : environment === 'forest' ? 20 : 10;
     const totalXPGain = baseXP + cycleBonus + rarityBonus + envBonus;
 
-    const newXP = totalXP + totalXPGain;
-    const newLevel = Math.floor(newXP / 500) + 1;
-    const newFrescoCount = totalFrescos + 1;
-    const leveledUp = newLevel > userLevel;
+    // Add XP
+    await addXP(totalXPGain);
+    
+    // Update fresco count in metadata
+    const currentFrescos = (metadata.totalFrescos || 0) + 1;
+    await setMetadata('totalFrescos', currentFrescos);
 
     // Check for environment unlocks
-    const newUnlocks = environments.filter(env => 
-      env.unlockLevel <= newLevel && !unlockedEnvironments.includes(env.id)
-    ).map(env => env.id);
-
-    if (leveledUp) {
-      setUserLevel(newLevel);
-      setShowLevelUp(true);
-      setTimeout(() => setShowLevelUp(false), 3000);
+    for (const env of environments) {
+      if (env.unlockLevel <= userLevel && !unlockedEnvironments.includes(env.id)) {
+        await unlockItem(env.id);
+        toast({
+          title: "🌌 Nouvel environnement débloqué!",
+          description: env.name,
+        });
+      }
     }
-
-    if (newUnlocks.length > 0) {
-      setUnlockedEnvironments([...unlockedEnvironments, ...newUnlocks]);
-      toast({
-        title: "🌌 Nouvel environnement débloqué!",
-        description: environments.find(e => e.id === newUnlocks[0])?.name,
-      });
-    }
-
-    setTotalXP(newXP);
-    setTotalFrescos(newFrescoCount);
-
-    localStorage.setItem('vr_breath_progress', JSON.stringify({
-      level: newLevel,
-      xp: newXP,
-      frescos: newFrescoCount,
-      envs: [...unlockedEnvironments, ...newUnlocks]
-    }));
     
     // Créer fragment
     const newFragment: Fragment = {
@@ -172,7 +153,7 @@ const VRBreath = () => {
       
       // Unlock cocons
       if (collections.cocons?.items[1]) {
-        unlockItem('cocons', collections.cocons.items[1].id);
+        unlockCollectionItem('cocons', collections.cocons.items[1].id);
       }
     }
     
@@ -199,8 +180,9 @@ const VRBreath = () => {
       value: "reduce_particles"
     });
   };
+  const totalFrescos = metadata.totalFrescos || 0;
   const xpToNextLevel = (userLevel * 500) - totalXP;
-  const progressPercent = (totalXP % 500) / 5;
+  const progressPercent = ((totalXP % 500) / 500) * 100;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-primary/5 to-accent/10 relative">
