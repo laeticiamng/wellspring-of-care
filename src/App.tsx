@@ -7,6 +7,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { CookieConsent } from "./components/CookieConsent";
+import { MigrationPrompt } from "./components/MigrationPrompt";
 import { RoleGuard } from "./components/RoleGuard";
 import { RoleBasedRoute } from "./components/RoleBasedRoute";
 import Index from "./pages/Index";
@@ -66,6 +67,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <CookieConsent />
+          <MigrationPrompt />
           <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
