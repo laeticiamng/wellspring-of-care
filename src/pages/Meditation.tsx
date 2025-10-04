@@ -283,11 +283,11 @@ const Meditation = () => {
               </div>
               <div>
                 <h2 className="text-2xl font-bold">Maître de Méditation</h2>
-                <p className="text-sm text-muted-foreground">Niveau {userLevel}</p>
+                <p className="text-sm text-muted-foreground" data-testid="user-level">Niveau {userLevel}</p>
               </div>
             </div>
             <div className="text-right">
-              <p className="text-3xl font-bold text-primary">{meditationTime}</p>
+              <p className="text-3xl font-bold text-primary" data-testid="user-xp">{meditationTime}</p>
               <p className="text-xs text-muted-foreground">minutes de méditation</p>
             </div>
           </div>

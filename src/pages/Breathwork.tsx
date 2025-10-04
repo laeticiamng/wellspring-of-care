@@ -246,9 +246,9 @@ const Breathwork = () => {
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-primary" />
-              <span className="font-bold">Maître du Souffle - Niveau {userLevel}</span>
+              <span className="font-bold" data-testid="user-level">Maître du Souffle - Niveau {userLevel}</span>
             </div>
-            <span className="text-sm text-muted-foreground">{totalXP} XP</span>
+            <span className="text-sm text-muted-foreground" data-testid="user-xp">{totalXP} XP</span>
           </div>
           <div className="w-full h-2 bg-secondary/20 rounded-full overflow-hidden">
             <motion.div 

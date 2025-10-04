@@ -311,7 +311,7 @@ const MoodMixer = () => {
               Mix ton Mood 🎛️✨
             </h1>
             <div className="px-3 py-1 bg-primary/20 rounded-full">
-              <span className="text-sm font-bold text-primary">Niv.{userLevel}</span>
+              <span className="text-sm font-bold text-primary" data-testid="user-level">Niv.{userLevel}</span>
             </div>
           </div>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
@@ -320,7 +320,7 @@ const MoodMixer = () => {
           <div className="max-w-md mx-auto space-y-1">
             <div className="flex justify-between text-xs">
               <span className="text-muted-foreground">Combo: x{combo}</span>
-              <span className="text-primary">{totalXP} XP ({xpToNextLevel} vers niv.{userLevel + 1})</span>
+              <span className="text-primary" data-testid="user-xp">{totalXP} XP ({xpToNextLevel} vers niv.{userLevel + 1})</span>
             </div>
             <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
               <div 
