@@ -56,6 +56,7 @@ import SocialHub from "./pages/SocialHub";
 import DataExport from "./pages/DataExport";
 import SecuritySettings from "./pages/SecuritySettings";
 import AdminDashboard from "./pages/AdminDashboard";
+import AdminProgressDashboard from "./pages/AdminProgressDashboard";
 
 const queryClient = new QueryClient();
 
@@ -133,6 +134,7 @@ const App = () => (
             <Route path="/export" element={<ProtectedRoute><DataExport /></ProtectedRoute>} />
             <Route path="/security" element={<ProtectedRoute><SecuritySettings /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><RoleBasedRoute allowedRoles={['admin']}><AdminDashboard /></RoleBasedRoute></ProtectedRoute>} />
+            <Route path="/admin/progress" element={<ProtectedRoute><RoleBasedRoute allowedRoles={['admin']}><AdminProgressDashboard /></RoleBasedRoute></ProtectedRoute>} />
             <Route path="/weekly-bars" element={<ProtectedRoute><WeeklyBars /></ProtectedRoute>} />
             <Route path="/ambition-arcade" element={<ProtectedRoute><AmbitionArcade /></ProtectedRoute>} />
           <Route path="/app/rh" element={

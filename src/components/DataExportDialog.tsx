@@ -36,6 +36,7 @@ export function DataExportDialog({ open, onOpenChange }: DataExportDialogProps) 
         { data: chatConversations },
         { data: badges },
         { data: userSettings },
+        { data: moduleProgress },
       ] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', user.id).single(),
         supabase.from('mood_entries').select('*').eq('user_id', user.id),
@@ -44,6 +45,7 @@ export function DataExportDialog({ open, onOpenChange }: DataExportDialogProps) 
         supabase.from('chat_conversations').select('*').eq('user_id', user.id),
         supabase.from('badges').select('*').eq('user_id', user.id),
         supabase.from('user_settings').select('*').eq('user_id', user.id).single(),
+        supabase.from('module_progress').select('*').eq('user_id', user.id),
       ]);
 
       const exportData = {
@@ -60,8 +62,17 @@ export function DataExportDialog({ open, onOpenChange }: DataExportDialogProps) 
         chatConversations: chatConversations || [],
         badges: badges || [],
         settings: userSettings,
+        moduleProgress: moduleProgress || [],
+        progressionStats: {
+          totalXP: moduleProgress?.reduce((sum, m) => sum + (m.total_xp || 0), 0) || 0,
+          totalModules: moduleProgress?.length || 0,
+          averageLevel: moduleProgress && moduleProgress.length > 0
+            ? Math.round((moduleProgress.reduce((sum, m) => sum + (m.user_level || 0), 0) / moduleProgress.length) * 10) / 10
+            : 0,
+          unlockedItemsCount: moduleProgress?.reduce((sum, m) => sum + (Array.isArray(m.unlocked_items) ? m.unlocked_items.length : 0), 0) || 0,
+        },
         metadata: {
-          version: '1.0',
+          version: '2.0',
           format: 'JSON',
           dataTypes: [
             'profile',
@@ -71,6 +82,7 @@ export function DataExportDialog({ open, onOpenChange }: DataExportDialogProps) 
             'chat_conversations',
             'badges',
             'settings',
+            'module_progress',
           ],
         },
       };
@@ -115,7 +127,7 @@ export function DataExportDialog({ open, onOpenChange }: DataExportDialogProps) 
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
             Le fichier contiendra toutes vos données : profil, humeurs, évaluations, sessions, 
-            conversations IA, badges et paramètres.
+            conversations IA, badges, paramètres et progression modules (XP, niveaux, items débloqués).
           </AlertDescription>
         </Alert>
 

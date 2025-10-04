@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -18,30 +19,32 @@ interface UseModuleProgressReturn extends ModuleProgress {
 }
 
 const XP_PER_LEVEL = 500;
+const SAVE_DEBOUNCE_MS = 1000; // Debounce saves by 1 second
 
 export function useModuleProgress(moduleName: string): UseModuleProgressReturn {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  
+  // Local state for optimistic updates
   const [userLevel, setUserLevel] = useState(1);
   const [totalXP, setTotalXP] = useState(0);
   const [unlockedItems, setUnlockedItems] = useState<string[]>([]);
   const [metadata, setMetadataState] = useState<Record<string, any>>({});
 
-  // Load progress from Supabase
-  useEffect(() => {
-    if (!user) {
-      setLoading(false);
-      return;
-    }
+  // Debounce save timer
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingUpdatesRef = useRef<Partial<ModuleProgress> | null>(null);
 
-    loadProgress();
-  }, [user, moduleName]);
+  // Query key
+  const queryKey = ['module-progress', user?.id, moduleName];
 
-  const loadProgress = async () => {
-    if (!user) return;
+  // Fetch progress from Supabase with React Query cache
+  const { data: progressData, isLoading } = useQuery({
+    queryKey,
+    queryFn: async () => {
+      if (!user) return null;
 
-    try {
       const { data, error } = await supabase
         .from('module_progress')
         .select('*')
@@ -53,31 +56,18 @@ export function useModuleProgress(moduleName: string): UseModuleProgressReturn {
         throw error;
       }
 
-      if (data) {
-        setUserLevel(data.user_level);
-        setTotalXP(data.total_xp);
-        setUnlockedItems(Array.isArray(data.unlocked_items) ? data.unlocked_items as string[] : []);
-        setMetadataState(typeof data.metadata === 'object' && data.metadata !== null ? data.metadata as Record<string, any> : {});
-      } else {
-        // Create initial progress
-        await createInitialProgress();
-      }
-    } catch (error) {
-      console.error('Error loading module progress:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de charger votre progression",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+      return data;
+    },
+    enabled: !!user,
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    refetchOnWindowFocus: false,
+  });
 
-  const createInitialProgress = async () => {
-    if (!user) return;
+  // Create initial progress mutation
+  const createProgressMutation = useMutation({
+    mutationFn: async () => {
+      if (!user) return;
 
-    try {
       const { error } = await supabase
         .from('module_progress')
         .insert({
@@ -90,15 +80,17 @@ export function useModuleProgress(moduleName: string): UseModuleProgressReturn {
         });
 
       if (error) throw error;
-    } catch (error) {
-      console.error('Error creating initial progress:', error);
-    }
-  };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey });
+    },
+  });
 
-  const saveProgress = async (updates: Partial<ModuleProgress>) => {
-    if (!user) return;
+  // Save progress mutation with optimistic updates
+  const saveProgressMutation = useMutation({
+    mutationFn: async (updates: Partial<ModuleProgress>) => {
+      if (!user) return;
 
-    try {
       const { error } = await supabase
         .from('module_progress')
         .upsert({
@@ -111,21 +103,74 @@ export function useModuleProgress(moduleName: string): UseModuleProgressReturn {
         });
 
       if (error) throw error;
-    } catch (error) {
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey });
+    },
+    onError: (error) => {
       console.error('Error saving progress:', error);
       toast({
         title: "Erreur",
         description: "Impossible de sauvegarder votre progression",
         variant: "destructive",
       });
+    },
+  });
+
+  // Initialize state from query data
+  useEffect(() => {
+    if (progressData) {
+      setUserLevel(progressData.user_level);
+      setTotalXP(progressData.total_xp);
+      setUnlockedItems(Array.isArray(progressData.unlocked_items) ? progressData.unlocked_items as string[] : []);
+      setMetadataState(typeof progressData.metadata === 'object' && progressData.metadata !== null ? progressData.metadata as Record<string, any> : {});
+    } else if (user && !isLoading && progressData === null) {
+      // Create initial progress if none exists
+      createProgressMutation.mutate();
     }
-  };
+  }, [progressData, user, isLoading]);
+
+  // Debounced save function
+  const debouncedSave = useCallback((updates: Partial<ModuleProgress>) => {
+    // Merge with pending updates
+    pendingUpdatesRef.current = {
+      ...pendingUpdatesRef.current,
+      ...updates,
+    };
+
+    // Clear existing timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    // Set new timeout
+    saveTimeoutRef.current = setTimeout(() => {
+      if (pendingUpdatesRef.current) {
+        saveProgressMutation.mutate(pendingUpdatesRef.current);
+        pendingUpdatesRef.current = null;
+      }
+    }, SAVE_DEBOUNCE_MS);
+  }, [saveProgressMutation]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+        // Save immediately on unmount if there are pending updates
+        if (pendingUpdatesRef.current) {
+          saveProgressMutation.mutate(pendingUpdatesRef.current);
+        }
+      }
+    };
+  }, []);
 
   const addXP = async (amount: number, itemId?: string) => {
     const newTotalXP = totalXP + amount;
     const newLevel = Math.floor(newTotalXP / XP_PER_LEVEL) + 1;
     const leveledUp = newLevel > userLevel;
 
+    // Optimistic update
     setTotalXP(newTotalXP);
     setUserLevel(newLevel);
 
@@ -136,7 +181,8 @@ export function useModuleProgress(moduleName: string): UseModuleProgressReturn {
       setUnlockedItems(newUnlocked);
     }
 
-    await saveProgress({
+    // Debounced save
+    debouncedSave({
       totalXP: newTotalXP,
       userLevel: newLevel,
       unlockedItems: newUnlocked,
@@ -155,17 +201,21 @@ export function useModuleProgress(moduleName: string): UseModuleProgressReturn {
 
     const newUnlocked = [...unlockedItems, itemId];
     setUnlockedItems(newUnlocked);
-    await saveProgress({ unlockedItems: newUnlocked });
+    
+    // Debounced save
+    debouncedSave({ unlockedItems: newUnlocked });
   };
 
   const setMetadata = async (key: string, value: any) => {
     const newMetadata = { ...metadata, [key]: value };
     setMetadataState(newMetadata);
-    await saveProgress({ metadata: newMetadata });
+    
+    // Debounced save
+    debouncedSave({ metadata: newMetadata });
   };
 
   return {
-    loading,
+    loading: isLoading,
     userLevel,
     totalXP,
     unlockedItems,
