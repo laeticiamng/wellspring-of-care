@@ -34,7 +34,7 @@ export const GamificationPanel = () => {
           Progression & Récompenses
         </CardTitle>
         <CardDescription>
-          Niveau {stats.level} • {stats.xp}/{stats.nextLevelXP} XP
+          Niveau <span data-testid="user-level">{stats.level}</span> • <span data-testid="user-xp">{stats.xp}</span>/{stats.nextLevelXP} XP
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
