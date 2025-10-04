@@ -15,11 +15,12 @@ import {
   BookOpen,
   Star
 } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { useMoodEntries } from "@/hooks/useMoodEntries";
 import { useToast } from "@/hooks/use-toast";
 import { useImplicitTracking } from "@/hooks/useImplicitTracking";
 import { useCollections } from "@/hooks/useCollections";
+import { useModuleProgress } from "@/hooks/useModuleProgress";
 
 const Journal = () => {
   const [selectedMood, setSelectedMood] = useState<string>("");
@@ -28,14 +29,19 @@ const Journal = () => {
   const { entries, loading, saveEntry } = useMoodEntries();
   const { toast } = useToast();
   const { track } = useImplicitTracking();
-  const { collections, unlockItem } = useCollections();
+  const { collections, unlockItem: unlockCollectionItem } = useCollections();
   const [audioRecording, setAudioRecording] = useState(false);
   const audioStartTime = useRef<number>(0);
-  const [userLevel, setUserLevel] = useState(1);
-  const [totalXP, setTotalXP] = useState(0);
-  const [totalEntries, setTotalEntries] = useState(0);
   const [showLevelUp, setShowLevelUp] = useState(false);
-  const [unlockedChapters, setUnlockedChapters] = useState<string[]>([]);
+  
+  const {
+    userLevel,
+    totalXP,
+    unlockedItems: unlockedChapters,
+    addXP,
+    unlockItem,
+    loading: progressLoading
+  } = useModuleProgress("journal");
   
   const chapters = [
     { id: 'ch1', name: '📖 Chapitre 1: L\'Éveil', unlockLevel: 1, xp: 50 },
@@ -53,17 +59,6 @@ const Journal = () => {
     { emoji: "😡", name: "Colère", color: "bg-destructive", value: "angry", xp: 70 },
     { emoji: "😴", name: "Fatigué", color: "bg-muted-foreground/20", value: "tired", xp: 50 },
   ];
-
-  useEffect(() => {
-    const saved = localStorage.getItem('journal_progress');
-    if (saved) {
-      const { level, xp, entries: count, chapters: unlocked } = JSON.parse(saved);
-      setUserLevel(level || 1);
-      setTotalXP(xp || 0);
-      setTotalEntries(count || 0);
-      setUnlockedChapters(unlocked || []);
-    }
-  }, []);
 
   const handleSave = async () => {
     if (!selectedMood || !journalText) {
@@ -84,18 +79,26 @@ const Journal = () => {
     const tagsBonus = selectedTags.length * 5;
     const totalXPGain = baseXP + lengthBonus + tagsBonus;
     
-    const newXP = totalXP + totalXPGain;
-    const newLevel = Math.floor(newXP / 500) + 1;
-    const newEntryCount = totalEntries + 1;
-    const leveledUp = newLevel > userLevel;
+    const oldLevel = userLevel;
+
+    // Add XP and check for level up
+    await addXP(totalXPGain);
+    
+    const newLevel = Math.floor((totalXP + totalXPGain) / 500) + 1;
+    const leveledUp = newLevel > oldLevel;
 
     // Check for chapter unlocks
-    const newUnlocks = chapters.filter(ch => 
-      ch.unlockLevel <= newLevel && !unlockedChapters.includes(ch.id)
-    ).map(ch => ch.id);
+    for (const chapter of chapters) {
+      if (chapter.unlockLevel <= newLevel && !unlockedChapters.includes(chapter.id)) {
+        await unlockItem(chapter.id);
+        toast({
+          title: "📖 Nouveau chapitre débloqué!",
+          description: chapter.name,
+        });
+      }
+    }
 
     if (leveledUp) {
-      setUserLevel(newLevel);
       setShowLevelUp(true);
       setTimeout(() => setShowLevelUp(false), 3000);
       
@@ -103,24 +106,6 @@ const Journal = () => {
         navigator.vibrate([200, 100, 200]);
       }
     }
-
-    if (newUnlocks.length > 0) {
-      setUnlockedChapters([...unlockedChapters, ...newUnlocks]);
-      toast({
-        title: "📖 Nouveau chapitre débloqué!",
-        description: chapters.find(ch => ch.id === newUnlocks[0])?.name,
-      });
-    }
-
-    setTotalXP(newXP);
-    setTotalEntries(newEntryCount);
-
-    localStorage.setItem('journal_progress', JSON.stringify({
-      level: newLevel,
-      xp: newXP,
-      entries: newEntryCount,
-      chapters: [...unlockedChapters, ...newUnlocks]
-    }));
     
     // Track journal completion with PANAS proxy
     const hasPositiveMood = ['happy', 'calm'].includes(selectedMood);
@@ -135,7 +120,7 @@ const Journal = () => {
     // Unlock pages collection
     const entriesCount = entries.length + 1;
     if (entriesCount >= 3 && collections.pages?.items[0]) {
-      unlockItem('pages', collections.pages.items[0].id);
+      unlockCollectionItem('pages', collections.pages.items[0].id);
     }
 
     toast({
@@ -219,7 +204,7 @@ const Journal = () => {
   ];
 
   const xpToNextLevel = (userLevel * 500) - totalXP;
-  const progressPercent = (totalXP % 500) / 5;
+  const progressPercent = ((totalXP % 500) / 500) * 100;
 
   return (
     <div className="min-h-screen bg-gradient-calm relative">
@@ -254,7 +239,7 @@ const Journal = () => {
               </div>
               <div className="max-w-md mx-auto space-y-1">
                 <div className="flex justify-between text-xs">
-                  <span className="text-muted-foreground">{totalEntries} entrées</span>
+                  <span className="text-muted-foreground">{entries.length} entrées</span>
                   <span className="text-primary">{totalXP} XP ({xpToNextLevel} vers niv.{userLevel + 1})</span>
                 </div>
                 <div className="w-full h-2 bg-muted rounded-full overflow-hidden">

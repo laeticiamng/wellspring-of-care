@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useModuleProgress } from "@/hooks/useModuleProgress";
 
 interface MeditationSession {
   id: number;
@@ -46,12 +47,20 @@ const Meditation = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentSession, setCurrentSession] = useState<MeditationSession | null>(null);
   const [progress, setProgress] = useState(0);
-  const [userLevel, setUserLevel] = useState(0);
-  const [totalXP, setTotalXP] = useState(0);
-  const [completedSessions, setCompletedSessions] = useState<number[]>([]);
   const [showJourney, setShowJourney] = useState(false);
   const [meditationTime, setMeditationTime] = useState(0);
   const { toast } = useToast();
+  
+  const {
+    userLevel,
+    totalXP,
+    unlockedItems: completedSessions,
+    addXP,
+    unlockItem,
+    metadata,
+    setMetadata,
+    loading: progressLoading
+  } = useModuleProgress("meditation");
 
   const sessions: MeditationSession[] = [
     {
@@ -200,18 +209,12 @@ const Meditation = () => {
     }
   ];
 
-  // Load progress
+  // Load meditation time from metadata
   useEffect(() => {
-    const savedXP = localStorage.getItem('meditation_xp');
-    const savedLevel = localStorage.getItem('meditation_level');
-    const savedCompleted = localStorage.getItem('meditation_completed');
-    const savedTime = localStorage.getItem('meditation_total_time');
-    
-    if (savedXP) setTotalXP(parseInt(savedXP));
-    if (savedLevel) setUserLevel(parseInt(savedLevel));
-    if (savedCompleted) setCompletedSessions(JSON.parse(savedCompleted));
-    if (savedTime) setMeditationTime(parseInt(savedTime));
-  }, []);
+    if (metadata.meditationTime) {
+      setMeditationTime(metadata.meditationTime);
+    }
+  }, [metadata]);
 
   // Session timer
   useEffect(() => {
@@ -238,40 +241,23 @@ const Meditation = () => {
     setShowJourney(true);
   };
 
-  const completeSession = () => {
+  const completeSession = async () => {
     if (!currentSession) return;
     
     setIsPlaying(false);
     const xpGained = currentSession.xp;
-    const newTotalXP = totalXP + xpGained;
     const newTime = meditationTime + currentSession.durationMinutes;
     
-    setTotalXP(newTotalXP);
+    // Update time and save to metadata
     setMeditationTime(newTime);
-    localStorage.setItem('meditation_xp', newTotalXP.toString());
-    localStorage.setItem('meditation_total_time', newTime.toString());
+    await setMetadata('meditationTime', newTime);
     
-    if (!completedSessions.includes(currentSession.id)) {
-      const newCompleted = [...completedSessions, currentSession.id];
-      setCompletedSessions(newCompleted);
-      localStorage.setItem('meditation_completed', JSON.stringify(newCompleted));
-    }
-    
-    // Level up
-    const newLevel = Math.floor(newTotalXP / 800);
-    if (newLevel > userLevel) {
-      setUserLevel(newLevel);
-      localStorage.setItem('meditation_level', newLevel.toString());
-      
-      toast({
-        title: "🎊 Illumination !",
-        description: `Niveau ${newLevel} - De nouvelles méditations s'ouvrent à toi`,
-      });
-    }
+    // Add XP and unlock session
+    await addXP(xpGained, currentSession.id.toString());
     
     toast({
       title: "✨ Méditation complétée",
-      description: `+${xpGained} XP • ${currentSession.durationMinutes} min de paix`,
+      description: `+${xpGained} XP • ${currentSession.durationMinutes} min de paix • Niveau ${userLevel}`,
     });
     
     setShowJourney(false);
@@ -280,6 +266,8 @@ const Meditation = () => {
 
   const unlockedSessions = sessions.filter(s => s.unlockLevel <= userLevel);
   const nextUnlock = sessions.find(s => s.unlockLevel > userLevel);
+  const xpToNextLevel = (userLevel * 500) - totalXP;
+  const progressPercent = ((totalXP % 500) / 500) * 100;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-secondary/10 to-background">
@@ -307,13 +295,13 @@ const Meditation = () => {
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">{totalXP} XP</span>
-              <span className="text-muted-foreground">{Math.floor((totalXP % 800) / 8)}% vers niveau {userLevel + 1}</span>
+              <span className="text-muted-foreground">{xpToNextLevel} XP vers niveau {userLevel + 1}</span>
             </div>
             <div className="w-full h-3 bg-secondary/20 rounded-full overflow-hidden">
               <motion.div 
                 className="h-full bg-gradient-to-r from-primary via-secondary to-accent"
                 initial={{ width: 0 }}
-                animate={{ width: `${(totalXP % 800) / 8}%` }}
+                animate={{ width: `${progressPercent}%` }}
                 transition={{ duration: 0.8 }}
               />
             </div>
@@ -331,7 +319,7 @@ const Meditation = () => {
           <Card className="border-0 shadow-lg bg-gradient-to-br from-primary/10 to-primary/5">
             <CardContent className="p-6 text-center space-y-2">
               <Trophy className="w-8 h-8 text-primary mx-auto" />
-              <div className="text-3xl font-bold">{completedSessions.length}</div>
+              <div className="text-3xl font-bold">{completedSessions.filter(id => sessions.find(s => s.id.toString() === id)).length}</div>
               <p className="text-sm text-muted-foreground">Sessions</p>
             </CardContent>
           </Card>
@@ -365,7 +353,7 @@ const Meditation = () => {
         <div className="grid lg:grid-cols-3 gap-6">
           {sessions.map((session) => {
             const isLocked = session.unlockLevel > userLevel;
-            const isCompleted = completedSessions.includes(session.id);
+            const isCompleted = completedSessions.includes(session.id.toString());
             
             return (
               <motion.div

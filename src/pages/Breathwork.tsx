@@ -7,6 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import Header from "@/components/Header";
 import { useImplicitTracking } from "@/hooks/useImplicitTracking";
 import { useToast } from "@/hooks/use-toast";
+import { useModuleProgress } from "@/hooks/useModuleProgress";
 
 interface BreathPattern {
   name: string;
@@ -116,26 +117,22 @@ const Breathwork = () => {
   const [phase, setPhase] = useState<'inhale' | 'hold' | 'exhale'>('inhale');
   const [countdown, setCountdown] = useState(selectedPattern.inhale);
   const [round, setRound] = useState(1);
-  const [userLevel, setUserLevel] = useState(0);
-  const [totalXP, setTotalXP] = useState(0);
-  const [completedPatterns, setCompletedPatterns] = useState<string[]>([]);
   const [showStory, setShowStory] = useState(false);
   const [particles, setParticles] = useState<Array<{id: number, x: number, y: number}>>([]);
   const [showLevelUp, setShowLevelUp] = useState(false);
   
   const { track } = useImplicitTracking();
   const { toast } = useToast();
+  
+  const {
+    userLevel,
+    totalXP,
+    unlockedItems: completedPatterns,
+    addXP,
+    unlockItem,
+    loading: progressLoading
+  } = useModuleProgress("breathwork");
 
-  // Load user progress
-  useEffect(() => {
-    const savedXP = localStorage.getItem('breathwork_xp');
-    const savedLevel = localStorage.getItem('breathwork_level');
-    const savedCompleted = localStorage.getItem('breathwork_completed');
-    
-    if (savedXP) setTotalXP(parseInt(savedXP));
-    if (savedLevel) setUserLevel(parseInt(savedLevel));
-    if (savedCompleted) setCompletedPatterns(JSON.parse(savedCompleted));
-  }, []);
 
   const startExercise = () => {
     setIsActive(true);
@@ -161,35 +158,15 @@ const Breathwork = () => {
     });
   };
 
-  const completeSession = () => {
+  const completeSession = async () => {
     const xpGained = selectedPattern.xp;
-    const newTotalXP = totalXP + xpGained;
-    setTotalXP(newTotalXP);
-    localStorage.setItem('breathwork_xp', newTotalXP.toString());
     
-    if (!completedPatterns.includes(selectedPattern.name)) {
-      const newCompleted = [...completedPatterns, selectedPattern.name];
-      setCompletedPatterns(newCompleted);
-      localStorage.setItem('breathwork_completed', JSON.stringify(newCompleted));
-    }
-    
-    // Level up check
-    const newLevel = Math.floor(newTotalXP / 500);
-    if (newLevel > userLevel) {
-      setUserLevel(newLevel);
-      localStorage.setItem('breathwork_level', newLevel.toString());
-      setShowLevelUp(true);
-      setTimeout(() => setShowLevelUp(false), 3000);
-      
-      toast({
-        title: "🎉 Niveau supérieur !",
-        description: `Niveau ${newLevel} atteint - Nouvelles techniques débloquées`,
-      });
-    }
+    // Add XP and unlock pattern
+    await addXP(xpGained, selectedPattern.name);
     
     toast({
       title: "✨ Session complétée !",
-      description: `+${xpGained} XP gagné • ${round} cycles`,
+      description: `+${xpGained} XP gagné • ${round} cycles • Niveau ${userLevel}`,
     });
     
     track({
@@ -234,6 +211,8 @@ const Breathwork = () => {
 
   const unlockedPatterns = breathPatterns.filter(p => p.unlock <= userLevel);
   const nextUnlock = breathPatterns.find(p => p.unlock > userLevel);
+  const xpToNextLevel = (userLevel * 500) - totalXP;
+  const progressPercent = ((totalXP % 500) / 500) * 100;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/20 via-background to-secondary/20 p-8 relative overflow-hidden">
@@ -275,13 +254,13 @@ const Breathwork = () => {
             <motion.div 
               className="h-full bg-gradient-to-r from-primary to-secondary"
               initial={{ width: 0 }}
-              animate={{ width: `${(totalXP % 500) / 5}%` }}
+              animate={{ width: `${progressPercent}%` }}
               transition={{ duration: 0.5 }}
             />
           </div>
           {nextUnlock && (
             <p className="text-xs text-muted-foreground mt-2 text-center">
-              Prochaine technique : {nextUnlock.name} (Niveau {nextUnlock.unlock})
+              {xpToNextLevel} XP vers niv.{userLevel + 1} • Prochaine technique : {nextUnlock.name}
             </p>
           )}
         </div>
@@ -296,7 +275,7 @@ const Breathwork = () => {
           <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground">
             <div className="flex items-center gap-1">
               <Check className="w-4 h-4 text-green-500" />
-              {completedPatterns.length}/{breathPatterns.length} Maîtrisées
+              {completedPatterns.filter(name => breathPatterns.find(p => p.name === name)).length}/{breathPatterns.length} Maîtrisées
             </div>
             <div className="flex items-center gap-1">
               <Award className="w-4 h-4 text-primary" />

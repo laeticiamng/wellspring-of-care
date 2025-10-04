@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useModuleProgress } from "@/hooks/useModuleProgress";
 import { Howl } from "howler";
 
 const scratchSound = new Howl({
@@ -34,11 +35,17 @@ const MoodMixer = () => {
   const [showBadge, setShowBadge] = useState(false);
   const [currentBadge, setCurrentBadge] = useState<any>(null);
   const [isStabilized, setIsStabilized] = useState(false);
-  const [userLevel, setUserLevel] = useState(1);
-  const [totalXP, setTotalXP] = useState(0);
   const [combo, setCombo] = useState(0);
   const [showLevelUp, setShowLevelUp] = useState(false);
-  const [unlockedSets, setUnlockedSets] = useState<string[]>([]);
+  
+  const {
+    userLevel,
+    totalXP,
+    unlockedItems: unlockedSets,
+    addXP,
+    unlockItem,
+    loading: progressLoading
+  } = useModuleProgress("mood-mixer");
 
   const djSets = [
     { id: 'set1', name: '🎵 Set Débutant', unlockLevel: 1 },
@@ -50,14 +57,6 @@ const MoodMixer = () => {
   useEffect(() => {
     loadSavedMixes();
     startSession();
-    
-    const saved = localStorage.getItem('mood_mixer_progress');
-    if (saved) {
-      const { level, xp, sets } = JSON.parse(saved);
-      setUserLevel(level || 1);
-      setTotalXP(xp || 0);
-      setUnlockedSets(sets || []);
-    }
   }, []);
 
   useEffect(() => {
@@ -180,33 +179,31 @@ const MoodMixer = () => {
       const rareBonus = isRareMix(valence, arousal) ? 150 : 0;
       const totalXPGain = baseXP + comboBonus + rareBonus;
       
-      const newXP = totalXP + totalXPGain;
-      const newLevel = Math.floor(newXP / 500) + 1;
-      const leveledUp = newLevel > userLevel;
+      const oldLevel = userLevel;
+
+      // Add XP and check for unlocks
+      await addXP(totalXPGain);
+      
+      const newLevel = Math.floor((totalXP + totalXPGain) / 500) + 1;
+      const leveledUp = newLevel > oldLevel;
 
       // Check for set unlocks
-      const newUnlocks = djSets.filter(set => 
-        set.unlockLevel <= newLevel && !unlockedSets.includes(set.id)
-      ).map(set => set.id);
+      for (const set of djSets) {
+        if (set.unlockLevel <= newLevel && !unlockedSets.includes(set.id)) {
+          await unlockItem(set.id);
+          toast({
+            title: "🎧 Nouveau DJ Set débloqué!",
+            description: set.name,
+          });
+        }
+      }
 
       if (leveledUp) {
-        setUserLevel(newLevel);
         setShowLevelUp(true);
         setTimeout(() => setShowLevelUp(false), 3000);
       }
 
-      if (newUnlocks.length > 0) {
-        setUnlockedSets([...unlockedSets, ...newUnlocks]);
-      }
-
-      setTotalXP(newXP);
       setCombo(0);
-
-      localStorage.setItem('mood_mixer_progress', JSON.stringify({
-        level: newLevel,
-        xp: newXP,
-        sets: [...unlockedSets, ...newUnlocks]
-      }));
 
       const mixToSave = {
         ...currentMix,
@@ -286,7 +283,7 @@ const MoodMixer = () => {
   };
 
   const xpToNextLevel = (userLevel * 500) - totalXP;
-  const progressPercent = (totalXP % 500) / 5;
+  const progressPercent = ((totalXP % 500) / 500) * 100;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-primary/10 to-background relative overflow-hidden">
